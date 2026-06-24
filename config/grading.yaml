@@ -1,0 +1,15 @@
+# 钢化玻璃应力斑分级表
+# 真值来源：docs/01-objective-and-metrics.md（暂缺）。本文件只填 INSTRUCTION 内联给出的
+# 6mm X0.95 一行，其余一律 TODO(plant)，待 docs/01 补全后替换。
+#
+# X0.95 判级方向（值越小越好）：v <= A_max → A；A_max < v <= B_max → B；v > B_max → C。
+# 厚度匹配：每行 thickness_mm 表示"适用 ≤该值"，查表取 thickness_mm >= 查询厚度的最小一行。
+
+x0_95_nm:                  # 方法 4.2（X0.95，单位 nm）
+  - thickness_mm: 6        # 适用 ≤6
+    A_max: 70
+    B_max: 95
+  # TODO(plant): 8 / 10 / 12 / 15 行待 docs/01 补全；>15mm 限值待商定
+
+iso_t_pct: TODO(plant)     # 方法 4.3（IsoT，阈值 T=75nm，判级为"≥"方向，占比越大越好）；分级表待 docs/01
+ccp: TODO(plant)           # 方法 4.4（CCP）；分级表待 docs/01

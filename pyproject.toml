@@ -1,0 +1,43 @@
+# Glass Agents · 工程配置（ruff 命名/风格 + pytest + mypy）
+# 真值/限值不在此文件；见 config/*.yaml 与 CONVENTIONS.md。
+
+[project]
+name = "glass-agents"
+version = "0.0.0"
+description = "对流钢化炉 · 本地多 Agent 调参系统（评测靶子 + 护栏 + 数据层 + 训练脚手架）"
+requires-python = ">=3.12"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+# torch/cu128 等不参与 lint；运行期产物排除
+extend-exclude = [".venv", "data", "wandb", "runs"]
+
+[tool.ruff.lint]
+# E/F 基础、I import 排序、N pep8-naming（snake_case 变量/函数、PascalCase 类）
+select = ["E", "F", "I", "N"]
+
+[tool.ruff.lint.pep8-naming]
+# 受批准的物理量/数学记号例外（详见 CONVENTIONS.md「受批准大写记号」表）：
+# 国标/GLCM 约定俗成的大写符号，不强行改名以免破坏 iso_t(...,T=75) 等既有签名。
+extend-ignore-names = [
+    "L", "W", "T",          # 长度 L / 宽度 W / 阈值 T（nm）
+    "L_mm", "W_mm",         # 带单位的长宽参数
+    "La", "Wa",             # 边缘带宽（沿长/宽）
+    "R_px",                 # 像素半径
+    "Ng",                   # GLCM 灰度级数
+    "Ca", "CPa",            # GLCM 对比度 / 聚类突出（四向平均）
+    "Cmax", "CPmax",        # CCP 参考最差样品标定量
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.mypy]
+python_version = "3.12"
+# 宽松起步：第三方库（numpy/yaml/torch/skimage）缺 stub 不报错；不做强制门禁。
+ignore_missing_imports = true
+warn_unused_ignores = false
+warn_redundant_casts = true

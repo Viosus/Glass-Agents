@@ -1,0 +1,49 @@
+# ============================================================
+# Glass Agents — 训练环境依赖
+# Python 3.12 venv | PyTorch cu128 (Blackwell RTX 5070)
+# torch/torchvision/torchaudio 单独从 cu128 源安装，不在此文件
+# ============================================================
+
+# ---- 通用深度学习 ----
+numpy
+pandas
+scipy
+scikit-learn
+matplotlib
+seaborn
+tqdm
+jupyterlab
+ipykernel
+tensorboard
+wandb
+
+# ---- LLM 生态 (HuggingFace) ----
+transformers
+datasets
+accelerate
+peft
+trl
+bitsandbytes
+sentencepiece
+safetensors
+tokenizers
+evaluate
+einops
+huggingface_hub[hf_transfer]
+
+# ---- 计算机视觉 ----
+timm
+opencv-python
+albumentations
+scikit-image
+ultralytics
+pycocotools
+
+# ---- 测试 / 护栏 ----
+pytest
+pyyaml
+pydantic            # M3 数据层 schema 校验
+
+# ---- 代码质量（dev） ----
+ruff                # 命名/风格 lint（pep8-naming N）
+mypy                # 类型检查（宽松起步）

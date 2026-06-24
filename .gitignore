@@ -1,0 +1,24 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ---- 虚拟环境 ----
+.venv/
+
+# ---- 编辑器 ----
+.vscode/
+
+# ---- Claude Code 本地态（不入版本库）----
+.claude/settings.local.json
+.claude/agent-memory/
+
+# ---- 训练 / 运行期产物 ----
+wandb/
+runs/
+data/archive/          # 归档样本（运行期落库，不入版本库）
+*.ckpt
+*.pt

@@ -1,0 +1,5 @@
+# CCP（方法 4.4）参考最差样品标定值
+# 真值来源：现场标定（暂缺）。未标定前 ccp() 无法计算，相关测试 skip。
+
+c_max: TODO(plant)     # 参考最差样品对比度 Cmax
+cp_max: TODO(plant)    # 参考最差样品聚类突出 CPmax
