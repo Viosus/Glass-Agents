@@ -45,7 +45,7 @@ DEFAULT_RULES_PATH = ROOT / "config" / "review_rules.yaml"
 
 # 命名铁律正则
 RE_SNAKE = re.compile(r"^_*[a-z][a-z0-9_]*$")        # snake_case / 私有前缀 / dunder
-RE_UPPER_SNAKE = re.compile(r"^[A-Z][A-Z0-9_]*$")    # 模块级常量
+RE_UPPER_SNAKE = re.compile(r"^_*[A-Z][A-Z0-9_]*$")  # 模块级常量（允许前导下划线的私有常量）
 RE_PASCAL = re.compile(r"^_?[A-Z][a-zA-Z0-9]*$")     # 类名
 RE_CJK = re.compile(r"[一-鿿]")              # 中文字符
 
@@ -68,11 +68,12 @@ def detect_cloud_imports(tree: ast.AST, rules: dict) -> list[tuple[int, str]]:
     dotted = list(rules.get("cloud_import_blacklist_dotted", []))
     findings: list[tuple[int, str]] = []
     for node in ast.walk(tree):
-        mods: list[str] = []
         if isinstance(node, ast.Import):
             mods = [a.name for a in node.names]
         elif isinstance(node, ast.ImportFrom):
             mods = [node.module or ""]
+        else:
+            continue
         for mod in mods:
             root = mod.split(".")[0]
             hit = root in blacklist or any(mod == d or mod.startswith(d + ".") for d in dotted)
@@ -152,6 +153,8 @@ def detect_naming(tree: ast.AST, rules: dict) -> list[tuple[int, str]]:
         # 赋值/绑定目标 → snake_case 或 UPPER_SNAKE（常量）或受批准大写名
         elif isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
             nm = node.id
+            if set(nm) <= {"_"}:  # 占位符 _ / __：Python 惯例的丢弃变量，豁免
+                continue
             ok = RE_SNAKE.match(nm) or RE_UPPER_SNAKE.match(nm) or _is_approved(nm, approved)
             if not ok and (nm, node.lineno) not in seen:
                 seen.add((nm, node.lineno))

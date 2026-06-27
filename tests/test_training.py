@@ -7,10 +7,11 @@ from tools.constraints import CheckResult
 from training.dataset import time_ordered_split
 from training.losses import MultiHeadLoss
 from training.model import MultiHeadCore
-from training.train import ATTR_DIM, IN_DIM, PARAM_DIM, safety_gate, smoke_train
+from training.train import ATTR_DIM, IN_DIM, PARAM_DIM, baseline_recipe, safety_gate, smoke_train
 
 
 def test_model_forward_shapes():
+    """各头输出形状正确。"""
     m = MultiHeadCore(IN_DIM, param_dim=PARAM_DIM, attr_dim=ATTR_DIM)
     out = m(torch.randn(4, IN_DIM))
     assert out["param_delta"].shape == (4, PARAM_DIM)
@@ -28,6 +29,7 @@ def test_multihead_loss_is_scalar():
 
 
 def test_smoke_train_runs_steps():
+    """冒烟训练能跑指定步数且 loss 有限。"""
     _, history, _ = smoke_train(steps=2, n=32, device="cpu")
     assert len(history) == 2
     assert all(np.isfinite(h) for h in history)
@@ -45,8 +47,8 @@ def test_time_ordered_split_no_leakage():
 
 
 def test_model_output_passes_safety_gate():
-    model, _, _ = smoke_train(steps=1, n=16, device="cpu")
+    model, _, _ = smoke_train(steps=1, n=32, device="cpu")
     delta = model(torch.randn(1, IN_DIM))["param_delta"].detach().numpy().ravel()
-    res = safety_gate(delta, [100.0, 102.0])
+    res = safety_gate(delta, baseline_recipe())
     assert isinstance(res, CheckResult)         # 规则闸门外挂于模型，被应用
     assert res.within_limits is False           # 默认 config 多 TODO → 保守拦截（规则不在权重里）
