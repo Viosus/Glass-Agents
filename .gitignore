@@ -22,3 +22,7 @@ runs/
 data/archive/          # 归档样本（运行期落库，不入版本库）
 *.ckpt
 *.pt
+
+# ---- 本地大模型权重（不入版本库，元数据见 VERSION.md）----
+models/
+*.gguf
