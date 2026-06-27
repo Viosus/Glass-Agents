@@ -21,7 +21,7 @@
 ---
 
 ## 步骤 1 — L3 编排（Teacher 产建议 + 强制过闸门）
-新建 `agents/teacher_loop.py`（或 `pipeline/`），实现单片玻璃的建议生成：
+新建 `llm_roles/teacher_loop.py`（或 `pipeline/`），实现单片玻璃的建议生成：
 
 1. **聚合输入**（输入契约，临时，待 docs/04 §2.1–2.5 定稿 `TODO(plant)`）：
    - 图像派生特征：应力斑指标 `X0.95 / IsoT / CCP`（调 `tools/metrics`，仅在掩膜 M 内统计）；
