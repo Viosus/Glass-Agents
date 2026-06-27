@@ -1,0 +1,50 @@
+# review.py 确定性预检规则（AST/正则通道读取；纯数据，禁硬编码进 tools/，符合铁律 #4）
+# 改这里即时生效（review.py 每次运行按需读取），无需改代码。
+
+# 1) 云端调用——import 黑名单（按模块根名精确匹配 import / from ... import）
+cloud_import_blacklist:
+  - openai
+  - anthropic
+  - requests
+  - urllib
+  - http          # http.client
+  - httpx
+  - aiohttp
+  - socket
+  - websocket
+  - websockets
+  - ftplib
+  - smtplib
+  - telnetlib
+  - boto3
+  - cohere
+
+# 云端调用——带点号的命名空间包（按前缀匹配，如 google.generativeai.xxx）
+cloud_import_blacklist_dotted:
+  - google.generativeai
+
+# 2) 云端调用——出现即违规的字面子串（大小写不敏感，按行扫描）
+cloud_string_patterns:
+  - "https://"
+  - "http://"
+  - "api.openai.com"
+  - "api.anthropic.com"
+  - "api_key"
+  - "base_url"
+
+# 3) 命名铁律——受批准的大写记号（CONVENTIONS.md §2/§3），命名检查时豁免
+approved_uppercase_names:
+  - L
+  - W
+  - T
+  - L_mm
+  - W_mm
+  - La
+  - Wa
+  - R_px
+  - Ng
+  - Ca
+  - CPa
+  - Cmax
+  - CPmax
+  - A_max
