@@ -22,7 +22,9 @@
 ### 工艺参数 `ParamSet` / `ProcessParams`（单位：℃ / s / mm）
 `zone_temps`(list, ℃)、`zone_roles`(list, 与 zone_temps 等长)、`temp_upper`/`temp_lower`(℃)、
 `convection_speed`、`convection_ratio_upper_lower`、`oscillation_speed`、`oscillation_amplitude`、
-`heating_duration_s`(s)、`glass_type`、`thickness_mm`(mm)、`quality_mode`。
+`heating_duration_s`(s)、`glass_type`、`thickness_mm`(mm)、`quality_mode`；
+可选字段（架构讨论稿 §4.2-2，2026-07-02 增，约束规则待 docs/03）：`convection_temp`(℃|None,
+对流风温)、`fan_startup_logic`(str|None, 风机启动逻辑，形态待现场)。
 
 ### 校验结果 `CheckResult`
 `within_limits`(bool)、`blow_up_risk`(bool)、`gradient_ok`(bool)、`violations`(list[str]，含规则编号 C1/C2/C3/安全)。
@@ -54,6 +56,16 @@
 - `operator_id` / `repeat_group_id` / `condition_note`(str|None)：老师傅工号 / 一致性重复组号 / 工况备注。
 - `MetricRecord.fringe_score_0_100`(float|None, 0–100)：**外部**应力斑分布打分（独立功能评好随数据到达，本工程只承接不计算）。
 - `ARCHIVE_SCHEMA_VERSION`(模块常量)：只进数据包 manifest，不进样本本体。
+
+### 研判输出层（advisor/，2026-07-02）
+- `AdvisoryReport`：讨论稿 §4.2 六项输出的统一装配（`params`/`energy`/`maintenance`/`loading`/`attribution` + `environment`/`optical` 插槽）。
+- `SectionStatus{ok, missing}`：缺真值节如实 `cannot_determine`；未标定参考值一律 `is_calibrated=False`。
+- 输入载体（schemas/inputs.py，源=架构讨论稿 §2）：`EnvironmentInput{workshop_temp, workshop_humidity_pct, glass_inlet_temp, season_note}`、
+  `OpticalFeatureSlots{optical_power_mdpt, bow_height_mm, wave_amplitude_mm}`（光焦度/弓波插槽，未接恒 None）、
+  `EquipmentUsage{furnace_id, run_hours, changeover_count, load_frac, source_note}`。
+- config 键：`energy.yaml{model,ref_temp_c,kw_per_zone_c,fan_kw_per_speed,base_kw}`、
+  `maintenance.yaml{weights.{hours,cycles,load},service_wear_threshold,components[].{name,rated_hours,rated_cycles}}`、
+  `loading.yaml{strategy,bed_length_mm,bed_width_mm,min_gap_mm}`、`attribution.yaml{rules[].{signal,op,threshold,issue}}`。
 
 ### 同步与版本（schemas/datapack.py / tools/model_registry.py）
 - 数据包去重键：`(furnace_id, sample_id)` + `content_sha256`；冲突（同键异内容）绝不静默覆盖。
