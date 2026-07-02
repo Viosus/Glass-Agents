@@ -44,6 +44,21 @@
 ### 归档样本分桶键（L5 `ArchiveSample`）
 `thickness_mm`(厚度)、`glass_type`(品类)、`quality_mode`(质量模式)、`is_ground_truth`(bool)。
 
+### 炉体身份与标注扩展（ArchiveSample v2，2026-07-02）
+- `furnace_id`(str)：炉子标识；**身份缺省用 `"unknown"`**（不是安全限值，故不用 TODO(plant) 字串）。
+- `furnace_config`(FurnaceConfig|None)：炉体配置快照（`schemas/furnace.py`；铭牌未知项一律 None）。
+- `operator_id` / `repeat_group_id` / `condition_note`(str|None)：老师傅工号 / 一致性重复组号 / 工况备注。
+- `MetricRecord.fringe_score_0_100`(float|None, 0–100)：**外部**应力斑分布打分（独立功能评好随数据到达，本工程只承接不计算）。
+- `ARCHIVE_SCHEMA_VERSION`(模块常量)：只进数据包 manifest，不进样本本体。
+
+### 同步与版本（schemas/datapack.py / tools/model_registry.py）
+- 数据包去重键：`(furnace_id, sample_id)` + `content_sha256`；冲突（同键异内容）绝不静默覆盖。
+- 契约指纹：`feature_schema_sha256` / `delta_fields_sha256`（training/targets.py），模型包导入必校验。
+- config 键：`furnaces.yaml: furnaces[].{furnace_id,zone_count,zone_layout,fan_count,nameplate}`；
+  `sync.yaml: {furnace_id,drop_dir,cloud.{provider,endpoint,auth_ref}}`；
+  `training.yaml: {grade_scores,min_train_samples,val_frac,test_frac,gate.{max_param_mae,regression_tolerance}}`；
+  `dialogue_rules.yaml: {intents,field_aliases}`（顺序即路由优先级）。
+
 ## 3. 受批准大写记号（pep8-naming 例外）
 国标 / GLCM 约定俗成的大写符号，已在 [pyproject.toml](pyproject.toml) `extend-ignore-names` 放行，**仅限**下表，新增需先登记：
 
