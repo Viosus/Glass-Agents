@@ -1,0 +1,27 @@
+# 应力斑分布打分 · 可调参数（算法参数，非国标限值，不属于 TODO(plant)）
+# 由 fringe_scoring/ 在每次调用时读取——改这里即时生效，无需改代码。
+# 每个键的含义与"调大/调小"的效果见 docs/应力斑分布打分_需求与设计.md §4 调参指南。
+
+segment:
+  method: quantile            # 斑判定方法：quantile(默认，取最深 top_fraction 像素) | robust_z(固定阈值)
+  top_fraction: 0.15          # quantile 法：斑占有效区面积的经验比例，建议 0.10–0.20
+  min_z: 2.5                  # quantile 法的质控下限：top-q 且 |z|≥该值才算斑（纯噪声不计罚）
+  polarity: both              # 斑相对背景的极性：both(暗亮都算) | bright(只算偏亮) | dark(只算偏暗)
+  z_threshold: 3.0            # robust_z 法：|z| 超过该值判为斑
+  z_saturation: 8.0           # 深浅强度 s 封顶的 z 值（锚定统一 z 尺度，跨玻璃可比）
+  background_block_frac: 0.05 # 背景拟合的分块边长 ≈ 内部短边 × 该比例（块内取中位数，稳健）
+  background_poly_degree: 1   # 背景曲面多项式次数：1=平面(默认，稳)；2=二次曲面——
+                              # 仅当照度明显弯曲时用：宽斑会污染曲率项（穹顶假象），需目检确认
+  min_contrast_frac: 0.05     # 残差稳健尺度 < 图像整体稳健尺度 × 该比例 → 判"无斑"（防数值噪声放大）
+
+border:                       # 四边各自自适应检测边框重应力斑带（不计惩罚）
+  min_band_frac: 0.0          # 带宽下限（占对应边长比例）
+  max_band_frac: 0.25         # 带宽上限（占对应边长比例，保护阈）
+  profile_quantile: 0.5       # 每行/列取该分位数作 1D 剖面（0.5=中位数，对内部斑污染最稳健；
+                              # 边框不连续/只占行列一部分时调高，如 0.75，更敏感但易受内部斑干扰）
+  return_to_background_ratio: 2.0  # |去趋势剖面| 回落到内部波动(稳健σ)×该倍数以下 → 边框带到此为止
+
+weight:                       # 位置惩罚权重 w(r)：中心最重、越远越轻
+  kind: linear                # linear(=1-r) | gaussian(=exp(-r^2/2σ^2))
+  gaussian_sigma: 0.5         # gaussian 形状的"中心区半径"（r∈[0,1] 的单位）
+  distance_norm: euclidean    # 距离口径：euclidean(圆形等罚线) | chebyshev(方形等罚线)
