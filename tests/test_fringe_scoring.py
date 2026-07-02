@@ -34,6 +34,7 @@ def base_config() -> dict:
             "min_z": 2.5,
             "polarity": "both",
             "z_threshold": 3.0,
+            "s_scale_mode": "per_sheet",  # 本文件既有性质（含仿射不变）针对 per_sheet 锚；绝对锚见 ⑥
             "z_saturation": 8.0,
             "background_block_frac": 0.05,
             "background_poly_degree": 1,
@@ -216,6 +217,56 @@ def test_full_frame_bypasses_quad_and_matches():
     res_off = score_fringe_distribution(img, config=cfg_off)
     assert res_on.quad_corners_px is None
     assert res_on.score_0_100 == res_off.score_0_100
+
+
+# ---------------- ⑥ 绝对灰度锚（s_scale_mode=absolute，决策 #11） ----------------
+def absolute_config() -> dict:
+    """绝对锚测试配置：s 用固定灰度饱和值（合成图幅度量级下取 60）。"""
+    cfg = base_config()
+    cfg["segment"]["s_scale_mode"] = "absolute"
+    cfg["segment"]["s_saturation_gray"] = 60.0
+    cfg["segment"]["min_dev_gray"] = 4.0  # 合成图噪声 σ=1 → 4σ 质控下限
+    return cfg
+
+
+def test_absolute_mode_fixes_uniform_severe_inversion():
+    # 排序反转回归（真实照片实测暴露）：整片布满深斑 vs 干净玻璃+一颗淡斑。
+    # per_sheet 锚下前者自身 MAD 被斑撑大 → 漏罚；绝对锚下必须判"整片深斑"更差。
+    heavy_blobs = [(r, c, 0.10, 45.0) for r in (0.2, 0.5, 0.8) for c in (0.2, 0.5, 0.8)]
+    heavy = make_glass_image(blobs=heavy_blobs, seed=11)
+    faint = make_glass_image(blobs=[(0.5, 0.5, 0.08, 6.0)], seed=11)
+    cfg = absolute_config()
+    s_heavy = score_fringe_distribution(heavy, config=cfg).score_0_100
+    s_faint = score_fringe_distribution(faint, config=cfg).score_0_100
+    assert s_heavy < s_faint - 1.0
+
+
+def test_absolute_mode_depth_monotonic():
+    # 同位置同大小：绝对幅度更深 → 分更低（绝对锚保留深浅信号，不被逐片归一化吃掉）
+    shallow = make_glass_image(blobs=[(0.5, 0.5, 0.08, 10.0)], seed=13)
+    deep = make_glass_image(blobs=[(0.5, 0.5, 0.08, 30.0)], seed=13)
+    cfg = absolute_config()
+    s_shallow = score_fringe_distribution(shallow, config=cfg).score_0_100
+    s_deep = score_fringe_distribution(deep, config=cfg).score_0_100
+    assert s_deep < s_shallow
+
+
+def test_absolute_mode_is_exposure_sensitive_by_design():
+    # 绝对锚有意放弃仿射不变（前提=同批曝光固定）：整体 ×k 加深 → 分数变化
+    img = make_glass_image(blobs=[(0.5, 0.5, 0.08, 20.0)], seed=17)
+    cfg = absolute_config()
+    s_a = score_fringe_distribution(img, config=cfg).score_0_100
+    s_b = score_fringe_distribution(1.7 * img, config=cfg).score_0_100
+    assert s_b < s_a  # 乘性加深 → 斑更深 → 分更低
+
+
+def test_absolute_mode_missing_saturation_raises():
+    # absolute 模式缺 s_saturation_gray → 报错拒绝，不静默退回旧口径
+    cfg = absolute_config()
+    del cfg["segment"]["s_saturation_gray"]
+    img = make_glass_image(blobs=[(0.5, 0.5, 0.08, 6.0)], seed=19)
+    with pytest.raises(ValueError, match="s_saturation_gray"):
+        score_fringe_distribution(img, config=cfg)
 
 
 def test_quad_low_glass_frac_rejected():

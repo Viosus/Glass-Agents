@@ -44,6 +44,7 @@ def base_config() -> dict:
             "min_z": 2.5,
             "polarity": "both",
             "z_threshold": 3.0,
+            "s_scale_mode": "per_sheet",  # 本文件性质（含整床仿射不变）针对 per_sheet 锚
             "z_saturation": 8.0,
             "background_block_frac": 0.05,
             "background_poly_degree": 1,

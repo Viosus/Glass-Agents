@@ -147,9 +147,11 @@ def score_fringe_distribution(
     reference_scale = robust_scale(arr[interior])
     z = robust_z_map(residual, interior, float(seg_cfg["min_contrast_frac"]), reference_scale)
 
-    # ④ 斑分割 + 深浅强度
-    dev = deviation_map(z, str(seg_cfg["polarity"]))
-    fringe, intensity_s = fringe_mask_and_intensity(dev, interior, seg_cfg)
+    # ④ 斑分割 + 深浅强度：掩膜在 z 域（相对检测），强度 s 默认灰度域绝对锚（绝对惩罚）
+    polarity = str(seg_cfg["polarity"])
+    dev = deviation_map(z, polarity)
+    dev_gray = deviation_map(residual - float(np.median(residual[interior])), polarity)
+    fringe, intensity_s = fringe_mask_and_intensity(dev, interior, seg_cfg, dev_gray=dev_gray)
 
     # ⑤ 位置加权惩罚 → 0–100 分
     u, v = normalized_coords(arr.shape)

@@ -29,7 +29,14 @@ segment:
   min_z: 2.5                  # quantile 法的质控下限：top-q 且 |z|≥该值才算斑（纯噪声不计罚）
   polarity: both              # 斑相对背景的极性：both(暗亮都算) | bright(只算偏亮) | dark(只算偏暗)
   z_threshold: 3.0            # robust_z 法：|z| 超过该值判为斑
-  z_saturation: 8.0           # 深浅强度 s 封顶的 z 值（锚定统一 z 尺度，跨玻璃可比）
+  s_scale_mode: absolute      # 深浅 s 的尺度锚：absolute=固定灰度饱和（跨片可比；前提=同批曝光固定）
+                              # | per_sheet=每片自身 MAD（旧行为）。per_sheet 已实测在"整片重斑"上
+                              # 排序反转（斑撑大自身尺度→漏罚，2026-07-02 决策#11），仅曝光不可控时退用
+  s_saturation_gray: 200      # absolute 模式 s 顶满的 |残差| 灰度值。按 2026-07 实测批次（400US/F4/255）
+                              # 定：最重斑片斑内 p99≈200–228、最淡片≈64；换曝光/相机需重标此值
+  min_dev_gray: 10            # absolute 模式计罚质控下限（灰度）：top-q 且 |残差|≥该值才算斑
+                              # （对应 per_sheet 的 min_z；实测最淡片内部 p50≈1.6–2.2、传感噪声量级个位数）
+  z_saturation: 8.0           # per_sheet 模式：深浅强度 s 封顶的 z 值（锚定统一 z 尺度）
   background_block_frac: 0.05 # 背景拟合的分块边长 ≈ 内部短边 × 该比例（块内取中位数，稳健）
   background_poly_degree: 1   # 背景曲面多项式次数：1=平面(默认，稳)；2=二次曲面——
                               # 仅当照度明显弯曲时用：宽斑会污染曲率项（穹顶假象），需目检确认
