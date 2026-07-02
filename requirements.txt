@@ -18,7 +18,10 @@ tensorboard
 wandb
 
 # ---- LLM 生态 (HuggingFace) ----
-transformers
+# transformers 锁 <5：5.12 v2 加载器在 Windows 上加载大模型（14B 分片）触发原生
+# access violation（mmap 物化路径；分片哈希与官方一致已排除损坏），4.x 老路径实测正常。
+# 详见 .claude/rules/以往错误.md §5。升 5.x 前须先用 14B 冒烟验证。
+transformers<5
 datasets
 accelerate
 peft

@@ -92,11 +92,14 @@ class TransformersChatAdapter:
 
 
 def load_llm_transformers(model_path: Path | str, *, quant_4bit: bool = True) -> TransformersChatAdapter:
-    """加载 HF 权重（默认 bitsandbytes nf4 4bit，12GB 显存可装 14B）→ 适配器。
+    """加载 HF 权重（默认 bitsandbytes nf4 4bit + double quant）→ 适配器。
 
+    12GB 卡装 14B 很紧（桌面还占着零头显存）：开 double quant 省显存，并允许放不下的
+    非量化模块（embed/lm_head 等）回落 CPU——Teacher 是离线批量产参，慢一点可接受。
     model_path 可为本地目录（推荐，先下载落盘）或 HF 模型 id（需已缓存，不在此处联网）。
     """
     import torch  # 本地库
+    import transformers  # 本地库
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig  # 本地库
 
     quant_cfg = None
@@ -104,14 +107,24 @@ def load_llm_transformers(model_path: Path | str, *, quant_4bit: bool = True) ->
         quant_cfg = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
             bnb_4bit_compute_dtype=torch.bfloat16,
+            llm_int8_enable_fp32_cpu_offload=True,   # 显存不够时溢出模块回落 CPU，而非直接拒载
         )
+    # Windows 实测（详见 .claude/rules/以往错误.md）：transformers 5.12 v2 加载器在本机
+    # 触发原生 access violation（mmap 物化路径），整读路径又需 ≥28GB 内存 → 环境锁定 4.x
+    # 老加载路径（safe_open+get_tensor，多年 Windows+bnb 里程）。若在 5.x 上运行，则退回
+    # 整读（disable_mmap）——小模型可用，14B 级别需 4.x。
+    load_kwargs: dict[str, Any] = {}
+    if int(transformers.__version__.split(".")[0]) >= 5:
+        load_kwargs["disable_mmap"] = True
     tokenizer = AutoTokenizer.from_pretrained(str(model_path))
     model = AutoModelForCausalLM.from_pretrained(
         str(model_path),
         quantization_config=quant_cfg,
         device_map="auto",
-        torch_dtype=torch.bfloat16 if quant_cfg is None else None,
+        dtype=torch.bfloat16 if quant_cfg is None else None,
+        **load_kwargs,
     )
     model.eval()
     return TransformersChatAdapter(model, tokenizer)
