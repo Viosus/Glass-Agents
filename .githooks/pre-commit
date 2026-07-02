@@ -1,0 +1,25 @@
+#!/bin/sh
+# 提交硬闸门（agent 无关）：pytest 不过则拦提交。规则 > AI。
+#
+# 与 .claude/hooks/pre_commit_gate.py 同一逻辑，但对**任何** git commit 生效：
+# Claude Code / Codex / 人手动 / CI 都拦得住 —— 真正做到"安全闸门在模型之外"。
+# 启用一次即可（每个 clone 各设一次）：  git config core.hooksPath .githooks
+#
+# git 在项目根目录运行本 hook，故用相对路径引用 venv 解释器。
+
+PY=".venv/Scripts/python.exe"
+
+if [ ! -f "$PY" ]; then
+  echo "pre-commit: 找不到 venv 解释器 $PY —— 无法运行安全闸门，拒绝提交（不静默放行）。" >&2
+  echo "  见 CLAUDE.md 铁律1：只用 .venv 的 python。" >&2
+  exit 1
+fi
+
+echo "pre-commit: 运行 pytest 安全/指标闸门 …" >&2
+"$PY" -m pytest -q tests/
+if [ $? -ne 0 ]; then
+  echo "提交被拦截：安全/指标测试未通过（规则 > AI）。请先修复再提交。" >&2
+  exit 1
+fi
+
+exit 0

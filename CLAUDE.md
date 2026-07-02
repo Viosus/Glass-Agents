@@ -24,6 +24,10 @@ Glass Agents = 对流钢化炉 · 本地多 Agent 调参系统（模仿老师傅
 8. **没有的别装有**：源文档 `docs/01`、`docs/03`、`PLAN.md` 不存在，C4/C5 代号无定义 —— 不臆造数值或含义。
 9. **py 改动必审查**：每新建/修改一个 `.py` 后，必须跑 `tools/review.py <该文件>`（本地 GGUF，四项机械规则）并把结果展示给用户；**审查通过（✅）才算该任务完成**。
 
+## 双 agent 入口（Codex 可随时接手）
+- `AGENTS.md` = Codex 等非 Claude agent 的开机必读，其铁律是本文件的镜像 —— **改铁律须两处同步**。
+- 提交硬闸门已下沉为 git hook `.githooks/pre-commit`（每个 clone 跑一次 `git config core.hooksPath .githooks` 启用），对任何提交者生效；Claude 侧 `pre_commit_gate` 照旧，互不影响。
+
 ## 分类文档（@ 引用，按需展开）
 - `@.claude/rules/以往错误.md` — 踩过的坑：现象 + 根因 + 正确做法。
 - `@.claude/rules/用户偏好风格.md` — 中文、简洁、增量、统计背景、遇阻塞先摆不瞎猜。
