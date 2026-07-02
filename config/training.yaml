@@ -1,0 +1,23 @@
+# 训练与版本门配置（数据驱动，禁硬编码进 training/；每次调用按需读取，改这里即时生效）。
+# 注意：grade_scores 是**训练编码**（把主观判级变成可回归的数值），不是国标真值；
+#       国标分级限值在 config/grading.yaml（缺值 TODO(plant)，另一体系）。
+
+# 主观判级 → 数值目标（训练编码，可调）
+grade_scores:
+  A: 1.0
+  B: 0.5
+  C: 0.0
+
+# 真数据训练门槛：样本量不足则诚实报错退出，不用模拟数据顶
+min_train_samples: 30
+
+# 时间序切分比例（不打乱，防未来泄漏）
+val_frac: 0.2
+test_frac: 0.2
+
+# 参数头版本门（tools/eval_gate.evaluate_param_gate + tools/model_registry.promote）
+gate:
+  # Δ 的验证集 MAE 上限：合格线待老师傅数据分布确定后再定 → 未填时门只查"出参零违规"
+  max_param_mae: TODO(plant)
+  # 相对当前已晋级版本的允许回归容差（new_mae ≤ prev_mae × (1 + tolerance)）
+  regression_tolerance: 0.05

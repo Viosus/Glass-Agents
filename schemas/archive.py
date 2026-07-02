@@ -13,9 +13,15 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from schemas.furnace import UNKNOWN_FURNACE_ID, FurnaceConfig
 from schemas.process_params import ProcessParams
 
 Grade = Literal["A", "B", "C"]
+
+# 归档 schema 版本：只放数据包 manifest 引用，不进样本本体
+# （带默认值的版本字段会让旧样本"谎报"新版本，包级声明更诚实）。
+# v2：+furnace_id/furnace_config/operator_id/repeat_group_id/condition_note、MetricRecord+fringe_score_0_100
+ARCHIVE_SCHEMA_VERSION = 2
 
 
 class ImageRef(BaseModel):
@@ -42,6 +48,9 @@ class MetricRecord(BaseModel):
     ccp_value: float | None = None
     ccp_is_calibrated: bool = False
     ccp_grade: Grade | None = None
+    # 应力斑分布分（0-100，越高越好）：由独立的 fringe 打分功能产出，
+    # 数据到达本工程时已带分——这里只承接，不负责计算；无则 None。
+    fringe_score_0_100: float | None = Field(default=None, ge=0, le=100)
 
 
 class ConstraintSummary(BaseModel):
@@ -64,6 +73,10 @@ class ArchiveSample(BaseModel):
     created_at: datetime
     source: str                                              # 产线/班次/teacher 版本等来源
 
+    # ---- 炉体身份（v2：数据从第一天带炉子身份，多炉汇聚/跨炉迁移的前提）----
+    furnace_id: str = UNKNOWN_FURNACE_ID                     # 旧数据读回默认 unknown（诚实缺省，不猜）
+    furnace_config: FurnaceConfig | None = None              # 入库时的炉体配置快照（未登记则 None）
+
     # ---- 分桶键 ----
     thickness_mm: float = Field(gt=0)
     glass_type: Literal["ultra_clear", "clear"]
@@ -82,6 +95,9 @@ class ArchiveSample(BaseModel):
     # ---- 标注（老师傅主观，区别于出炉实测）----
     expert_quality_grade: Grade | None = None               # 老师傅目测判级（≠ measured_quality_grade）
     cause_tag: str | None = None                            # 成因弱标签（类目未定则留空）
+    operator_id: str | None = None                          # 老师傅工号（测标签一致性）
+    repeat_group_id: str | None = None                      # 重复标注组号（一致性重复）
+    condition_note: str | None = None                       # 工况备注自由文本（结构化字段待 docs/04）
 
     # ---- outcome 回填（出炉实测）----
     measured_quality_grade: Grade | None = None
