@@ -129,6 +129,14 @@ def detect_naming(tree: ast.AST, rules: dict) -> list[tuple[int, str]]:
     findings: list[tuple[int, str]] = []
     seen: set[tuple[str, int]] = set()
 
+    # 模块级赋值名：允许 PascalCase（类型别名/哨兵，如 Grade = Literal[...]）
+    module_level: set[str] = set()
+    for top in ast.iter_child_nodes(tree):
+        if isinstance(top, ast.Assign):
+            module_level.update(t.id for t in top.targets if isinstance(t, ast.Name))
+        elif isinstance(top, ast.AnnAssign) and isinstance(top.target, ast.Name):
+            module_level.add(top.target.id)
+
     for node in ast.walk(tree):
         # 函数名 → snake_case
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -156,6 +164,8 @@ def detect_naming(tree: ast.AST, rules: dict) -> list[tuple[int, str]]:
             if set(nm) <= {"_"}:  # 占位符 _ / __：Python 惯例的丢弃变量，豁免
                 continue
             ok = RE_SNAKE.match(nm) or RE_UPPER_SNAKE.match(nm) or _is_approved(nm, approved)
+            if nm in module_level and RE_PASCAL.match(nm):  # 模块级类型别名允许 PascalCase
+                ok = True
             if not ok and (nm, node.lineno) not in seen:
                 seen.add((nm, node.lineno))
                 findings.append((node.lineno, f"命名不合规 - 变量 '{nm}' 应为 snake_case"))

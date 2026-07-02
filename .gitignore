@@ -23,6 +23,11 @@ data/archive/          # 归档样本（运行期落库，不入版本库）
 *.ckpt
 *.pt
 
+# ---- 标注数据（填好的表=工厂配方，商业机密，绝不入库；仅保留模板）----
+data/annotation/*
+!data/annotation/标注表模板.csv
+!data/annotation/标注表模板.xlsx
+
 # ---- 本地大模型权重（不入版本库，元数据见 VERSION.md）----
 models/
 *.gguf

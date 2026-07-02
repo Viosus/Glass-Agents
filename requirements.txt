@@ -47,3 +47,10 @@ pydantic            # M3 数据层 schema 校验
 # ---- 代码质量（dev） ----
 ruff                # 命名/风格 lint（pep8-naming N）
 mypy                # 类型检查（宽松起步）
+
+# ---- 标注表生成 ----
+openpyxl            # 生成老师傅标注表 xlsx（枚举下拉校验）
+
+# ---- 本地 LLM 推理（Teacher / 翻译官 / 知识库 / review）----
+# llama-cpp-python 需从预编译 CPU 源装（Blackwell 无匹配 CUDA wheel）：
+#   pip install "llama-cpp-python==0.3.30" --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu

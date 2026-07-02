@@ -74,9 +74,14 @@ class ArchiveSample(BaseModel):
     stress_image: ImageRef | None = None
 
     # ---- 结构化 ----
-    params: ProcessParams
+    params: ProcessParams                                    # 老师傅/Teacher 的最终参数
+    baseline_params: ProcessParams | None = None            # 当时基准配方（参数头残差 Δ = params − baseline_params）
     metrics: MetricRecord = Field(default_factory=MetricRecord)
     constraint: ConstraintSummary | None = None
+
+    # ---- 标注（老师傅主观，区别于出炉实测）----
+    expert_quality_grade: Grade | None = None               # 老师傅目测判级（≠ measured_quality_grade）
+    cause_tag: str | None = None                            # 成因弱标签（类目未定则留空）
 
     # ---- outcome 回填（出炉实测）----
     measured_quality_grade: Grade | None = None
@@ -85,6 +90,7 @@ class ArchiveSample(BaseModel):
 
     @property
     def bucket(self) -> tuple[float, str, str]:
+        """分桶键：(厚度, 品类, 质量模式)。"""
         return (self.thickness_mm, self.glass_type, self.quality_mode)
 
 
