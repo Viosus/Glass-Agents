@@ -1,15 +1,63 @@
 # 钢化玻璃应力斑分级表
-# 真值来源：docs/01-objective-and-metrics.md（暂缺）。本文件只填 INSTRUCTION 内联给出的
-# 6mm X0.95 一行，其余一律 TODO(plant)，待 docs/01 补全后替换。
+# 真值来源：docs/《钢化玻璃应力斑分级及检测方法》草案2026.5.18(1).pdf（GB/T 草案，SAC/TC 255）
+#   §4.2 表1（X0.95）/ §4.3 表2（IsoT，T=75nm）/ §4.4 表3（CCP）。
+# ⚠️ 该文件为草案（征求意见稿）：正式版发布后须逐值复核；数值有出入以正式版为准。
 #
-# X0.95 判级方向（值越小越好）：v <= A_max → A；A_max < v <= B_max → B；v > B_max → C。
-# 厚度匹配：每行 thickness_mm 表示"适用 ≤该值"，查表取 thickness_mm >= 查询厚度的最小一行。
+# 判级方向：
+#   X0.95 / CCP（越小越好）：v ≤ A_max → A；A_max < v ≤ B_max → B；v > B_max → C。
+#   IsoT（占比越大越好）  ：v ≥ A_min → A；B_min ≤ v < A_min → B；v < B_min → C。
+# 厚度匹配：每行 thickness_mm 为公称厚度档（"适用 ≤该值"），查表取 thickness_mm ≥ 查询厚度
+# 的最小一行；查无适用行（如 >15mm，草案注明"由供需双方商定"）→ 无法判级，返回 None。
 
-x0_95_nm:                  # 方法 4.2（X0.95，单位 nm）
-  - thickness_mm: 6        # 适用 ≤6
+x0_95_nm:                  # 方法 4.2（X0.95，单位 nm）—— 草案表1
+  - thickness_mm: 6        # 适用 ≤6mm
     A_max: 70
     B_max: 95
-  # TODO(plant): 8 / 10 / 12 / 15 行待 docs/01 补全；>15mm 限值待商定
+  - thickness_mm: 8
+    A_max: 80
+    B_max: 120
+  - thickness_mm: 10
+    A_max: 95
+    B_max: 140
+  - thickness_mm: 12
+    A_max: 115
+    B_max: 155
+  - thickness_mm: 15
+    A_max: 130
+    B_max: 165
+  # >15mm：草案注"限值由供需双方商定" → 不设行，判级返回 None
 
-iso_t_pct: TODO(plant)     # 方法 4.3（IsoT，阈值 T=75nm，判级为"≥"方向，占比越大越好）；分级表待 docs/01
-ccp: TODO(plant)           # 方法 4.4（CCP）；分级表待 docs/01
+iso_t_pct:                 # 方法 4.3（IsoT，阈值 T=75nm，"≥"方向）—— 草案表2
+  - thickness_mm: 6        # 适用 ≤6mm
+    A_min: 95
+    B_min: 85
+  - thickness_mm: 8
+    A_min: 90
+    B_min: 68
+  - thickness_mm: 10
+    A_min: 85
+    B_min: 52
+  - thickness_mm: 12
+    A_min: 70
+    B_min: 30
+  # ≥15mm：草案表2 注 b"由供需双方商定" → 不设行，判级返回 None
+
+ccp:                       # 方法 4.4（CCP，无量纲 0~1）—— 草案表3
+  - thickness_mm: 6        # 适用 ≤6mm
+    A_max: 0.43
+    B_max: 0.57
+  - thickness_mm: 8
+    A_max: 0.49
+    B_max: 0.71
+  - thickness_mm: 10
+    A_max: 0.57
+    B_max: 0.82
+  - thickness_mm: 12
+    A_max: 0.68
+    B_max: 0.90
+  - thickness_mm: 15
+    A_max: 0.76
+    B_max: 0.96
+  # >15mm：草案注"限值由供需双方商定" → 不设行，判级返回 None
+  # ⚠️ CCP 判级还依赖 config/ccp_reference.yaml 的 Cmax/CPmax（参考最差样品标定），
+  #    草案未给数值，仍为 TODO(plant)——标定前 metrics.ccp 默认路径拒绝出值。

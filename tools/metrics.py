@@ -1,6 +1,7 @@
 """钢化玻璃应力斑质量指标：评估区域掩膜 + X0.95 / IsoT / CCP。
 
-严格依据 docs/01-objective-and-metrics.md（暂缺）。分级限值在 config/grading.yaml，
+严格依据 docs/《钢化玻璃应力斑分级及检测方法》草案2026.5.18(1).pdf（GB/T 草案，
+即原挂账的"docs/01"主体；正式版发布后须复核）。分级限值在 config/grading.yaml，
 CCP 参考常量在 config/ccp_reference.yaml，禁止把限值硬编码进逻辑。
 
 约定：
@@ -23,10 +24,12 @@ _CCP_REF = _CONFIG_DIR / "ccp_reference.yaml"
 
 
 def _is_todo(v) -> bool:
+    """判断 config 值是否为缺值占位（None 或 TODO 开头字符串）→ 按"无法判定"处理。"""
     return v is None or (isinstance(v, str) and v.strip().upper().startswith("TODO"))
 
 
 def _load_yaml(path: Path) -> dict:
+    """按需读取 yaml 配置（每次调用重新读盘，改 yaml 即时生效）。"""
     with open(path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
@@ -117,10 +120,31 @@ class CcpResult:
     is_calibrated: bool
 
 
+def _standardize_to_1px_per_mm(image: np.ndarray, mm_per_px: float) -> np.ndarray:
+    """草案 §4.4 b) 图像标准化：重采样到 1 px/mm（像素距离归一到真实距离）。
+
+    参考面积 10000 px² ↔ 100 mm×100 mm，即标准化后 1 px = 1 mm——保证不同尺寸/
+    分辨率玻璃的 CCP 可横向比较；此后 GLCM 步距 d=1 即对应真实 1 mm。
+    """
+    arr = np.asarray(image, dtype=float)
+    if arr.ndim != 2:
+        raise ValueError("ccp: 需要二维光程差图像（评估区域），非一维数组")
+    if mm_per_px <= 0:
+        raise ValueError("ccp: mm_per_px 须为正")
+    if abs(mm_per_px - 1.0) < 1e-12:
+        return arr
+    from skimage.transform import resize
+
+    rows = max(2, int(round(arr.shape[0] * mm_per_px)))
+    cols = max(2, int(round(arr.shape[1] * mm_per_px)))
+    # mm_per_px<1（分辨率高于 1px/mm）时是降采样，需抗混叠
+    return resize(arr, (rows, cols), order=1, preserve_range=True, anti_aliasing=mm_per_px < 1.0)
+
+
 def _glcm_ca_cpa(image: np.ndarray, ng: int = 8) -> tuple[float, float]:
     """二维光程差图像 → (Ca, CPa)：GLCM 四方向(0/45/90/135°)平均的对比度与聚类突出。
 
-    步距 d=1（真实步距对应物理尺度待 docs/01 → TODO(plant)）；线性量化到 Ng 级。
+    步距 d=1（输入应已标准化到 1 px/mm，故 d=1 ≡ 真实 1 mm）；线性量化到 Ng 级。
     """
     from skimage.feature import graycomatrix, graycoprops
 
@@ -155,17 +179,19 @@ def _cluster_prominence(glcm: np.ndarray) -> np.ndarray:
 
 
 def ccp(retardation_nm_masked: np.ndarray, mm_per_px: float, ref: dict | None = None) -> CcpResult:
-    """聚类对比度参数 CCP（方法 4.4）。
+    """组合纹理特征 CCP（草案 §4.4）。
 
+    - 步骤 b) 图像标准化：先重采样到 1 px/mm（10000 px² ↔ 100 mm 口径），跨尺寸可比；
     - GLCM 灰度级 Ng=8、四方向(0/45/90/135°)平均；
-    - 公式 CCP = 0.5 * ( sqrt(Ca / Cmax) + (CPa / CPmax) ** 0.25 )；
-    - Cmax / CPmax 取自"参考最差样品"（归一化基准 10000 px² / 100 mm）。
+    - 公式(1)：CCP = 0.5 * ( sqrt(Ca / Cmax) + (CPa / CPmax) ** 0.25 )；
+    - Cmax / CPmax 取自"参考最差样品"——**草案未给数值，标定值仍缺**。
 
     ``ref``：可注入参考 ``{"c_max":…, "cp_max":…}``（测试用合成参考，结果 is_calibrated=False）。
     ``ref=None`` 时读 config/ccp_reference.yaml；其值为 TODO(plant) 未标定 → 抛 NotImplementedError，
-    **不当真值下发**（规则 > AI）。归一化基准的精确口径待 docs/01 → TODO(plant)。
+    **不当真值下发**（规则 > AI）。
     """
-    ca, cpa = _glcm_ca_cpa(retardation_nm_masked, ng=8)
+    standardized = _standardize_to_1px_per_mm(retardation_nm_masked, mm_per_px)
+    ca, cpa = _glcm_ca_cpa(standardized, ng=8)
 
     if ref is None:
         ref = _load_yaml(_CCP_REF)
@@ -187,9 +213,20 @@ def ccp(retardation_nm_masked: np.ndarray, mm_per_px: float, ref: dict | None = 
 # --------------------------------------------------------------------------- #
 # 分级
 # --------------------------------------------------------------------------- #
+def _pick_row(table: list, thickness_mm: float, required_key: str):
+    """取 thickness_mm ≥ 查询厚度的最小一行（行值=公称厚度档"适用 ≤该值"）。
+
+    查无适用行（如 >15mm，草案注明"由供需双方商定"）或该行限值为 TODO → None。
+    """
+    rows = sorted((r for r in table if not _is_todo(r.get(required_key))),
+                  key=lambda r: r["thickness_mm"])
+    return next((r for r in rows if r["thickness_mm"] >= thickness_mm), None)
+
+
 def grade(value: float, thickness_mm: float, method: str, grading: dict | None = None):
     """按 config/grading.yaml 给指标值判级，返回 'A'/'B'/'C'。
 
+    判级方向（草案表1/2/3）：x0_95 / ccp 越小越好（≤A_max→A）；iso_t 占比越大越好（≥A_min→A）。
     缺值（TODO(plant) 或查不到适用行）→ 返回 None（无法判级），不猜测。
     method: 'x0_95' | 'iso_t' | 'ccp'。
     """
@@ -199,14 +236,12 @@ def grade(value: float, thickness_mm: float, method: str, grading: dict | None =
         raise ValueError(f"grade: 未知 method {method!r}")
     table = g.get(key)
     if _is_todo(table):
-        return None     # 该方法分级表缺失（待 docs/01）
+        return None     # 该方法分级表缺失
     assert table is not None  # _is_todo 已排除 None/TODO
 
-    if method == "x0_95":
-        # 取 thickness_mm >= 查询厚度的最小一行
-        rows = sorted((r for r in table if not _is_todo(r.get("A_max"))),
-                      key=lambda r: r["thickness_mm"])
-        row = next((r for r in rows if r["thickness_mm"] >= thickness_mm), None)
+    if method in ("x0_95", "ccp"):
+        # 越小越好："≤"方向（草案表1/表3）
+        row = _pick_row(table, thickness_mm, "A_max")
         if row is None:
             return None
         if value <= row["A_max"]:
@@ -215,5 +250,12 @@ def grade(value: float, thickness_mm: float, method: str, grading: dict | None =
             return "B"
         return "C"
 
-    # iso_t / ccp 分级表当前为 TODO(plant)，到此说明结构已就绪但数值待补
-    return None
+    # iso_t：占比越大越好，"≥"方向（草案表2，阈值 T=75nm）
+    row = _pick_row(table, thickness_mm, "A_min")
+    if row is None:
+        return None
+    if value >= row["A_min"]:
+        return "A"
+    if value >= row["B_min"]:
+        return "B"
+    return "C"

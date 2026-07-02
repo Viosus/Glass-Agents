@@ -12,27 +12,44 @@ def test_x0_95_value():
 
 
 def test_x0_95_grade_boundaries_6mm():
-    # 6mm：A_max=70, B_max=95
+    # 草案表1 6mm 档：A_max=70, B_max=95
     assert metrics.grade(70.0, 6, "x0_95") == "A"      # 边界 ≤70 → A
     assert metrics.grade(65.0, 6, "x0_95") == "A"
     assert metrics.grade(95.0, 6, "x0_95") == "B"      # 70<95≤95 → B
     assert metrics.grade(95.01, 6, "x0_95") == "C"     # >95 → C
 
 
-def test_grade_missing_thickness_returns_none():
-    # 8mm 行缺失（TODO(plant)）→ 无法判级
-    assert metrics.grade(50.0, 8, "x0_95") is None
+def test_x0_95_grade_boundaries_8mm():
+    # 草案表1 8mm 档：A_max=80, B_max=120（表已由草案 PDF 补全）
+    assert metrics.grade(80.0, 8, "x0_95") == "A"
+    assert metrics.grade(120.0, 8, "x0_95") == "B"
+    assert metrics.grade(120.01, 8, "x0_95") == "C"
+
+
+def test_grade_over_15mm_returns_none():
+    # >15mm 草案注"由供需双方商定" → 查无适用行 → 无法判级
+    assert metrics.grade(50.0, 16, "x0_95") is None
+    assert metrics.grade(0.5, 16, "ccp") is None
 
 
 # --------------------------- IsoT --------------------------- #
 def test_iso_t_value():
-    arr = np.concatenate([np.full(30, 50.0), np.full(70, 100.0)])  # 30% < 75
+    # IsoT 数值：30% 像素低于阈值 75nm → 30.0%
+    arr = np.concatenate([np.full(30, 50.0), np.full(70, 100.0)])
     assert metrics.iso_t(arr, T=75.0) == pytest.approx(30.0)
 
 
-@pytest.mark.skip(reason="IsoT 分级表待 docs/01 补全")
-def test_iso_t_grade():
-    assert metrics.grade(80.0, 6, "iso_t") in ("A", "B", "C")
+def test_iso_t_grade_boundaries_6mm():
+    # 草案表2 6mm 档（"≥"方向）：A_min=95, B_min=85
+    assert metrics.grade(95.0, 6, "iso_t") == "A"      # 边界 ≥95 → A
+    assert metrics.grade(94.9, 6, "iso_t") == "B"
+    assert metrics.grade(85.0, 6, "iso_t") == "B"      # 边界 ≥85 → B
+    assert metrics.grade(84.9, 6, "iso_t") == "C"
+
+
+def test_iso_t_grade_15mm_returns_none():
+    # 表2 "≥15mm 由供需双方商定" → 无 15 行 → 无法判级
+    assert metrics.grade(90.0, 15, "iso_t") is None
 
 
 # --------------------------- 评估区域几何 --------------------------- #
@@ -54,6 +71,7 @@ def test_edge_band_within_range():
 
 
 def test_hole_exclusion_radius():
+    # 孔洞排除半径 = 6×厚度 + 孔半径（mm）
     assert metrics.hole_exclusion_radius_mm(6, 5) == 41.0   # 6*6+5
     assert metrics.hole_exclusion_radius_mm(10, 0) == 60.0  # 6*10+0
 
@@ -96,5 +114,26 @@ def test_ccp_flat_image_has_zero_contrast():
 
 
 def test_ccp_requires_2d():
+    # CCP 需要二维光程差图像：一维数组应被拒绝
     with pytest.raises(ValueError):
         metrics.ccp(np.zeros(100), mm_per_px=1.0, ref={"c_max": 1.0, "cp_max": 1.0})
+
+
+def test_ccp_standardization_makes_resolutions_comparable():
+    # 草案 §4.4 b)：同一块玻璃在不同扫描分辨率下 CCP 应基本一致（标准化到 1px/mm）
+    yy, xx = np.mgrid[0:60, 0:80].astype(float)         # 60×80mm @ 1px/mm
+    base = 100.0 + 50.0 * np.sin(2 * np.pi * xx / 10.0) * np.cos(2 * np.pi * yy / 8.0)
+    from skimage.transform import resize
+
+    hi_res = resize(base, (120, 160), order=1, preserve_range=True)  # 同一玻璃 @ 2px/mm
+    ref = {"c_max": 10.0, "cp_max": 1000.0}
+    v_base = metrics.ccp(base, mm_per_px=1.0, ref=ref).value
+    v_hi = metrics.ccp(hi_res, mm_per_px=0.5, ref=ref).value
+    assert v_hi == pytest.approx(v_base, abs=0.03)
+
+
+def test_ccp_grade_boundaries_8mm():
+    # 草案表3 8mm 档：A_max=0.49, B_max=0.71
+    assert metrics.grade(0.49, 8, "ccp") == "A"
+    assert metrics.grade(0.71, 8, "ccp") == "B"
+    assert metrics.grade(0.72, 8, "ccp") == "C"
