@@ -36,10 +36,12 @@ _RULES_PATH = _ROOT / "config" / "dialogue_rules.yaml"
 _FALLBACK_PROMPT_PATH = _ROOT / "config" / "prompt_dialogue_fallback.md"
 
 Intent = Literal[
-    "param_edit", "param_check", "model_suggest", "process_qa", "diagnose", "show_state", "help", "exit", "unknown"
+    "param_edit", "param_check", "model_suggest", "export_sheet",
+    "process_qa", "diagnose", "show_state", "help", "exit", "unknown",
 ]
 _INTENTS: tuple[Intent, ...] = (
-    "param_edit", "param_check", "model_suggest", "process_qa", "diagnose", "show_state", "help", "exit", "unknown",
+    "param_edit", "param_check", "model_suggest", "export_sheet",
+    "process_qa", "diagnose", "show_state", "help", "exit", "unknown",
 )
 
 _RE_NUMBER = re.compile(r"-?\d+(?:\.\d+)?")
@@ -50,6 +52,7 @@ _HELP_TEXT = """我能做的（数值全部来自确定性规则或经闸门的�
 - 改参数：如「上炉温改到705」→ 改后自动过安全闸门，越界会如实列出问题
 - 查参数：「检查当前参数」「当前参数」
 - 要建议：「给个建议」→ 已激活的参数头模型出 Δ → 过闸门后呈现（仅供参考，不自动应用）
+- 出参数单：「导出参数单」→ 当前参数导出 Excel（闸门状态与 violations 一并写进单子）
 - 看样片：「诊断一下」→ 呈现已加载样片的指标与应力斑分布分（只报数；诊断类目 TODO(plant)）
 - 问工艺：「为什么上炉温要高于下炉温」→ 查知识库，缺依据会拒答
 - 退出：「退出」"""
@@ -202,6 +205,28 @@ def _handle_model_suggest(state: DialogueState, model: Any | None, thresholds: d
     )
 
 
+def _handle_export_sheet(state: DialogueState, thresholds: dict | None, sheet_dir: Path | None) -> str:
+    """导出参数单：当前参数（+prev 作基准列）→ 闸门（沿用最近检查或现算）→ Excel 落盘。"""
+    from tools.param_sheet import default_out_path, write_param_sheet
+
+    if state.params is None:
+        return "当前会话还没有参数组，没有可导出的内容。先 --baseline 载入基准配方。"
+    check = state.last_check
+    if check is None:
+        prev = state.prev_params.to_param_set() if state.prev_params is not None else None
+        check = validate(state.params.to_param_set(), prev=prev, thresholds=thresholds)
+        state.last_check = check
+    out = write_param_sheet(
+        state.params,
+        check,
+        baseline=state.prev_params,
+        meta={"furnace_id": state.furnace_id},
+        out_path=default_out_path(sheet_dir),
+    )
+    gate = "已通过安全闸门" if check.within_limits else "**未过安全闸门**（单内已标注禁止照做）"
+    return f"参数单已导出：{out}（{gate}）"
+
+
 def _handle_param_check(state: DialogueState, thresholds: dict | None) -> str:
     """查参：当前参数过闸门 → 确定性骨架/violations 呈现。"""
     if state.params is None:
@@ -238,6 +263,7 @@ def respond(
     rules: dict | None = None,
     thresholds: dict | None = None,
     kb_path: Path = DEFAULT_KB_PATH,
+    sheet_dir: Path | None = None,
 ) -> tuple[DialogueState, str]:
     """一轮对话：老状态 + 用户输入 → 新状态 + 回复。llm/model 均注入式（None=对应能力关闭）。"""
     r = rules if rules is not None else load_dialogue_rules()
@@ -257,6 +283,8 @@ def respond(
         reply = _handle_param_check(state, thresholds)
     elif intent == "model_suggest":
         reply = _handle_model_suggest(state, model, thresholds)
+    elif intent == "export_sheet":
+        reply = _handle_export_sheet(state, thresholds, sheet_dir)
     elif intent == "diagnose":
         if state.metrics is None:
             reply = "当前会话没有加载样片数据（--sample 载入 ArchiveSample JSON 后可看指标与分数）。"

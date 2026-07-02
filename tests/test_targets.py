@@ -107,6 +107,53 @@ def test_grade_score_reads_config_mapping():
     assert grade_score("A", {"grade_scores": {}}) is None   # 映射缺失 → None，不猜
 
 
+# --------------------------- v2 老化特征（22→26 维） --------------------------- #
+def test_feature_dim_is_26():
+    from training.features import feature_dim
+
+    assert feature_dim() == 26
+    assert FEATURE_NAMES[-4:] == (
+        "furnace_age_years", "furnace_age_present", "days_since_overhaul", "overhaul_present",
+    )
+
+
+def test_aging_features_from_furnace_config():
+    from datetime import date
+
+    from schemas.furnace import FurnaceConfig
+    from training.features import featurize
+
+    fc = FurnaceConfig(
+        furnace_id="F1",
+        commissioning_date=date(2016, 7, 2),      # 距样本时刻(2026-07-02 09:00)整 10 年
+        last_overhaul_date=date(2026, 6, 2),      # 距样本 30 天
+    )
+    sample = make_sample("s1", baseline=make_params()).model_copy(update={"furnace_config": fc})
+    vec = featurize(sample)
+    i = FEATURE_NAMES.index("furnace_age_years")
+    assert float(vec[i]) == pytest.approx(10.0, abs=0.02)     # 3652/365.25 ≈ 10.0
+    assert float(vec[i + 1]) == 1.0
+    assert float(vec[FEATURE_NAMES.index("days_since_overhaul")]) == pytest.approx(30.0)
+    assert float(vec[FEATURE_NAMES.index("overhaul_present")]) == 1.0
+
+
+def test_aging_features_missing_and_dirty():
+    from datetime import date
+
+    from schemas.furnace import FurnaceConfig
+    from training.features import featurize
+
+    plain = make_sample("s1", baseline=make_params())         # 无 furnace_config
+    vec = featurize(plain)
+    for name in ("furnace_age_years", "furnace_age_present", "days_since_overhaul", "overhaul_present"):
+        assert float(vec[FEATURE_NAMES.index(name)]) == 0.0   # 缺 → 0+presence=0
+
+    dirty_fc = FurnaceConfig(furnace_id="F1", commissioning_date=date(2030, 1, 1))  # 晚于样本=脏
+    dirty = plain.model_copy(update={"furnace_config": dirty_fc})
+    vec2 = featurize(dirty)
+    assert float(vec2[FEATURE_NAMES.index("furnace_age_present")]) == 0.0  # 脏日期按缺失，不污染
+
+
 def test_contract_fingerprints_stable():
     f1, f2 = feature_schema_sha256(), delta_fields_sha256()
     assert len(f1) == 64 and len(f2) == 64 and f1 != f2

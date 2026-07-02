@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 import yaml
@@ -29,6 +29,8 @@ class FurnaceConfig(BaseModel):
     zone_layout: str | None = None                           # 布局描述如 "2x6"；二维邻接 TODO(plant)
     fan_count: int | None = Field(default=None, gt=0)        # 风机数
     nameplate: dict[str, str] = Field(default_factory=dict)  # 铭牌原文键值对（原样记录）
+    commissioning_date: date | None = None                   # 投产日期（炉龄特征的原料；台账/铭牌）
+    last_overhaul_date: date | None = None                   # 上次大修日期（距大修天数特征的原料）
     recorded_at: datetime | None = None                      # 快照采集时间
 
 
@@ -57,7 +59,11 @@ def load_furnace_registry(path: Path | None = None) -> dict[str, FurnaceConfig]:
         if not fid or _is_todo(fid):
             continue  # 无身份的条目不登记
         cleaned: dict[str, object] = {"furnace_id": str(fid)}
-        for key in ("zone_count", "zone_layout", "fan_count", "recorded_at"):
+        optional_keys = (
+            "zone_count", "zone_layout", "fan_count",
+            "commissioning_date", "last_overhaul_date", "recorded_at",
+        )
+        for key in optional_keys:
             v = entry.get(key)
             if v is not None and not _is_todo(v):
                 cleaned[key] = v

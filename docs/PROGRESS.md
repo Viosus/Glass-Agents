@@ -91,6 +91,14 @@ M0 工程地基 / M1 护栏实测 / M2 指标补全(CCP) / M3 数据底座(schem
 - [x] `docs/同步与自我迭代.md`（包格式/四道锁/双重门/机密边界/runbook）、`docs/对话使用说明.md`
 - [x] `CONVENTIONS.md` 名册扩 v2 字段；`产品形态与安全.md` §1 加同步层/对话壳、§4.B **数据出厂边界正式更新**（只上自家受控云，绝不入 git）
 
+### 2.12 上炉三件套：初始化向导 + 老化特征 + 参数单 Excel（本轮）✅
+- [x] `tools/furnace_setup.py`：炉子初始化**问答向导**（回车跳过=诚实缺值；--from-json 非交互；
+  写 furnaces.yaml+sync.yaml 整文件再生成保注释；收尾打印上炉检查清单）
+- [x] `FurnaceConfig` +投产日期/上次大修；**特征契约 22→26 维**（炉龄/距大修+presence 尾部追加；
+  脏日期按缺失）——真训练前定契约零成本，等训完再改要走版本迁移
+- [x] **输出格式拍板（用户）**：参数=Excel 参数单（`tools/param_sheet.py`，未过闸门标注"禁止照此操作"
+  +violations 进单），建议=中文文本；对话壳 +`export_sheet` 意图（「导出参数单」）；下发通道挂账 B9 等 B4
+
 ## 3. ⬜ 未完成 / 阻塞项
 
 > 🗂 **所有"还差什么信息/文件"已统一汇总到 `docs/信息需求清单.md`**（A 安全真值 / B 炉体现场 / C 云与网络 / D 组织拍板），此处只留工程项。
@@ -126,6 +134,8 @@ $py = "D:\Glass Agents\.venv\Scripts\python.exe"
 & $py tools\sync_cli.py status                   # 同步看板；export/import-data|model 见 docs/同步与自我迭代.md
 & $py tools\sync_cli.py register-model runs\param_head ; & $py tools\sync_cli.py promote-model param_head-v0001  # 登记→第一重门
 & $py llm_roles\run_dialogue.py --no-llm         # CLI 对话壳(全确定性秒开)；「给个建议」走激活模型(--model-weights 可调试)；用法见 docs/对话使用说明.md
+& $py tools\furnace_setup.py                     # 炉子初始化向导(问答式；--from-json 非交互)
+& $py tools\param_sheet.py 参数.json --furnace-id F1   # 参数单 Excel(对话壳说「导出参数单」同款)
 ```
 
 ## 5. 提交历史（本轮，新→旧）

@@ -147,6 +147,14 @@ def test_v2_new_fields_have_defaults():
     assert s.metrics.fringe_score_0_100 is None
 
 
+def test_furnace_config_date_fields_default_none():
+    """FurnaceConfig 新增日期字段向后兼容：不传默认 None（老化特征按缺失处理）。"""
+    from schemas.furnace import FurnaceConfig
+
+    fc = FurnaceConfig(furnace_id="F1")
+    assert fc.commissioning_date is None and fc.last_overhaul_date is None
+
+
 def test_v1_json_without_new_fields_reads_back(tmp_path):
     """v1 时代落库的 JSON（无 furnace_id 等键）读回按默认值补齐，不报错。"""
     import json

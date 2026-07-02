@@ -47,6 +47,10 @@
 ### 炉体身份与标注扩展（ArchiveSample v2，2026-07-02）
 - `furnace_id`(str)：炉子标识；**身份缺省用 `"unknown"`**（不是安全限值，故不用 TODO(plant) 字串）。
 - `furnace_config`(FurnaceConfig|None)：炉体配置快照（`schemas/furnace.py`；铭牌未知项一律 None）。
+  含 `commissioning_date`/`last_overhaul_date`(date|None)——老化特征的原料，用 `tools/furnace_setup.py` 向导录入。
+- **特征契约 26 维**（2026-07-02 尾部追加 4 维，勿插队）：`furnace_age_years`/`furnace_age_present`/
+  `days_since_overhaul`/`overhaul_present`；日期缺失或晚于样本时刻（脏）→ 0+presence=0。
+- **人读输出拍板**：工艺参数=Excel 参数单（`tools/param_sheet.py`），建议/说明=中文文本；未过闸门的单子标注"禁止照此操作"。
 - `operator_id` / `repeat_group_id` / `condition_note`(str|None)：老师傅工号 / 一致性重复组号 / 工况备注。
 - `MetricRecord.fringe_score_0_100`(float|None, 0–100)：**外部**应力斑分布打分（独立功能评好随数据到达，本工程只承接不计算）。
 - `ARCHIVE_SCHEMA_VERSION`(模块常量)：只进数据包 manifest，不进样本本体。

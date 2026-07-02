@@ -38,6 +38,11 @@ FEATURE_NAMES: tuple[str, ...] = (
     "iso_t_present",
     "ccp_value",
     "ccp_present",
+    # ---- v2 追加（2026-07-02）：炉体老化协变量（原料 = FurnaceConfig 日期字段）----
+    "furnace_age_years",       # 炉龄（样本时刻 − 投产日期，年）
+    "furnace_age_present",
+    "days_since_overhaul",     # 距上次大修天数
+    "overhaul_present",
 )
 
 
@@ -51,6 +56,16 @@ def _opt(value: float | None) -> tuple[float, float]:
     return (0.0, 0.0) if value is None else (float(value), 1.0)
 
 
+def _days_between(sample: ArchiveSample, from_date: object) -> float | None:
+    """样本时刻 − 某日期 的天数；日期缺失或**晚于样本时刻**（物理不可能=脏数据）→ None 按缺失。"""
+    from datetime import date
+
+    if not isinstance(from_date, date):
+        return None
+    days = (sample.created_at.date() - from_date).days
+    return float(days) if days >= 0 else None
+
+
 def featurize(sample: ArchiveSample) -> torch.Tensor:
     """把一条 ArchiveSample 转成 float32 特征向量（顺序见 FEATURE_NAMES）。"""
     p = sample.params
@@ -60,6 +75,12 @@ def featurize(sample: ArchiveSample) -> torch.Tensor:
     x0_95, x0_95_present = _opt(m.x0_95_nm)
     iso_t, iso_t_present = _opt(m.iso_t_pct)
     ccp, ccp_present = _opt(m.ccp_value)
+
+    fc = sample.furnace_config
+    age_days = _days_between(sample, fc.commissioning_date) if fc is not None else None
+    overhaul_days = _days_between(sample, fc.last_overhaul_date) if fc is not None else None
+    age_years, age_present = _opt(None if age_days is None else age_days / 365.25)
+    overhaul, overhaul_present = _opt(overhaul_days)
 
     vec = [
         float(p.thickness_mm),
@@ -81,6 +102,8 @@ def featurize(sample: ArchiveSample) -> torch.Tensor:
         x0_95, x0_95_present,
         iso_t, iso_t_present,
         ccp, ccp_present,
+        age_years, age_present,
+        overhaul, overhaul_present,
     ]
     return torch.tensor(vec, dtype=torch.float32)
 
