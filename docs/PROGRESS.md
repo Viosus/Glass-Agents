@@ -95,11 +95,13 @@ M0 工程地基 / M1 护栏实测 / M2 指标补全(CCP) / M3 数据底座(schem
 > 🗂 **所有"还差什么信息/文件"已统一汇总到 `docs/信息需求清单.md`**（A 安全真值 / B 炉体现场 / C 云与网络 / D 组织拍板），此处只留工程项。
 
 ### 工程项
-- [ ] 参数头**输出字段空间**：看老师傅前 ~20–30 条实际改动分布再定（当前 DELTA_FIELDS 6 标量不含 zone_temps，很可能要加；单一来源 training/decode.py，届时只改一处）
-- [ ] 中心侧 register/promote 的便捷脚本（当前走 tools.model_registry 函数调用；量大再包 CLI）
-- [ ] `CloudTransport` 联网适配器：等清单 C1–C4 + 安全评审 → 实现 + 调整 review 联网黑名单
-- [ ] 对话壳接多头核心推理（模型激活后："让模型给个建议"意图 → 参数头 Δ → 闸门 → 翻译官）
-- [ ] 归因头 `attr_dim=4` 为占位，标签体系未定义（等诊断专项 D3）
+- [x] ~~中心侧 register/promote 便捷 CLI~~ → `sync_cli register-model / promote-model`（MODELS.md 自动记账；留存验证门与 activate 共用 `_holdout_gate`）
+- [x] ~~对话壳接多头核心推理~~ → `model_suggest` 意图（「给个建议」）：激活模型出 Δ → 解码 → 闸门 → 呈现；**不自动应用**，逐项确认再过闸门
+- [ ] 参数头**输出字段空间**：看老师傅前 ~20–30 条实际改动分布再定（当前 DELTA_FIELDS 6 标量不含 zone_temps，很可能要加；单一来源 training/decode.py，届时只改一处）⏸等数据
+- [ ] `CloudTransport` 联网适配器：等清单 C1–C4 + 安全评审 → 实现 + 调整 review 联网黑名单 ⏸等信息
+- [ ] 归因头 `attr_dim=4` 为占位，标签体系未定义（等诊断专项 D3）⏸等拍板
+
+> 至此，**不依赖外部输入/数据的代码工作已全部清空**——剩余项全部在等信息（清单 A/B/C）、等数据（前 20–30 条）或等拍板（清单 D）。
 
 ### 待拍板 / 专项（详见清单 D）
 - [ ] **诊断体系专项**（D3）；Teacher LLM 选型（D1）；复核工具形态（D2）；模块级标注（D5）
@@ -120,13 +122,17 @@ $py = "D:\Glass Agents\.venv\Scripts\python.exe"
 # ---- 本轮新增 ----
 & $py tools\ingest_annotations.py 填好的表.csv --furnace-id F1 [--dry-run]   # 标注表导入
 & $py training\train_param_head.py --archive data\archive                    # 参数头真数据训练(不足30条诚实退出)
-& $py tools\sync_cli.py status                   # 同步看板；export/import-data|model、activate-model 见 docs/同步与自我迭代.md
-& $py llm_roles\run_dialogue.py --no-llm         # CLI 对话壳(全确定性秒开)；用法见 docs/对话使用说明.md
+& $py tools\sync_cli.py status                   # 同步看板；export/import-data|model 见 docs/同步与自我迭代.md
+& $py tools\sync_cli.py register-model runs\param_head ; & $py tools\sync_cli.py promote-model param_head-v0001  # 登记→第一重门
+& $py llm_roles\run_dialogue.py --no-llm         # CLI 对话壳(全确定性秒开)；「给个建议」走激活模型(--model-weights 可调试)；用法见 docs/对话使用说明.md
 ```
 
 ## 5. 提交历史（本轮，新→旧）
 ```
-(待提交)  P3 CLI 对话壳 + P4 文档三件套
+(本次)   清空可写工程项：register/promote CLI + 对话壳 model_suggest 接模型
+b3ff03b0 fringe_scoring 迭代②（并行会话）
+9eb61119 P4 信息需求清单+同步/对话文档+名册与产品边界
+2fa96015 P3 CLI 多轮对话壳
 fe450b27 P2 同步与自我迭代——数据包/模型包+双重版本门
 7342706c P1 P2三件套+炉体身份（数据从第一天带炉子身份）
 40d3001b P1 标注表模板+说明+schema 扩展（老师傅开工）

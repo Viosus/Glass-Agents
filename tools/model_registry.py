@@ -17,8 +17,12 @@ import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
+import torch
+
 from tools.eval_gate import GateResult
-from training.targets import load_training_config
+from training.features import feature_dim
+from training.model import MultiHeadCore
+from training.targets import PARAM_TARGET_FIELDS, load_training_config
 
 _ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REGISTRY = _ROOT / "models" / "registry"
@@ -101,6 +105,25 @@ def load_model_card(model_id: str, registry_dir: Path = DEFAULT_REGISTRY) -> dic
     """读某版本的 model_card.json（不存在抛 FileNotFoundError）。"""
     p = Path(registry_dir) / model_id / "model_card.json"
     return json.loads(p.read_text(encoding="utf-8"))
+
+
+def load_param_head(weights_path: Path) -> MultiHeadCore:
+    """从权重文件恢复参数头模型（结构由当前代码契约决定，eval 模式）。"""
+    model = MultiHeadCore(feature_dim(), param_dim=len(PARAM_TARGET_FIELDS))
+    model.load_state_dict(torch.load(weights_path, map_location="cpu", weights_only=True))
+    model.eval()
+    return model
+
+
+def load_active_param_head(registry_dir: Path = DEFAULT_REGISTRY) -> tuple[str, MultiHeadCore] | None:
+    """加载**当前已激活**版本（过了炉侧第二重门的那个）。无激活版本返回 None，不回退到候选。"""
+    model_id = current_active(registry_dir)
+    if model_id is None:
+        return None
+    weights = Path(registry_dir) / model_id / "weights.pt"
+    if not weights.exists():
+        return None  # 账本有记录但权重被清理 → 如实当无
+    return model_id, load_param_head(weights)
 
 
 def _last_event(registry_dir: Path, event: str) -> dict | None:

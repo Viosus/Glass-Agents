@@ -49,6 +49,17 @@ def load_training_config(path: Path | None = None) -> dict:
         return yaml.safe_load(f) or {}
 
 
+def todo_or_float(value: object) -> float | None:
+    """config 值 → float；TODO(plant)/None/非数 → None（如实降级，不填占位数）。"""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return None if value.strip().startswith("TODO(plant)") else float(value)
+    if isinstance(value, (int, float)):
+        return float(value)
+    return None
+
+
 def param_delta_target(sample: ArchiveSample) -> torch.Tensor | None:
     """Δ 标签 = final − baseline（按 PARAM_TARGET_FIELDS）；无基准 → None（剔除，不猜）。"""
     if sample.baseline_params is None:

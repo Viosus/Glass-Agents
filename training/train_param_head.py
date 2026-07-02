@@ -34,18 +34,8 @@ from training.targets import (  # noqa: E402
     delta_fields_sha256,
     feature_schema_sha256,
     load_training_config,
+    todo_or_float,
 )
-
-
-def _todo_or_float(value: object) -> float | None:
-    """config 值 → float；TODO(plant)/None → None（如实降级，不填占位数）。"""
-    if value is None:
-        return None
-    if isinstance(value, str):
-        return None if value.strip().startswith("TODO(plant)") else float(value)
-    if isinstance(value, (int, float)):
-        return float(value)
-    return None
 
 
 def train_param_head(
@@ -164,7 +154,7 @@ def main() -> int:
     for bucket, m in per_bucket_metrics(model, train_set, va).items():
         print(f"  {bucket}: MAE={m['mae_param']:.4f} n={int(m['n'])}")
 
-    max_mae = _todo_or_float((cfg.get("gate") or {}).get("max_param_mae"))
+    max_mae = todo_or_float((cfg.get("gate") or {}).get("max_param_mae"))
     gate = run_gate_on_split(model, train_set, te, max_mae=max_mae)
     print(f"版本门(test): passed={gate.passed} 零违规={gate.constraints_ok} MAE={gate.metrics['mae_param']:.4f}")
     for d in gate.details:

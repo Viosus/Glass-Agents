@@ -15,9 +15,11 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
 
+import torch
 import yaml
 
 from llm_roles._llm import chat
@@ -26,23 +28,28 @@ from llm_roles.param_translator import render_skeleton, translate_params
 from schemas.archive import ArchiveSample, MetricRecord
 from schemas.process_params import ProcessParams
 from tools.constraints import CheckResult, validate
+from training.decode import DELTA_FIELDS, decode_params
+from training.features import featurize
 
 _ROOT = Path(__file__).resolve().parents[1]
 _RULES_PATH = _ROOT / "config" / "dialogue_rules.yaml"
 _FALLBACK_PROMPT_PATH = _ROOT / "config" / "prompt_dialogue_fallback.md"
 
-Intent = Literal["param_edit", "param_check", "process_qa", "diagnose", "show_state", "help", "exit", "unknown"]
+Intent = Literal[
+    "param_edit", "param_check", "model_suggest", "process_qa", "diagnose", "show_state", "help", "exit", "unknown"
+]
 _INTENTS: tuple[Intent, ...] = (
-    "param_edit", "param_check", "process_qa", "diagnose", "show_state", "help", "exit", "unknown",
+    "param_edit", "param_check", "model_suggest", "process_qa", "diagnose", "show_state", "help", "exit", "unknown",
 )
 
 _RE_NUMBER = re.compile(r"-?\d+(?:\.\d+)?")
 # 别名命中后，在其后多长的窗口内找数值（覆盖"改到 705"这类近邻表达）
 _NUMBER_WINDOW = 20
 
-_HELP_TEXT = """我能做的（数值全部来自确定性规则，不由大模型生成）：
+_HELP_TEXT = """我能做的（数值全部来自确定性规则或经闸门的模型头，不由大模型生成）：
 - 改参数：如「上炉温改到705」→ 改后自动过安全闸门，越界会如实列出问题
 - 查参数：「检查当前参数」「当前参数」
+- 要建议：「给个建议」→ 已激活的参数头模型出 Δ → 过闸门后呈现（仅供参考，不自动应用）
 - 看样片：「诊断一下」→ 呈现已加载样片的指标与应力斑分布分（只报数；诊断类目 TODO(plant)）
 - 问工艺：「为什么上炉温要高于下炉温」→ 查知识库，缺依据会拒答
 - 退出：「退出」"""
@@ -156,6 +163,45 @@ def _handle_param_edit(state: DialogueState, text: str, rules: dict, thresholds:
     return head + result.advice_zh
 
 
+def _handle_model_suggest(state: DialogueState, model: Any | None, thresholds: dict | None) -> str:
+    """模型建议：参数头 Δ →（确定性）解码 → 强制过闸门 → 呈现。**不自动应用**（人在环）。
+
+    Δ 数值来自模型+确定性解码，非 LLM；越界时复用翻译官只列 violations。
+    """
+    if state.params is None:
+        return "当前会话还没有参数组。请先用 --baseline 载入基准配方，或加载样片（--sample）。"
+    if model is None:
+        return (
+            "无已激活模型版本——先 sync_cli import-model 导入并 activate-model 过第二重门"
+            "（调试可用 --model-weights）。"
+        )
+
+    p = state.params
+    shadow = ArchiveSample(
+        sample_id="dialogue-shadow",
+        created_at=datetime.now(timezone.utc),
+        source="dialogue/session",
+        furnace_id=state.furnace_id,
+        thickness_mm=p.thickness_mm,
+        glass_type=p.glass_type,
+        quality_mode=p.quality_mode,
+        params=p,                                    # 模型输入 = 当前状态（建议的基准），语义正确
+        metrics=state.metrics if state.metrics is not None else MetricRecord(),
+    )
+    with torch.no_grad():
+        delta = model(featurize(shadow).unsqueeze(0))["param_delta"][0]
+
+    new = decode_params(delta, p)
+    check = validate(new.to_param_set(), prev=p.to_param_set(), thresholds=thresholds)
+    delta_zh = "；".join(f"{f} {v:+.2f}" for f, v in zip(DELTA_FIELDS, delta.tolist()))
+    result = translate_params(new, check, polish=False)
+    return (
+        f"模型建议（相对当前参数的调整量 Δ）：{delta_zh}\n"
+        f"{result.advice_zh}\n"
+        "（模型建议仅供参考，**未**应用到会话。认可哪项就说『XX改到YY』逐项应用，会再过一次闸门。）"
+    )
+
+
 def _handle_param_check(state: DialogueState, thresholds: dict | None) -> str:
     """查参：当前参数过闸门 → 确定性骨架/violations 呈现。"""
     if state.params is None:
@@ -188,11 +234,12 @@ def respond(
     user_text: str,
     *,
     llm: Any | None = None,
+    model: Any | None = None,
     rules: dict | None = None,
     thresholds: dict | None = None,
     kb_path: Path = DEFAULT_KB_PATH,
 ) -> tuple[DialogueState, str]:
-    """一轮对话：老状态 + 用户输入 → 新状态 + 回复。llm 注入式（None=全程确定性）。"""
+    """一轮对话：老状态 + 用户输入 → 新状态 + 回复。llm/model 均注入式（None=对应能力关闭）。"""
     r = rules if rules is not None else load_dialogue_rules()
     intent = route_intent(user_text, r)
     if intent == "unknown" and llm is not None:
@@ -208,6 +255,8 @@ def respond(
         reply = _handle_param_edit(state, user_text, r, thresholds)
     elif intent == "param_check":
         reply = _handle_param_check(state, thresholds)
+    elif intent == "model_suggest":
+        reply = _handle_model_suggest(state, model, thresholds)
     elif intent == "diagnose":
         if state.metrics is None:
             reply = "当前会话没有加载样片数据（--sample 载入 ArchiveSample JSON 后可看指标与分数）。"

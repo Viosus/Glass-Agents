@@ -33,13 +33,26 @@ def build_state(args: argparse.Namespace) -> DialogueState:
     return state
 
 
+def load_model(args: argparse.Namespace) -> tuple[str, object] | None:
+    """加载参数头模型：--model-weights 直指权重（调试），否则取注册表当前激活版本；都没有 → None。"""
+    from tools.model_registry import load_active_param_head, load_param_head
+
+    if args.model_weights is not None:
+        return f"weights:{Path(args.model_weights).name}", load_param_head(args.model_weights)
+    return load_active_param_head(args.registry)
+
+
 def main() -> int:
     """REPL：读一行→respond→打印；「退出」结束。"""
+    from tools.model_registry import DEFAULT_REGISTRY
+
     ap = argparse.ArgumentParser(description="钢化炉调参对话壳（数值全来自确定性工具，LLM 只做语言壳）")
     ap.add_argument("--no-llm", action="store_true", help="全程确定性，不加载 GGUF")
     ap.add_argument("--furnace-id", default="", help="炉子标识（展示与留痕）")
     ap.add_argument("--baseline", type=Path, default=None, help="基准配方 ProcessParams JSON")
     ap.add_argument("--sample", type=Path, default=None, help="样片 ArchiveSample JSON（含指标/分数）")
+    ap.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY, help="模型注册表（取当前激活版本）")
+    ap.add_argument("--model-weights", type=Path, default=None, help="调试用：直指参数头权重，绕过注册表")
     args = ap.parse_args()
 
     llm = None
@@ -49,9 +62,12 @@ def main() -> int:
         print("加载本地 LLM（GGUF，CPU 可能需要十几秒）…")
         llm = load_llm()
 
+    loaded = load_model(args)
+    model_id, model = loaded if loaded is not None else ("无（未激活任何版本）", None)
+
     state = build_state(args)
     llm_mark = "开" if llm is not None else "关"
-    print(f"对话开始（炉: {state.furnace_id}；LLM: {llm_mark}）。说「帮助」看用法，「退出」结束。")
+    print(f"对话开始（炉: {state.furnace_id}；LLM: {llm_mark}；模型: {model_id}）。说「帮助」看用法，「退出」结束。")
     while True:
         try:
             text = input("你> ").strip()
@@ -60,7 +76,7 @@ def main() -> int:
             break
         if not text:
             continue
-        state, reply = respond(state, text, llm=llm)
+        state, reply = respond(state, text, llm=llm, model=model)
         print(f"助手> {reply}\n")
         if state.turns and state.turns[-1][0] == text and reply.startswith("已结束对话"):
             break

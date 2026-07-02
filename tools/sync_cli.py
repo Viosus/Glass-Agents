@@ -20,23 +20,27 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # 支持直接 `python tools/sync_cli.py`
 
-import torch  # noqa: E402
+import json  # noqa: E402
 
 from schemas.archive import load_all  # noqa: E402
 from schemas.bucketing import bucket_table  # noqa: E402
 from sync.datapack import export_datapack, export_modelpack, import_datapack, import_modelpack  # noqa: E402
 from sync.transport import FileDropTransport  # noqa: E402
-from tools.eval_gate import evaluate_param_gate  # noqa: E402
+from tools.eval_gate import GateResult, evaluate_param_gate  # noqa: E402
 from tools.model_registry import (  # noqa: E402
+    DEFAULT_MODELS_MD,
     DEFAULT_REGISTRY,
     activate,
+    append_models_md,
     current_active,
     current_promoted,
+    load_model_card,
+    load_param_head,
+    promote,
+    register_candidate,
 )
 from training.dataset import time_ordered_split  # noqa: E402
-from training.features import feature_dim  # noqa: E402
-from training.model import MultiHeadCore  # noqa: E402
-from training.targets import PARAM_TARGET_FIELDS, build_param_training_set, load_training_config  # noqa: E402
+from training.targets import build_param_training_set, load_training_config, todo_or_float  # noqa: E402
 
 _ROOT = Path(__file__).resolve().parents[1]
 _ARCHIVE = _ROOT / "data" / "archive"
@@ -44,12 +48,30 @@ _OUTBOX = _ROOT / "data" / "outbox"
 _INBOX = _ROOT / "data" / "inbox"
 
 
-def _load_param_head(weights: Path) -> MultiHeadCore:
-    """从权重文件恢复参数头模型（结构由当前代码契约决定）。"""
-    model = MultiHeadCore(feature_dim(), param_dim=len(PARAM_TARGET_FIELDS))
-    model.load_state_dict(torch.load(weights, map_location="cpu", weights_only=True))
-    model.eval()
-    return model
+def _holdout_gate(archive: Path, weights: Path, thresholds: dict | None = None) -> GateResult | None:
+    """留存验证门：本地归档时间序尾部（val+test 段）跑参数门。无可用样本返回 None（拒绝盲判）。
+
+    promote（中心侧第一重门）与 activate（炉侧第二重门）共用此逻辑；
+    max_param_mae 读 config/training.yaml，TODO(plant) 未填时门内如实降级只查违规。
+    """
+    if not Path(archive).exists():
+        return None
+    ts = build_param_training_set(load_all(Path(archive)))
+    n = ts.features.shape[0]
+    if n == 0:
+        return None
+    cfg = load_training_config()
+    _, va, te = time_ordered_split(n, float(cfg.get("val_frac", 0.2)), float(cfg.get("test_frac", 0.2)))
+    holdout = va + te
+    model = load_param_head(weights)
+    return evaluate_param_gate(
+        model,
+        ts.features[holdout],
+        ts.deltas[holdout],
+        [ts.baselines[i] for i in holdout],
+        thresholds=thresholds,
+        max_mae=todo_or_float((cfg.get("gate") or {}).get("max_param_mae")),
+    )
 
 
 def cmd_export_data(args: argparse.Namespace) -> int:
@@ -88,32 +110,55 @@ def cmd_import_model(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_register_model(args: argparse.Namespace) -> int:
+    """把训练产出（checkpoint 目录：weights.pt + meta.json）登记为候选版本。"""
+    ckpt = Path(args.checkpoint_dir)
+    weights, meta_path = ckpt / "weights.pt", ckpt / "meta.json"
+    if not weights.exists() or not meta_path.exists():
+        print(f"checkpoint 目录不完整（需 weights.pt + meta.json，train_param_head 的输出）：{ckpt}")
+        return 1
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    model_id = register_candidate(weights, meta, args.registry)
+    append_models_md(load_model_card(model_id, args.registry), "候选", args.models_md)
+    print(f"已登记候选 {model_id}（样本量 {meta.get('train_sample_count')}）；下一步：promote-model 过第一重门。")
+    return 0
+
+
+def cmd_promote_model(args: argparse.Namespace) -> int:
+    """第一重门（中心侧晋级）：留存验证跑门 → promote 判据（门过+样本量+不回归）。"""
+    weights = Path(args.registry) / args.model_id / "weights.pt"
+    if not weights.exists():
+        print(f"注册表中无该版本权重: {weights}（先 register-model / import-model）")
+        return 1
+    gate = _holdout_gate(args.archive, weights)
+    if gate is None:
+        print(f"归档 {args.archive} 无可用真值样本（is_ground_truth+baseline），拒绝盲晋级")
+        return 1
+    ok, reason = promote(args.model_id, gate, args.registry)
+    print(f"第一重门: passed={gate.passed} MAE={gate.metrics['mae_param']:.4f} → {reason}")
+    for d in gate.details:
+        print(f"  - {d}")
+    if ok:
+        append_models_md(load_model_card(args.model_id, args.registry), "晋级", args.models_md)
+    return 0 if ok else 1
+
+
 def cmd_activate_model(args: argparse.Namespace) -> int:
     """第二重门：本地留存验证样本（时间序尾部 val+test 段）跑参数门，通过才激活。"""
     weights = Path(args.registry) / args.model_id / "weights.pt"
     if not weights.exists():
         print(f"注册表中无该版本权重: {weights}（先 import-model）")
         return 1
-    if not Path(args.archive).exists():
-        print(f"本地归档不存在: {args.archive}——无留存验证样本，拒绝盲激活")
+    gate = _holdout_gate(args.archive, weights)
+    if gate is None:
+        print(f"归档 {args.archive} 无可用真值样本（is_ground_truth+baseline），拒绝盲激活")
         return 1
-
-    ts = build_param_training_set(load_all(Path(args.archive)))
-    n = ts.features.shape[0]
-    if n == 0:
-        print("本地无可用真值样本（is_ground_truth+baseline），拒绝盲激活")
-        return 1
-    cfg = load_training_config()
-    _, va, te = time_ordered_split(n, float(cfg.get("val_frac", 0.2)), float(cfg.get("test_frac", 0.2)))
-    holdout = va + te
-    model = _load_param_head(weights)
-    gate = evaluate_param_gate(
-        model, ts.features[holdout], ts.deltas[holdout], [ts.baselines[i] for i in holdout]
-    )
     ok, reason = activate(args.model_id, gate, args.registry)
     print(f"第二重门: passed={gate.passed} MAE={gate.metrics['mae_param']:.4f} → {reason}")
     for d in gate.details:
         print(f"  - {d}")
+    if ok:
+        append_models_md(load_model_card(args.model_id, args.registry), "激活", args.models_md)
     return 0 if ok else 1
 
 
@@ -184,10 +229,24 @@ def main() -> int:
     p.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY)
     p.set_defaults(func=cmd_import_model)
 
+    p = sub.add_parser("register-model", help="checkpoint 目录（weights.pt+meta.json）→ 注册表候选")
+    p.add_argument("checkpoint_dir", type=Path)
+    p.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY)
+    p.add_argument("--models-md", type=Path, default=DEFAULT_MODELS_MD)
+    p.set_defaults(func=cmd_register_model)
+
+    p = sub.add_parser("promote-model", help="留存验证过第一重门（门过+样本量+不回归）后晋级")
+    p.add_argument("model_id")
+    p.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY)
+    p.add_argument("--archive", type=Path, default=_ARCHIVE)
+    p.add_argument("--models-md", type=Path, default=DEFAULT_MODELS_MD)
+    p.set_defaults(func=cmd_promote_model)
+
     p = sub.add_parser("activate-model", help="本地留存验证过第二重门后激活")
     p.add_argument("model_id")
     p.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY)
     p.add_argument("--archive", type=Path, default=_ARCHIVE)
+    p.add_argument("--models-md", type=Path, default=DEFAULT_MODELS_MD)
     p.set_defaults(func=cmd_activate_model)
 
     p = sub.add_parser("push", help="投递一个包（drop_dir 见 config/sync.yaml）")

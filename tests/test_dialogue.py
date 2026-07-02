@@ -54,6 +54,18 @@ class FakeLLM:
         return {"choices": [{"message": {"content": self.content}}]}
 
 
+class FakeCore:
+    """假参数头：固定 Δ 输出（测 model_suggest 接线，不训模型）。"""
+
+    def __init__(self, delta: list[float]) -> None:
+        self.delta = delta
+
+    def __call__(self, x):
+        import torch
+
+        return {"param_delta": torch.tensor([self.delta], dtype=torch.float32)}
+
+
 @pytest.fixture(scope="module")
 def rules():
     return load_dialogue_rules()
@@ -65,6 +77,9 @@ def rules():
     [
         ("上炉温改到705", "param_edit"),
         ("检查当前参数", "param_check"),
+        ("给个建议", "model_suggest"),
+        ("模型怎么看", "model_suggest"),          # 含"怎么"但先于 process_qa 命中
+        ("这个怎么弄", "process_qa"),             # 普通"怎么"仍走问答
         ("为什么上炉温要高于下炉温", "process_qa"),
         ("诊断一下这片玻璃", "diagnose"),
         ("当前参数", "show_state"),
@@ -130,6 +145,36 @@ def test_edit_without_params_asks_for_baseline(rules):
 def test_check_current_params(rules):
     state, reply = respond(DialogueState(params=make_params()), "检查当前参数", rules=rules, thresholds=FULL_THR)
     assert "700.0" in reply and "加热时长" in reply     # 确定性骨架呈现
+
+
+# --------------------------- 模型建议（人在环，不自动应用） --------------------------- #
+def test_model_suggest_zero_delta_renders_and_not_applied(rules):
+    state = DialogueState(params=make_params())
+    model = FakeCore([0.0] * 6)                     # 零 Δ → 建议 = 当前参数 → 过闸门
+    state, reply = respond(state, "给个建议", rules=rules, model=model, thresholds=FULL_THR)
+    assert "模型建议" in reply and "仅供参考" in reply
+    assert "temp_upper +0.00" in reply              # Δ 明细逐项呈现
+    assert "加热时长" in reply                       # 过闸门 → 确定性骨架
+    assert state.params is not None and state.params.temp_upper == 700.0  # 未自动应用
+
+
+def test_model_suggest_bad_delta_shows_violations(rules):
+    state = DialogueState(params=make_params())
+    model = FakeCore([-60.0, 0.0, 0.0, 0.0, 0.0, 0.0])   # 上炉温压到 640 < 下炉温 650
+    state, reply = respond(state, "给个建议", rules=rules, model=model, thresholds=FULL_THR)
+    assert "禁止照此操作" in reply and "temp_upper" in reply
+    assert state.params is not None and state.params.temp_upper == 700.0  # 越界建议更不会应用
+
+
+def test_model_suggest_without_model(rules):
+    state, reply = respond(DialogueState(params=make_params()), "给个建议", rules=rules, thresholds=FULL_THR)
+    assert "无已激活模型版本" in reply
+
+
+def test_model_suggest_without_params(rules):
+    model = FakeCore([0.0] * 6)
+    state, reply = respond(DialogueState(), "给个建议", rules=rules, model=model)
+    assert "没有参数组" in reply
 
 
 # --------------------------- 诊断只报数 --------------------------- #
