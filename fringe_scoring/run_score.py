@@ -3,6 +3,7 @@
 用法（venv python，见 CLAUDE.md 铁律 #1）：
   python fringe_scoring/run_score.py <图.npy|.png|.tif> [更多图...]
   python fringe_scoring/run_score.py <图> --viz-dir out/     # 另存可视化
+  python fringe_scoring/run_score.py <整床照片> --sheets     # 一张照片多块玻璃：切片逐片打分
   python fringe_scoring/run_score.py --demo                  # 合成三图对照演示
 """
 
@@ -19,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from fringe_scoring.score import FringeScoreResult, load_config, score_fringe_distribution  # noqa: E402
+from fringe_scoring.sheets import SheetsScoreResult, score_sheets  # noqa: E402
 from fringe_scoring.synth import make_glass_image, warp_into_quad  # noqa: E402
 
 try:  # Windows 控制台默认 GBK，强制 UTF-8 避免中文乱码
@@ -42,6 +44,56 @@ def print_result(name: str, res: FringeScoreResult) -> None:
         print(f"  四边形角点(x,y)    : {pts} → 已透视矫正")
     else:
         print("  四边形角点(x,y)    : —（整图即玻璃，未矫正）")
+
+
+def print_sheets_result(name: str, res: SheetsScoreResult) -> None:
+    """整床结果打印：汇总一行 + 每片一行（阅读序）。"""
+    print(f"\n===== {name}（整床 {res.n_sheets} 片）=====")
+    print(f"  整床汇总: score_min={res.score_min:.2f}（最差片） score_mean={res.score_mean:.2f}")
+    for i, r in enumerate(res.sheet_results, 1):
+        cent = f"{r.centrality:.3f}" if r.centrality is not None else "—(无斑)"
+        assert r.quad_corners_px is not None  # 多片模式逐片必带角点
+        cx, cy = r.quad_corners_px.mean(axis=0)
+        print(
+            f"  片{i} @({cx:.0f},{cy:.0f}): score={r.score_0_100:.2f} "
+            f"斑占比={r.fringe_area_frac * 100:.1f}% 集中度={cent}"
+        )
+
+
+def save_sheets_viz(name: str, image: np.ndarray, res: SheetsScoreResult, viz_dir: Path) -> Path:
+    """整床可视化：原图 + 每片四边形描边 + 片号/分数标注。"""
+    import matplotlib
+
+    matplotlib.use("Agg")  # 无窗口环境直接落盘
+    import matplotlib.pyplot as plt
+
+    plt.rcParams["font.sans-serif"] = ["Microsoft YaHei", "SimHei"]  # Windows 中文字体
+    plt.rcParams["axes.unicode_minus"] = False
+
+    fig, ax = plt.subplots(figsize=(12, 12 * image.shape[0] / image.shape[1]))
+    ax.imshow(image, cmap="gray")
+    for i, r in enumerate(res.sheet_results, 1):
+        corners = r.quad_corners_px
+        assert corners is not None
+        ring = np.vstack([corners, corners[:1]])  # 闭合描边
+        ax.plot(ring[:, 0], ring[:, 1], color="yellow", linewidth=1.5)
+        cx, cy = corners.mean(axis=0)
+        ax.text(
+            cx, cy, f"#{i}\n{r.score_0_100:.1f}", color="yellow", fontsize=11,
+            ha="center", va="center",
+            bbox={"facecolor": "black", "alpha": 0.5, "edgecolor": "none"},
+        )
+    ax.set_title(
+        f"{name} · {res.n_sheets} 片 · min={res.score_min:.2f} mean={res.score_mean:.2f}"
+    )
+    ax.axis("off")
+    fig.tight_layout()
+
+    viz_dir.mkdir(parents=True, exist_ok=True)
+    out = viz_dir / f"{Path(name).stem}_sheets.png"
+    fig.savefig(out, dpi=120)
+    plt.close(fig)
+    return out
 
 
 def save_viz(name: str, image: np.ndarray, res: FringeScoreResult, viz_dir: Path) -> Path:
@@ -116,10 +168,16 @@ def main(argv: list[str]) -> int:
         help='显式玻璃角点 "x,y;x,y;x,y;x,y"（跳过自动检测；仅作用于 files 传入的图）',
     )
     parser.add_argument("--no-quad", action="store_true", help="关闭四边形自动检测（按整图即玻璃处理）")
+    parser.add_argument(
+        "--sheets", action="store_true",
+        help="整床多片模式：一张照片多块玻璃，先切片再逐片打分（与 --corners/--demo 互斥）",
+    )
     args = parser.parse_args(argv)
 
     if not args.files and not args.demo:
         parser.error("请给出图像路径，或用 --demo 跑合成演示")
+    if args.sheets and (args.corners or args.demo):
+        parser.error("--sheets 与 --corners/--demo 互斥（多片模式逐片角点由检测产出）")
 
     cfg = load_config(args.config)
     if args.no_quad and "quad" in cfg:
@@ -144,6 +202,13 @@ def main(argv: list[str]) -> int:
             targets.append((Path(f).name, load_array(f), True))
 
     for name, image, is_file in targets:
+        if args.sheets:
+            sheets_res = score_sheets(image, config=cfg)
+            print_sheets_result(name, sheets_res)
+            if args.viz_dir:
+                out = save_sheets_viz(name, image, sheets_res, Path(args.viz_dir))
+                print(f"  可视化 → {out}")
+            continue
         res = score_fringe_distribution(
             image, config=cfg, quad_corners=corners if is_file else None
         )

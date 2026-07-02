@@ -57,6 +57,46 @@ def make_glass_image(
     return img
 
 
+def make_bed_image(
+    sheets: list[tuple[np.ndarray, np.ndarray]],
+    out_shape: tuple[int, int],
+    fill_value: float = 30.0,
+    noise_sigma: float = 1.0,
+    seed: int = 0,
+) -> np.ndarray:
+    """多片玻璃合成整床照片：逐片透视贴图，片外为恒定填充，最后整图加噪声。
+
+    sheets: [(玻璃图, 目标角点(4,2)), ...]，角点约定同 warp_into_quad；
+    片与片不应重叠（后贴覆盖先贴）。用于多片切分（sheets.py）的性质测试与演示。
+    """
+    import cv2
+
+    canvas = np.full(out_shape, float(fill_value), dtype=float)
+    for image, corners in sheets:
+        arr = np.asarray(image, dtype=np.float32)
+        rows, cols = arr.shape
+        src = np.array(
+            [[0, 0], [cols - 1, 0], [cols - 1, rows - 1], [0, rows - 1]], dtype=np.float32
+        )
+        dst = np.asarray(corners, dtype=np.float32).reshape(4, 2)
+        matrix = cv2.getPerspectiveTransform(src, dst)
+        warped = cv2.warpPerspective(
+            arr, matrix, (out_shape[1], out_shape[0]),
+            flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=0.0,
+        )
+        ones = np.ones((rows, cols), dtype=np.float32)
+        inside = cv2.warpPerspective(  # 玻璃区域掩膜：同一变换贴一张全 1 图
+            ones, matrix, (out_shape[1], out_shape[0]),
+            flags=cv2.INTER_NEAREST, borderMode=cv2.BORDER_CONSTANT, borderValue=0.0,
+        ) > 0.5
+        canvas[inside] = np.asarray(warped, dtype=float)[inside]
+
+    if noise_sigma > 0:
+        rng = np.random.default_rng(seed)
+        canvas = canvas + rng.normal(0.0, noise_sigma, size=out_shape)
+    return canvas
+
+
 def warp_into_quad(
     image: np.ndarray,
     corners: np.ndarray,
@@ -98,5 +138,5 @@ def warp_into_quad(
             flags=cv2.INTER_NEAREST, borderMode=cv2.BORDER_CONSTANT, borderValue=0.0,
         ) > 0.5
         rng = np.random.default_rng(seed)
-        out[inside] += rng.normal(0.0, noise_sigma, size=int(inside.sum()))
+        out[inside] = out[inside] + rng.normal(0.0, noise_sigma, size=int(inside.sum()))
     return out

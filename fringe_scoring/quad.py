@@ -43,6 +43,26 @@ def _fill_value_from_border(border_vals: np.ndarray, tol: float) -> tuple[float,
     return float(np.median(vals[in_peak])), float(counts[top] / vals.size)
 
 
+def quad_from_hull(hull: np.ndarray, poly_epsilon_frac: float) -> np.ndarray:
+    """凸包轮廓 → approxPolyDP 拟合 4 角（epsilon 逐级放大），返回排序后 (4,2) 角点。
+
+    单片检测（detect_glass_quad）与多片切分（sheets.detect_sheet_quads）共用。
+    收不到 4 角抛 ValueError（规则 > AI，不硬凑）。
+    """
+    import cv2
+
+    perimeter = cv2.arcLength(hull, True)
+    base_eps = float(poly_epsilon_frac) * perimeter
+    for mult in _EPSILON_LADDER:  # epsilon 逐级放大直到收敛为 4 角
+        approx = cv2.approxPolyDP(hull, base_eps * mult, True)
+        if len(approx) == 4:
+            return order_corners(approx.reshape(4, 2))
+    raise ValueError(
+        f"quad_from_hull: 轮廓无法拟合为四边形（最终 {len(approx)} 点），"
+        "确认玻璃为凸四边形或调大 poly_epsilon_frac"
+    )
+
+
 def detect_glass_quad(image: np.ndarray, quad_cfg: dict) -> np.ndarray | None:
     """检测玻璃四边形角点；返回 (4,2) 角点（x,y，左上起顺时针）或 None（整图即玻璃）。
 
@@ -82,17 +102,7 @@ def detect_glass_quad(image: np.ndarray, quad_cfg: dict) -> np.ndarray | None:
     if not contours:
         raise ValueError("detect_glass_quad: 未找到玻璃轮廓")
     hull = cv2.convexHull(max(contours, key=cv2.contourArea))
-    perimeter = cv2.arcLength(hull, True)
-
-    base_eps = float(quad_cfg["poly_epsilon_frac"]) * perimeter
-    for mult in _EPSILON_LADDER:  # epsilon 逐级放大直到收敛为 4 角
-        approx = cv2.approxPolyDP(hull, base_eps * mult, True)
-        if len(approx) == 4:
-            return order_corners(approx.reshape(4, 2))
-    raise ValueError(
-        f"detect_glass_quad: 轮廓无法拟合为四边形（最终 {len(approx)} 点），"
-        "确认玻璃为凸四边形或调大 poly_epsilon_frac"
-    )
+    return quad_from_hull(hull, float(quad_cfg["poly_epsilon_frac"]))
 
 
 def warp_to_rect(image: np.ndarray, corners: np.ndarray) -> np.ndarray:
