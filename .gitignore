@@ -35,3 +35,6 @@ data/annotation/*
 # ---- 本地大模型权重（不入版本库，元数据见 VERSION.md）----
 models/
 *.gguf
+
+# ---- fringe_scoring 本地调参库（真实裁切图+逐片分数，仅本机完善模块用，不入库）----
+fringe_scoring/local_store/

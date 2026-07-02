@@ -4,12 +4,14 @@
   python fringe_scoring/run_score.py <图.npy|.png|.tif> [更多图...]
   python fringe_scoring/run_score.py <图> --viz-dir out/     # 另存可视化
   python fringe_scoring/run_score.py <整床照片> --sheets     # 一张照片多块玻璃：切片逐片打分
+  python fringe_scoring/run_score.py <整床照片> --sheets --store-dir  # 逐片裁切图+分数落本地调参库
   python fringe_scoring/run_score.py --demo                  # 合成三图对照演示
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -96,6 +98,60 @@ def save_sheets_viz(name: str, image: np.ndarray, res: SheetsScoreResult, viz_di
     return out
 
 
+# 本地调参库默认位置（已 gitignore：真实裁切图+分数不入版本库）
+DEFAULT_STORE_DIR = ROOT / "fringe_scoring" / "local_store"
+
+
+def dump_sheets_store(
+    name: str, image: np.ndarray, res: SheetsScoreResult, store_dir: Path, cfg: dict
+) -> Path:
+    """整床结果落盘到本地调参库：每张照片一个子目录。
+
+    内容：逐片矫正裁切图 PNG（文件名带分数，仅供目检——按 0–255 裁剪转 uint8，
+    nm 尺度 .npy 输入会饱和）+ scores.json（分数/角点/诊断量/当次 config 快照）。
+    数值真值以 json 为准；用 json 里的 quad_corners_px 回到原图即可复现打分。
+    """
+    import cv2
+
+    folder = store_dir / Path(name).stem
+    folder.mkdir(parents=True, exist_ok=True)
+    records = []
+    for i, r in enumerate(res.sheet_results, 1):
+        assert r.warped_image is not None and r.quad_corners_px is not None  # 多片模式必有
+        u8 = np.clip(np.round(r.warped_image), 0, 255).astype(np.uint8)
+        crop_name = f"sheet{i:02d}_score{r.score_0_100:.1f}.png"
+        ok, buf = cv2.imencode(".png", u8)
+        if not ok:
+            raise ValueError(f"dump_sheets_store: PNG 编码失败（{crop_name}）")
+        buf.tofile(str(folder / crop_name))  # imencode+tofile 而非 imwrite：Windows 中文路径安全
+        bands = r.border_bands
+        records.append(
+            {
+                "sheet_index": i,
+                "crop_file": crop_name,
+                "score_0_100": r.score_0_100,
+                "penalty_raw": r.penalty_raw,
+                "penalty_max": r.penalty_max,
+                "fringe_area_frac": r.fringe_area_frac,
+                "centrality": r.centrality,
+                "border_px": [bands.top_px, bands.bottom_px, bands.left_px, bands.right_px],
+                "quad_corners_px": r.quad_corners_px.tolist(),
+            }
+        )
+    payload = {
+        "source_image": name,
+        "image_shape_hw": list(image.shape),
+        "n_sheets": res.n_sheets,
+        "score_min": res.score_min,
+        "score_mean": res.score_mean,
+        "config": cfg,
+        "sheets": records,
+    }
+    with open(folder / "scores.json", "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+    return folder
+
+
 def save_viz(name: str, image: np.ndarray, res: FringeScoreResult, viz_dir: Path) -> Path:
     """另存可视化四联图：原图 / 深浅强度 s / 斑掩膜+边框带 / 位置权重 w。"""
     import matplotlib
@@ -172,12 +228,19 @@ def main(argv: list[str]) -> int:
         "--sheets", action="store_true",
         help="整床多片模式：一张照片多块玻璃，先切片再逐片打分（与 --corners/--demo 互斥）",
     )
+    parser.add_argument(
+        "--store-dir", nargs="?", const=str(DEFAULT_STORE_DIR), default=None,
+        help="整床模式落盘本地调参库：逐片裁切图+scores.json+总览图"
+             "（不带值则用 fringe_scoring/local_store，已 gitignore；仅配 --sheets 用）",
+    )
     args = parser.parse_args(argv)
 
     if not args.files and not args.demo:
         parser.error("请给出图像路径，或用 --demo 跑合成演示")
     if args.sheets and (args.corners or args.demo):
         parser.error("--sheets 与 --corners/--demo 互斥（多片模式逐片角点由检测产出）")
+    if args.store_dir and not args.sheets:
+        parser.error("--store-dir 仅在 --sheets 整床模式下有效")
 
     cfg = load_config(args.config)
     if args.no_quad and "quad" in cfg:
@@ -205,6 +268,10 @@ def main(argv: list[str]) -> int:
         if args.sheets:
             sheets_res = score_sheets(image, config=cfg)
             print_sheets_result(name, sheets_res)
+            if args.store_dir:
+                folder = dump_sheets_store(name, image, sheets_res, Path(args.store_dir), cfg)
+                save_sheets_viz(name, image, sheets_res, folder)  # 总览图一并入库便于对照
+                print(f"  调参库 → {folder}")
             if args.viz_dir:
                 out = save_sheets_viz(name, image, sheets_res, Path(args.viz_dir))
                 print(f"  可视化 → {out}")
