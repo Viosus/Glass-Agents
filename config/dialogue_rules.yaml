@@ -1,0 +1,26 @@
+# 对话壳路由词表（数据驱动：现场补词只改这里，不改代码；每次调用按需读取）。
+# 原则：确定性关键词路由为主（可测、可审计），LLM 只兜底分类；数字提取绝不交给 LLM。
+
+# 顺序即优先级：先命中先定（param_check 在 show_state 前——"检查当前参数"应归检查）
+intents:
+  exit: [退出, 再见, 结束对话, quit, exit]
+  help: [帮助, 能做什么, 怎么用, 会什么]
+  param_edit: [改到, 调到, 改成, 设为, 设成, 升到, 降到, 调高, 调低, 加大, 减小]
+  param_check: [检查, 校验, 核对, 过闸门, 合不合规, 合规吗, 有没有问题]
+  show_state: [当前参数, 看参数, 显示参数, 现在的参数, 看下参数, 参数状态]
+  diagnose: [诊断, 炉子, 坏了, 异常, 应力斑, 判级, 质量分, 指标怎么样, 样片]
+  process_qa: [为什么, 什么是, 怎么, 如何, 多少算, 标准, 国标, 允许, 规定]
+
+# 中文字段别名 → ProcessParams 字段（与 CONVENTIONS.md 名册对齐；分区温度暂不支持对话改——
+# zone_temps 不在 Δ 契约内，待参数头字段空间扩展后一起放开）
+field_aliases:
+  上炉温: temp_upper
+  下炉温: temp_lower
+  对流风速: convection_speed
+  风速: convection_speed
+  上下对流配比: convection_ratio_upper_lower
+  对流配比: convection_ratio_upper_lower
+  摆动速度: oscillation_speed
+  摆动幅度: oscillation_amplitude
+  加热时长: heating_duration_s
+  加热时间: heating_duration_s
