@@ -14,7 +14,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
-import yaml
 
 from fringe_scoring.border import BorderBands, band_widths_px, border_mask
 from fringe_scoring.quad import detect_glass_quad, order_corners, warp_to_rect
@@ -32,7 +31,12 @@ _WEIGHT_KINDS = ("linear", "gaussian")
 
 
 def load_config(config_path: Path | str | None = None) -> dict:
-    """读取打分配置（默认 config/fringe_scoring.yaml），每次调用重新读盘。"""
+    """读取打分配置（默认 config/fringe_scoring.yaml），每次调用重新读盘。
+
+    yaml 延迟导入：嵌入外部软件、用 dict 注入 config 的场景不必安装 pyyaml。
+    """
+    import yaml
+
     path = Path(config_path) if config_path is not None else _CONFIG_PATH
     with open(path, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
