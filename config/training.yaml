@@ -15,6 +15,13 @@ min_train_samples: 30
 val_frac: 0.2
 test_frac: 0.2
 
+# Δ 字段空间复审判据（2026-07-02 预注册，防事后选规则）：
+# 前 review_after_n_samples 条真值标注中，zone_temps 有改动的样本占比 ≥ zone_temps_inclusion_min_frac
+# → 把 zone_temps 纳入 DELTA_FIELDS（training/decode.py 单一来源处修改）；否则沿用基准。
+delta_review:
+  review_after_n_samples: 30
+  zone_temps_inclusion_min_frac: 0.2
+
 # 参数头版本门（tools/eval_gate.evaluate_param_gate + tools/model_registry.promote）
 gate:
   # Δ 的验证集 MAE 上限：合格线待老师傅数据分布确定后再定 → 未填时门只查"出参零违规"

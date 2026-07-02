@@ -1,0 +1,15 @@
+# 本地 LLM 选型配置（数据驱动；llm_roles/_llm.py load_teacher_llm 每次按需读取）。
+# 2026-07-02 拍板（信息需求清单 D1）：Teacher = Qwen2.5-14B-Instruct + bitsandbytes 4bit GPU
+# （~9GB 显存，RTX 5070 12GB 可装）；轻角色（翻译官/kb_qa/审查/对话兜底）沿用 3B GGUF。
+# 权重不入 git（models/ 已 gitignore），登记见 VERSION.md。
+
+teacher:
+  backend: transformers                       # transformers | gguf
+  model_id: Qwen/Qwen2.5-14B-Instruct
+  local_dir: models/qwen2.5-14b-instruct      # 相对仓库根；下载后优先用本地目录
+  quant_4bit: true
+
+# 轻角色默认（load_llm 的既有默认即此，无需改代码；此处仅登记）
+roles_default:
+  backend: gguf
+  model_path: models/qwen2.5-3b-instruct-q4_k_m.gguf
