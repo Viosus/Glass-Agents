@@ -17,6 +17,7 @@ import numpy as np
 import yaml
 
 from fringe_scoring.border import BorderBands, band_widths_px, border_mask
+from fringe_scoring.quad import detect_glass_quad, order_corners, warp_to_rect
 from fringe_scoring.segment import (
     background_with_bands,
     deviation_map,
@@ -85,18 +86,35 @@ class FringeScoreResult:
     intensity_s: np.ndarray = field(repr=False)      # 深浅强度 s∈[0,1]
     border_mask_arr: np.ndarray = field(repr=False)  # 边框带掩膜（True=剔除）
     weight_map: np.ndarray = field(repr=False)       # 位置权重 w(r)
+    quad_corners_px: np.ndarray | None = field(repr=False, default=None)  # 原图角点(x,y)×4；None=整图即玻璃
+    warped_image: np.ndarray | None = field(repr=False, default=None)     # 实际被打分的（矫正后）图
 
 
-def score_fringe_distribution(image: np.ndarray, config: dict | None = None) -> FringeScoreResult:
+def score_fringe_distribution(
+    image: np.ndarray, config: dict | None = None, quad_corners: np.ndarray | None = None
+) -> FringeScoreResult:
     """一张玻璃图 → 应力斑分布打分（流水线见模块 docstring 与 docs §2）。
 
     config=None 时读 config/fringe_scoring.yaml；测试/调参可直接注入同构 dict。
+    第 0 步·四边形矫正：quad_corners 显式给角点则直接矫正；否则 config 的
+    quad.auto_detect 开启时自动检测（大图裁切的玻璃可能是平行四边形/一般四边形，
+    四边形外的填充不得进入任何统计）；检测出"整图即玻璃"则零开销走原路径。
     """
     arr = np.asarray(image, dtype=float)
     if arr.ndim != 2:
-        raise ValueError("score_fringe_distribution: 需要二维图像数组（已裁切、玻璃占满整图）")
+        raise ValueError("score_fringe_distribution: 需要二维图像数组（单片玻璃裁切图）")
     cfg = config if config is not None else load_config()
     seg_cfg, border_cfg, weight_cfg = cfg["segment"], cfg["border"], cfg["weight"]
+
+    # 第 0 步：四边形检测与透视矫正（矫正域同心矩形等高线 = 原图同心四边形）
+    quad_cfg = cfg.get("quad")
+    corners = None
+    if quad_corners is not None:
+        corners = order_corners(np.asarray(quad_corners, dtype=float))
+    elif quad_cfg and bool(quad_cfg.get("auto_detect")):
+        corners = detect_glass_quad(arr, quad_cfg)
+    if corners is not None:
+        arr = warp_to_rect(arr, corners)
 
     block_frac = float(seg_cfg["background_block_frac"])
     poly_degree = int(seg_cfg["background_poly_degree"])
@@ -153,4 +171,6 @@ def score_fringe_distribution(image: np.ndarray, config: dict | None = None) -> 
         intensity_s=intensity_s,
         border_mask_arr=border,
         weight_map=w,
+        quad_corners_px=corners,
+        warped_image=arr,
     )

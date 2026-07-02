@@ -6,12 +6,16 @@
 """
 
 from fringe_scoring.border import BorderBands, band_widths_px, border_mask
+from fringe_scoring.quad import detect_glass_quad, order_corners, warp_to_rect
 from fringe_scoring.score import FringeScoreResult, load_config, score_fringe_distribution
 
 __all__ = [
     "BorderBands",
     "band_widths_px",
     "border_mask",
+    "detect_glass_quad",
+    "order_corners",
+    "warp_to_rect",
     "FringeScoreResult",
     "load_config",
     "score_fringe_distribution",
