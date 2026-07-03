@@ -46,11 +46,17 @@ class EnergyAdvice:
 
 @dataclass
 class ComponentWear:
-    """单个部件的老化研判：wear_frac∈[0,1]，service_due=达到维保阈值。"""
+    """单个部件的老化研判：wear_frac∈[0,1]，service_due=达到维保阈值。
+
+    est_hours_to_service = §3.1.4"精准维保时间"：按"换产频次与负荷维持现状、
+    老化随运行小时线性累积"外推的剩余运行小时；已达阈值=0.0；小时权重为 0
+    （无法外推）= None。外推假设写死在此注释，产出随 is_calibrated 标注。
+    """
 
     component: str
     wear_frac: float
     service_due: bool
+    est_hours_to_service: float | None = None
 
 
 @dataclass

@@ -4,8 +4,10 @@
   energy_kwh ≈ [ base_kw + kw_per_zone_c·Σ_zone max(zone_temp − ref_temp_c, 0)
                + fan_kw_per_speed·convection_speed ] × heating_duration_s / 3600
 ref 可注入合成系数（测试/演示）→ is_calibrated=False，不当真值下发（同 CCP 模式）。
-"最低能耗方案"依赖 A3-A6 硬约束真值（当前闸门全拦、无可行域）+ 质量模型——
-结构留接口、缺口如实写进 plan_note，不臆造方案（规则 > AI）。
+"可优化降参空间"与"同质量最低能耗方案"（§3.1.3 后两项输出）同源：都依赖 A3-A6
+硬约束真值（当前闸门全拦、无可行域）+ 质量模型——结构留接口、缺口如实写进
+plan_note，不臆造（规则 > AI）；真值到位后先补降参空间（可行域内单参数余量），
+再补完整方案（可行域搜索）。
 """
 
 from __future__ import annotations
@@ -19,8 +21,9 @@ _CONFIG = Path(__file__).resolve().parents[1] / "config" / "energy.yaml"
 _COEF_KEYS = ("ref_temp_c", "kw_per_zone_c", "fan_kw_per_speed", "base_kw")
 
 _PLAN_GAP_NOTE = (
-    "最低能耗方案暂无法给出：需 A3-A6 硬约束真值（当前安全闸门对任何参数全拦，"
-    "无可行域可搜索）与质量预测模型；系数与真值到位后在本模块补搜索器。"
+    "可优化降参空间与最低能耗方案暂无法给出（两者同源）：需 A3-A6 硬约束真值"
+    "（当前安全闸门对任何参数全拦，无可行域可搜索）与质量预测模型；"
+    "系数与真值到位后在本模块先补降参空间、再补方案搜索器。"
 )
 
 

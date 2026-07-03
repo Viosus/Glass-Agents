@@ -4,6 +4,8 @@
 注入合成参考（ref）→ 出值且 is_calibrated=False（不当真值下发）——与 CCP 模式一致。
 """
 
+import pytest
+
 from advisor import advise, report_to_text
 from advisor.attribution import attribute
 from advisor.energy import estimate_energy
@@ -105,6 +107,30 @@ def test_maintenance_without_usage():
     # 无设备运行数据 → 如实标缺（信息需求清单 B4）
     adv = assess_maintenance(None, ref=MAINT_REF)
     assert not adv.status.ok and "B4" in adv.status.missing[0]
+
+
+def test_maintenance_est_hours_to_service_consistency():
+    # §3.1.4"精准维保时间"：线性外推自洽——再运行 est 小时（换产/负荷不变）恰达阈值
+    usage = EquipmentUsage(run_hours=1000.0, changeover_count=0, load_frac=0.0)
+    comp = assess_maintenance(usage, ref=MAINT_REF).components[0]
+    assert comp.est_hours_to_service is not None and comp.est_hours_to_service > 0
+    later = EquipmentUsage(
+        run_hours=1000.0 + comp.est_hours_to_service, changeover_count=0, load_frac=0.0
+    )
+    comp_later = assess_maintenance(later, ref=MAINT_REF).components[0]
+    assert comp_later.wear_frac == pytest.approx(MAINT_REF["service_wear_threshold"])
+    # 浮点边界不苛求恰好压线：再多跑 1h 必到期，且到期后剩余小时归 0
+    beyond = EquipmentUsage(
+        run_hours=1001.0 + comp.est_hours_to_service, changeover_count=0, load_frac=0.0
+    )
+    comp_beyond = assess_maintenance(beyond, ref=MAINT_REF).components[0]
+    assert comp_beyond.service_due and comp_beyond.est_hours_to_service == 0.0
+
+
+def test_energy_gap_note_names_headroom():
+    # §3.1.3"可优化降参空间"必须在缺口说明中点名（输出项不静默吞掉）
+    adv = estimate_energy(make_params())
+    assert "降参空间" in adv.plan_note and "最低能耗方案" in adv.plan_note
 
 
 # ---------------- 摆炉线 ----------------

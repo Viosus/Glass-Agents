@@ -115,8 +115,13 @@ def report_to_text(report: AdvisoryReport) -> str:
 
     lines += _status_line("设备维保（§4.2-6）", report.maintenance.status)
     for comp in report.maintenance.components:
-        due = "→ 建议检修" if comp.service_due else ""
-        lines.append(f"  {comp.component}: 老化度 {comp.wear_frac:.0%} {due}")
+        if comp.service_due:
+            tail = "→ 建议检修"
+        elif comp.est_hours_to_service is not None:  # 精准维保时间（线性外推，随报告未标定标注）
+            tail = f"（预计再运行 {comp.est_hours_to_service:.0f}h 达检修阈值）"
+        else:
+            tail = ""
+        lines.append(f"  {comp.component}: 老化度 {comp.wear_frac:.0%} {tail}")
 
     lines += _status_line("摆炉排布（§4.2-4）", report.loading.status)
     if report.loading.sheets_per_bed is not None:

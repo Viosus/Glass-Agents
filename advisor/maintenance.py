@@ -6,6 +6,8 @@
                         + w_cycles·changeover_count/rated_cycles
                         + w_load·load_frac, 0, 1 )
 wear_frac ≥ service_wear_threshold → 部件列入检修项目。
+"精准维保时间"（§3.1.4）= 线性外推剩余小时：假设换产频次/负荷维持现状，老化只随
+运行小时累积 → est = (threshold − wear)·rated_hours / w_hours；已达阈值取 0。
 ref 可注入合成规则（测试/演示）→ is_calibrated=False，不当真值下发。
 """
 
@@ -87,7 +89,18 @@ def assess_maintenance(
         )
         wear = min(max(wear, 0.0), 1.0)   # clip 到 [0,1]
         due = wear >= threshold
-        components.append(ComponentWear(component=str(comp["name"]), wear_frac=wear, service_due=due))
+        # 精准维保时间：线性外推（换产/负荷不变，老化只随小时涨）；小时权重为 0 无法外推
+        w_hours = float(weights["hours"])
+        if due:
+            est_hours: float | None = 0.0
+        elif w_hours > 0.0:
+            est_hours = (threshold - wear) * float(comp["rated_hours"]) / w_hours
+        else:
+            est_hours = None
+        components.append(ComponentWear(
+            component=str(comp["name"]), wear_frac=wear, service_due=due,
+            est_hours_to_service=est_hours,
+        ))
         if due:
             service_items.append(str(comp["name"]))
 
