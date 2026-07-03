@@ -1,0 +1,14 @@
+# 缺陷→工艺归因映射表（advisor/attribution.py 运行时读取；改此文件即时生效）
+# 出处要求：工艺专项座谈敲定（信息需求清单 D3 诊断类目 + E4 映射规则）。
+# 填入前归因线输出"无法判定"（安全闸门 violations 仍会透传为线索，不受影响）。
+#
+# 规则行格式（signal 取自质量诊断量字典，见 advisor/attribution.py 模块注释）：
+#   - signal: centrality          # 诊断量键名（如 centrality / fringe_score_0_100 / delta_heating_duration_s）
+#     op: gte                     # 比较方向：gte(≥) | lte(≤)
+#     threshold: 0.7              # 阈值
+#     issue: 局部过热/欠温（斑集中于中心）   # 疑似原因（讨论稿 §3.1.2 类目：局部过热/欠温、
+#                                            # 对流不均、摆动异常、加热时长不足）
+#
+# 疑似分区（zone）定位依赖 A9 二维分区邻接关系——未定前所有规则只出原因不出分区。
+
+rules: TODO(plant)   # 映射行待工艺专项；结构示例见上方注释

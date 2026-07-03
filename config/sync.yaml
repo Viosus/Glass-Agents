@@ -1,0 +1,15 @@
+# 同步配置（多炉云共享·中心汇聚）。缺值一律 TODO(plant)，代码遇 TODO 明确报错，不猜。
+# 机密边界：数据包含配方 → 只经工厂自有通道上自家云，绝不入 git（data/outbox|inbox 已 gitignore）。
+
+# 本机所在炉（导出数据包的默认炉标识；须与 config/furnaces.yaml 登记一致）
+furnace_id: TODO(plant)
+
+# 文件投递通道：双方约定的共享目录 / U盘挂载点（本轮唯一可用通道）
+drop_dir: TODO(plant)
+
+# 云通道（未实现——拿到以下信息并通过安全评审后，才开发 CloudTransport
+# 并同步调整 config/review_rules.yaml 联网黑名单；见 docs/信息需求清单.md 板块 C）
+cloud:
+  provider: TODO(plant)      # 服务商（自建/阿里云/华为云/…）
+  endpoint: TODO(plant)      # 上传地址（厂内网络出口白名单需 IT 确认）
+  auth_ref: TODO(plant)      # 鉴权方式引用（密钥托管方案待定，绝不写进代码/git）

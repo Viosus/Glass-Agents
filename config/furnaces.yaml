@@ -1,0 +1,24 @@
+# 炉体登记表：每台目标钢化炉一条（跨炉迁移的数据地基）。
+# 拿到铭牌照片/现场确认即填；未知项保持 TODO(plant)，代码按缺失处理，绝不猜测。
+# 由 schemas/furnace.py::load_furnace_registry 每次调用时按需读取（改这里即时生效）。
+#
+# 字段：
+#   furnace_id          炉子唯一标识（导入标注表时 --furnace-id 必须与此对得上）
+#   zone_count          分区数（铭牌/现场）
+#   zone_layout         分区布局描述，如 "2x6"（真实二维邻接关系另行 TODO(plant)，见 thresholds.yaml C1-c 注）
+#   fan_count           风机数
+#   nameplate           铭牌原文键值对（型号/厂家/额定功率等，原样抄录）
+#   commissioning_date  投产日期（ISO，台账/铭牌——炉龄特征的原料，务必填）
+#   last_overhaul_date  上次大修日期（ISO——距大修天数特征的原料）
+#   recorded_at         快照采集时间（ISO 格式）
+# 推荐用初始化向导录入：& .venv\Scripts\python.exe tools\furnace_setup.py
+
+furnaces:
+  - furnace_id: F1                    # 首炉：当前老师傅标注所在炉
+    zone_count: TODO(plant)           # 待铭牌/现场确认
+    zone_layout: TODO(plant)
+    fan_count: TODO(plant)
+    nameplate: {}
+    commissioning_date: TODO(plant)   # 投产日期（台账）
+    last_overhaul_date: TODO(plant)
+    recorded_at: null

@@ -31,9 +31,13 @@ class ProcessParams(BaseModel):
     glass_type: Literal["ultra_clear", "clear"]
     thickness_mm: float = Field(gt=0)                        # mm
     quality_mode: Literal["high_quality", "high_efficiency"]
+    # ---- 架构讨论稿 §4.2-2 补充字段（可选；约束规则待 docs/03，None 不拦）----
+    convection_temp: float | None = None                     # 对流风温（℃）
+    fan_startup_logic: str | None = None                     # 风机启动逻辑（形态待现场，自由文本）
 
     @model_validator(mode="after")
     def _check_lengths(self) -> ProcessParams:
+        """结构自洽校验：zone_temps 与 zone_roles 等长且非空。"""
         if len(self.zone_temps) != len(self.zone_roles):
             raise ValueError("zone_temps 与 zone_roles 必须等长")
         if not self.zone_temps:

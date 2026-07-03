@@ -14,9 +14,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
-import yaml
 
 from fringe_scoring.border import BorderBands, band_widths_px, border_mask
+from fringe_scoring.quad import detect_glass_quad, order_corners, warp_to_rect
 from fringe_scoring.segment import (
     background_with_bands,
     deviation_map,
@@ -31,7 +31,12 @@ _WEIGHT_KINDS = ("linear", "gaussian")
 
 
 def load_config(config_path: Path | str | None = None) -> dict:
-    """读取打分配置（默认 config/fringe_scoring.yaml），每次调用重新读盘。"""
+    """读取打分配置（默认 config/fringe_scoring.yaml），每次调用重新读盘。
+
+    yaml 延迟导入：嵌入外部软件、用 dict 注入 config 的场景不必安装 pyyaml。
+    """
+    import yaml
+
     path = Path(config_path) if config_path is not None else _CONFIG_PATH
     with open(path, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f) or {}
@@ -59,16 +64,26 @@ def center_distance(u: np.ndarray, v: np.ndarray, distance_norm: str) -> np.ndar
 
 
 def position_weight(r: np.ndarray, weight_cfg: dict) -> np.ndarray:
-    """距离 r → 惩罚权重 w(r)∈(0,1]：linear=1−r；gaussian=exp(−r²/2σ²)。中心最重。"""
+    """距离 r → 惩罚权重 w(r)∈(0,1]：linear=1−r；gaussian=exp(−r²/2σ²)。中心最重。
+
+    floor（默认 0）为边缘权重下限：w = max(形状值, floor)——边缘重斑不免罚
+    （2026-07-03 人工锚点：边缘集中重斑的片人工判不及格，决策 #12），
+    中心 > 边缘的次序保持不变。
+    """
     kind = weight_cfg.get("kind")
     if kind not in _WEIGHT_KINDS:
         raise ValueError(f"position_weight: 未知 kind {kind!r}，应为 {_WEIGHT_KINDS}")
+    floor = float(weight_cfg.get("floor", 0.0))
+    if not 0.0 <= floor < 1.0:
+        raise ValueError("position_weight: floor 须在 [0,1) 内")
     if kind == "linear":
-        return 1.0 - r
-    sigma = float(weight_cfg["gaussian_sigma"])
-    if sigma <= 0.0:
-        raise ValueError("position_weight: gaussian_sigma 须为正")
-    return np.exp(-(r * r) / (2.0 * sigma * sigma))
+        w = 1.0 - r
+    else:
+        sigma = float(weight_cfg["gaussian_sigma"])
+        if sigma <= 0.0:
+            raise ValueError("position_weight: gaussian_sigma 须为正")
+        w = np.exp(-(r * r) / (2.0 * sigma * sigma))
+    return np.maximum(w, floor)
 
 
 @dataclass
@@ -85,21 +100,39 @@ class FringeScoreResult:
     intensity_s: np.ndarray = field(repr=False)      # 深浅强度 s∈[0,1]
     border_mask_arr: np.ndarray = field(repr=False)  # 边框带掩膜（True=剔除）
     weight_map: np.ndarray = field(repr=False)       # 位置权重 w(r)
+    quad_corners_px: np.ndarray | None = field(repr=False, default=None)  # 原图角点(x,y)×4；None=整图即玻璃
+    warped_image: np.ndarray | None = field(repr=False, default=None)     # 实际被打分的（矫正后）图
 
 
-def score_fringe_distribution(image: np.ndarray, config: dict | None = None) -> FringeScoreResult:
+def score_fringe_distribution(
+    image: np.ndarray, config: dict | None = None, quad_corners: np.ndarray | None = None
+) -> FringeScoreResult:
     """一张玻璃图 → 应力斑分布打分（流水线见模块 docstring 与 docs §2）。
 
     config=None 时读 config/fringe_scoring.yaml；测试/调参可直接注入同构 dict。
+    第 0 步·四边形矫正：quad_corners 显式给角点则直接矫正；否则 config 的
+    quad.auto_detect 开启时自动检测（大图裁切的玻璃可能是平行四边形/一般四边形，
+    四边形外的填充不得进入任何统计）；检测出"整图即玻璃"则零开销走原路径。
     """
     arr = np.asarray(image, dtype=float)
     if arr.ndim != 2:
-        raise ValueError("score_fringe_distribution: 需要二维图像数组（已裁切、玻璃占满整图）")
+        raise ValueError("score_fringe_distribution: 需要二维图像数组（单片玻璃裁切图）")
     cfg = config if config is not None else load_config()
     seg_cfg, border_cfg, weight_cfg = cfg["segment"], cfg["border"], cfg["weight"]
 
+    # 第 0 步：四边形检测与透视矫正（矫正域同心矩形等高线 = 原图同心四边形）
+    quad_cfg = cfg.get("quad")
+    corners = None
+    if quad_corners is not None:
+        corners = order_corners(np.asarray(quad_corners, dtype=float))
+    elif quad_cfg and bool(quad_cfg.get("auto_detect")):
+        corners = detect_glass_quad(arr, quad_cfg)
+    if corners is not None:
+        arr = warp_to_rect(arr, corners)
+
     block_frac = float(seg_cfg["background_block_frac"])
     poly_degree = int(seg_cfg["background_poly_degree"])
+    block_q = float(seg_cfg.get("background_block_quantile", 0.5))  # 0.5=中位数旧口径；低分位=暗地板锚
     rows, cols = arr.shape
 
     # ① 定边框带：按带宽上限扣除四边 → 内部拟合背景曲面（整图求值）→ |残差| 剖面扫描。
@@ -107,17 +140,36 @@ def score_fringe_distribution(image: np.ndarray, config: dict | None = None) -> 
     max_frac = float(border_cfg["max_band_frac"])
     cap_rows, cap_cols = int(max_frac * rows), int(max_frac * cols)
     pre_background = background_with_bands(
-        arr, block_frac, poly_degree, cap_rows, cap_rows, cap_cols, cap_cols
+        arr, block_frac, poly_degree, cap_rows, cap_rows, cap_cols, cap_cols, block_q
     )
     bands = band_widths_px(np.abs(arr - pre_background), border_cfg)
-    border = border_mask(arr.shape, bands)
+
+    # 免罚域边框带 = min(实测带宽, 正常允许宽度)：细圈是物理正常（免罚），
+    # 超宽段是质量缺陷 → 留在惩罚域按普通斑计罚（决策 #13，人工语义确认）。
+    # 背景/残差估计仍用实测全带宽（带内像素不进背景拟合，与免罚多宽无关）。
+    normal_frac = border_cfg.get("normal_band_frac")
+    if normal_frac is None:
+        penalty_bands = bands  # 兼容旧配置：不设允许值 = 整带免罚
+    else:
+        normal_frac = float(normal_frac)
+        if not 0.0 <= normal_frac <= 1.0:
+            raise ValueError("score_fringe_distribution: normal_band_frac 须在 [0,1] 内")
+        allow_r, allow_c = int(round(normal_frac * rows)), int(round(normal_frac * cols))
+        penalty_bands = BorderBands(
+            top_px=min(bands.top_px, allow_r),
+            bottom_px=min(bands.bottom_px, allow_r),
+            left_px=min(bands.left_px, allow_c),
+            right_px=min(bands.right_px, allow_c),
+        )
+    border = border_mask(arr.shape, penalty_bands)
     interior = ~border
     if not bool(interior.any()):
         raise ValueError("score_fringe_distribution: 边框带占满整图，无有效像素")
 
     # ② 终版背景 → 残差：只按实测带宽扣除（内部信息最大化利用）
     background = background_with_bands(
-        arr, block_frac, poly_degree, bands.top_px, bands.bottom_px, bands.left_px, bands.right_px
+        arr, block_frac, poly_degree,
+        bands.top_px, bands.bottom_px, bands.left_px, bands.right_px, block_q,
     )
     residual = arr - background
 
@@ -125,9 +177,13 @@ def score_fringe_distribution(image: np.ndarray, config: dict | None = None) -> 
     reference_scale = robust_scale(arr[interior])
     z = robust_z_map(residual, interior, float(seg_cfg["min_contrast_frac"]), reference_scale)
 
-    # ④ 斑分割 + 深浅强度
-    dev = deviation_map(z, str(seg_cfg["polarity"]))
-    fringe, intensity_s = fringe_mask_and_intensity(dev, interior, seg_cfg)
+    # ④ 斑分割 + 深浅强度。dev_gray 的中心与背景块统计取同一分位（block_q）：
+    #    暗地板锚（低分位）下，整片亮斑的残差中位数会落在斑的水平上，
+    #    用中位数居中会把斑重新归零——必须同样锚到暗侧（0.5 时即旧口径中位数）。
+    polarity = str(seg_cfg["polarity"])
+    dev = deviation_map(z, polarity)
+    dev_gray = deviation_map(residual - float(np.quantile(residual[interior], block_q)), polarity)
+    fringe, intensity_s = fringe_mask_and_intensity(dev, interior, seg_cfg, dev_gray=dev_gray)
 
     # ⑤ 位置加权惩罚 → 0–100 分
     u, v = normalized_coords(arr.shape)
@@ -135,8 +191,14 @@ def score_fringe_distribution(image: np.ndarray, config: dict | None = None) -> 
     w = position_weight(r, weight_cfg)
 
     penalty_raw = float((intensity_s * w).sum())           # s 在掩膜外恒为 0
-    penalty_max = float(w[interior].sum())                 # 最差情形：有效区全是最深斑
-    score = 100.0 * (1.0 - penalty_raw / penalty_max)
+    penalty_max = float(w[interior].sum())                 # 理论最差：有效区全是最深斑
+    # 输出刻度锚（人工校准）：罚分比 ρ 达 penalty_ratio_at_zero → 0 分。
+    # 理论最差在分位数法下不可达（掩膜 ≤ top_fraction 面积 → ρ 有 ~0.15 量级上限，
+    # 分数被压在高位）；该锚把"人工判不及格"的罚分比映射到低分段，纯单调不改排序。
+    ratio_at_zero = float(cfg.get("scoring", {}).get("penalty_ratio_at_zero", 1.0))
+    if not 0.0 < ratio_at_zero <= 1.0:
+        raise ValueError("score_fringe_distribution: penalty_ratio_at_zero 须在 (0,1] 内")
+    score = 100.0 * (1.0 - penalty_raw / (penalty_max * ratio_at_zero))
 
     s_total = float(intensity_s.sum())
     centrality = penalty_raw / s_total if s_total > 0.0 else None
@@ -153,4 +215,6 @@ def score_fringe_distribution(image: np.ndarray, config: dict | None = None) -> 
         intensity_s=intensity_s,
         border_mask_arr=border,
         weight_map=w,
+        quad_corners_px=corners,
+        warped_image=arr,
     )

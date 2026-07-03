@@ -1,0 +1,33 @@
+# 设备损耗/维保规则表（advisor/maintenance.py 运行时读取；改此文件即时生效）
+# 出处要求：设备厂家手册 + 维修班组经验（信息需求清单 E2）。填入前维保线输出"无法判定"；
+# 测试/演示可注入 ref dict（结果 is_calibrated=False，不当真值）。
+#
+# 老化度公式（加权线性，架构讨论稿 §3.2"设备损耗计算算法"）：
+#   wear_frac(部件) = clip( w_hours × run_hours/rated_hours
+#                         + w_cycles × changeover_count/rated_cycles
+#                         + w_load  × load_frac , 0, 1 )
+#   wear_frac ≥ service_wear_threshold → 该部件列入"检修项目"
+
+weights:                    # 三项权重（合计建议 ≈1，由维修经验定）
+  hours: TODO(plant)
+  cycles: TODO(plant)
+  load: TODO(plant)
+
+service_wear_threshold: TODO(plant)   # 老化度达到该值建议安排维保（0~1）
+
+components:                 # 部件清单（讨论稿 §2.2 核心零部件）；额定寿命由厂家手册填
+  - name: 热电偶
+    rated_hours: TODO(plant)
+    rated_cycles: TODO(plant)
+  - name: 对流风机
+    rated_hours: TODO(plant)
+    rated_cycles: TODO(plant)
+  - name: 辊道
+    rated_hours: TODO(plant)
+    rated_cycles: TODO(plant)
+  - name: 传动系统
+    rated_hours: TODO(plant)
+    rated_cycles: TODO(plant)
+  - name: 风嘴/风栅
+    rated_hours: TODO(plant)
+    rated_cycles: TODO(plant)

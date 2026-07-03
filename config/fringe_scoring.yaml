@@ -2,21 +2,65 @@
 # 由 fringe_scoring/ 在每次调用时读取——改这里即时生效，无需改代码。
 # 每个键的含义与"调大/调小"的效果见 docs/应力斑分布打分_需求与设计.md §4 调参指南。
 
+scoring:                      # 输出刻度（人工校准锚，纯单调映射不改排序）
+  penalty_ratio_at_zero: 0.45 # 罚分比 ρ=penalty_raw/penalty_max 达该值 → 0 分。标定依据（2026-07-03，
+                              # 决策#13 暗地板锚+边框超宽计罚口径下）：人工判废三片 ρ=0.265/0.317/0.324
+                              # → 41/30/28 分（<50，余量 9）；好片 ρ≤0.029 → ≥93.6；可行窗 [0.193,0.531]，
+                              # 取 0.45 使未经人工判定的中段片（ρ 0.04–0.16 → 64–92）离两侧边界都远。
+                              # 缺省 1.0=旧行为（理论最差归一，分数压在高位）
+
+sheets:                       # 整床多片切分（一张照片多块玻璃；暗背景、片边缘偏亮、背景占比≥bg_quantile 为前提）
+  edge_trim_frac: 0.002       # 检测前裁掉外圈条带占短边比例（至少 1px；实测照片首末行有 1px 亮线 artifact）
+  bg_quantile: 0.25           # 背景水平 = 全图该分位数（比中位数稳健：只要背景占比 ≥ 该值）
+  fg_min_z: 6.0               # 前景阈值项①：背景 + 该倍数 × 暗侧稳健尺度
+  fg_min_rel: 0.25            # 前景阈值项②：背景 + 该比例 × (亮参考分位数 − 背景)；两项取大。
+                              # 实测 ≥0.2 才能断开相邻片边缘辉光的粘连桥，0.2–0.5 计数稳定 → 取 0.25 留双侧余量
+  bright_ref_quantile: 0.995  # 亮参考分位数（项②的锚，避开个别饱和像素）
+  close_frac: 0.005           # 闭运算核边长 ≈ 短边 × 该比例（连补片边亮线断点；过大会把相邻片粘连）
+  min_area_frac: 0.01         # 单片最小面积占整图（裁边后）比例，低于视为杂物/反光忽略
+  min_side_frac: 0.05         # 单片最小边长（minAreaRect 短边）占短边比例，低于视为亮线纹/细条干扰剔除
+  max_sheets: 50              # 检出片数上限，超出判过分割 → 报错不打分
+  poly_epsilon_frac: 0.02     # 逐片四角拟合 approxPolyDP 的 epsilon = 凸包周长 × 该比例
+
+quad:                         # 四边形玻璃检测与透视矫正（大图裁切，玻璃可能非正矩形）
+  auto_detect: true           # 自动检测玻璃四边形并矫正成矩形；false=沿用"整图即玻璃"
+  fill_tol_frac: 0.05         # 填充判定容差 = 图像稳健尺度 × 该比例
+  min_fill_border_frac: 0.2   # 边界一圈的"恒定填充尖峰"占比低于此 → 判无填充（整图即玻璃）
+  full_frame_frac: 0.99       # 玻璃占比 ≥ 该值视为整图即玻璃，跳过矫正
+  min_glass_frac: 0.5         # 玻璃占比 < 该值（且非近恒定图）判检测异常 → 报错不打分
+  poly_epsilon_frac: 0.02     # 四角拟合 approxPolyDP 的 epsilon = 凸包周长 × 该比例
+
 segment:
-  method: quantile            # 斑判定方法：quantile(默认，取最深 top_fraction 像素) | robust_z(固定阈值)
+  method: gray_threshold      # 斑判定：gray_threshold(默认，|残差|≥min_dev_gray 全算，面积不封顶——
+                              #   斑铺得越大罚越多，决策#12) | quantile(取最深 top_fraction，面积≤top_fraction
+                              #   会轻判"又深又大"，仅对照用) | robust_z(固定 z 阈值)
   top_fraction: 0.15          # quantile 法：斑占有效区面积的经验比例，建议 0.10–0.20
-  min_z: 2.5                  # quantile 法的质控下限：top-q 且 |z|≥该值才算斑（纯噪声不计罚）
-  polarity: both              # 斑相对背景的极性：both(暗亮都算) | bright(只算偏亮) | dark(只算偏暗)
+  min_z: 2.5                  # z 域方法的质控下限：top-q 且 |z|≥该值才算斑（纯噪声不计罚）
+  polarity: bright            # 斑相对背景的极性。bright=只算偏亮（决策#12：暗场偏光成像的物理——无应力=暗、
+                              #   有应力=亮；同时杜绝"斑占多数时背景面漂移把干净暗区反标成斑"） | both | dark
   z_threshold: 3.0            # robust_z 法：|z| 超过该值判为斑
-  z_saturation: 8.0           # 深浅强度 s 封顶的 z 值（锚定统一 z 尺度，跨玻璃可比）
-  background_block_frac: 0.05 # 背景拟合的分块边长 ≈ 内部短边 × 该比例（块内取中位数，稳健）
+  s_scale_mode: absolute      # 深浅 s 的尺度锚：absolute=固定灰度饱和（跨片可比；前提=同批曝光固定）
+                              # | per_sheet=每片自身 MAD（旧行为）。per_sheet 已实测在"整片重斑"上
+                              # 排序反转（斑撑大自身尺度→漏罚，2026-07-02 决策#11），仅曝光不可控时退用
+  s_saturation_gray: 200      # absolute 模式 s 顶满的 |残差| 灰度值。按 2026-07 实测批次（400US/F4/255）
+                              # 定：最重斑片斑内 p99≈200–228、最淡片≈64；换曝光/相机需重标此值
+  min_dev_gray: 10            # absolute 模式计罚质控下限（灰度）：top-q 且 |残差|≥该值才算斑
+                              # （对应 per_sheet 的 min_z；实测最淡片内部 p50≈1.6–2.2、传感噪声量级个位数）
+  z_saturation: 8.0           # per_sheet 模式：深浅强度 s 封顶的 z 值（锚定统一 z 尺度）
+  background_block_frac: 0.05 # 背景拟合的分块边长 ≈ 内部短边 × 该比例
+  background_block_quantile: 0.15  # 块内统计分位：0.15=暗地板锚（决策#13，配 polarity=bright——高频亮
+                              #   条纹块内必有暗隙，低分位落在暗地板 → 整片布满亮斑时背景不被抬高，
+                              #   扫除"均匀饱和盲区"）；0.5=中位数旧口径。dev_gray 居中取同一分位
   background_poly_degree: 1   # 背景曲面多项式次数：1=平面(默认，稳)；2=二次曲面——
                               # 仅当照度明显弯曲时用：宽斑会污染曲率项（穹顶假象），需目检确认
   min_contrast_frac: 0.05     # 残差稳健尺度 < 图像整体稳健尺度 × 该比例 → 判"无斑"（防数值噪声放大）
 
-border:                       # 四边各自自适应检测边框重应力斑带（不计惩罚）
+border:                       # 四边各自自适应检测边框重应力斑带
   min_band_frac: 0.0          # 带宽下限（占对应边长比例）
   max_band_frac: 0.25         # 带宽上限（占对应边长比例，保护阈）
+  normal_band_frac: 0.04      # 正常边框带允许宽度（占对应边长比例）：细圈是物理正常 → 免罚；
+                              #   超出部分是质量缺陷 → 按普通斑计罚（决策#13，人工语义确认；
+                              #   25 片实测好片带宽 0.01–0.04）。不设此键 = 整带免罚旧口径
   profile_quantile: 0.5       # 每行/列取该分位数作 1D 剖面（0.5=中位数，对内部斑污染最稳健；
                               # 边框不连续/只占行列一部分时调高，如 0.75，更敏感但易受内部斑干扰）
   return_to_background_ratio: 2.0  # |去趋势剖面| 回落到内部波动(稳健σ)×该倍数以下 → 边框带到此为止
@@ -24,4 +68,7 @@ border:                       # 四边各自自适应检测边框重应力斑带
 weight:                       # 位置惩罚权重 w(r)：中心最重、越远越轻
   kind: linear                # linear(=1-r) | gaussian(=exp(-r^2/2σ^2))
   gaussian_sigma: 0.5         # gaussian 形状的"中心区半径"（r∈[0,1] 的单位）
-  distance_norm: euclidean    # 距离口径：euclidean(圆形等罚线) | chebyshev(方形等罚线)
+  floor: 0.3                  # 边缘权重下限 w=max(形状值,floor)：边缘重斑不免罚（决策#12——
+                              #   人工锚点：斑集中边缘的 235705 判不及格）；中心>边缘次序不变
+  distance_norm: chebyshev    # 距离口径：chebyshev(默认，同心矩形等罚线——经透视矫正映射回
+                              # 原图即"同心四边形"等高线) | euclidean(椭圆/圆形等罚线)

@@ -137,6 +137,39 @@ def test_write_read_roundtrip_and_bucketing(tmp_path):
     assert row[1] == 3 and row[2] == 2                  # total=3, ground_truth=2
 
 
+# --------------------------- v2 新字段向后兼容 --------------------------- #
+def test_v2_new_fields_have_defaults():
+    """老构造方式（不传新字段）零改动可用：炉体身份取诚实缺省。"""
+    s = make_sample("s1")
+    assert s.furnace_id == "unknown"
+    assert s.furnace_config is None
+    assert s.operator_id is None and s.repeat_group_id is None and s.condition_note is None
+    assert s.metrics.fringe_score_0_100 is None
+
+
+def test_furnace_config_date_fields_default_none():
+    """FurnaceConfig 新增日期字段向后兼容：不传默认 None（老化特征按缺失处理）。"""
+    from schemas.furnace import FurnaceConfig
+
+    fc = FurnaceConfig(furnace_id="F1")
+    assert fc.commissioning_date is None and fc.last_overhaul_date is None
+
+
+def test_v1_json_without_new_fields_reads_back(tmp_path):
+    """v1 时代落库的 JSON（无 furnace_id 等键）读回按默认值补齐，不报错。"""
+    import json
+
+    old = json.loads(make_sample("s-old").model_dump_json())
+    for key in ("furnace_id", "furnace_config", "operator_id", "repeat_group_id", "condition_note"):
+        old.pop(key, None)
+    old["metrics"].pop("fringe_score_0_100", None)
+    p = tmp_path / "s-old.json"
+    p.write_text(json.dumps(old), encoding="utf-8")
+
+    s = read_sample(p)
+    assert s.furnace_id == "unknown" and s.furnace_config is None
+
+
 def test_dirty_archive_json_rejected(tmp_path):
     bad = tmp_path / "bad.json"
     bad.write_text(

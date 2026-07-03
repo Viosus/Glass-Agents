@@ -1,0 +1,12 @@
+# 摆炉（装载排布）规则表（advisor/loading.py 运行时读取；改此文件即时生效）
+# 出处要求：炉床有效尺寸（铭牌/现场量测，可与 config/furnaces.yaml 对齐）+ 工艺规定的
+# 片间距（信息需求清单 E3）。填入前摆炉线输出"无法判定"。
+#
+# 参考策略（真值到位即生效）：grid 网格排布——
+#   每行片数 = floor((bed_width_mm + min_gap_mm) / (glass_width_mm + min_gap_mm))，行数同理；
+#   更优排布（旋转/混排/批次顺序）待现场规则，不臆造。
+
+strategy: grid              # 排布策略标识（当前仅 grid；扩展先改这里对齐）
+bed_length_mm: TODO(plant)  # 炉床有效长度（mm，沿传送方向）
+bed_width_mm: TODO(plant)   # 炉床有效宽度（mm）
+min_gap_mm: TODO(plant)     # 片间最小间距（mm，工艺规定）

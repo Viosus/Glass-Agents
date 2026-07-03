@@ -22,7 +22,9 @@
 ### 工艺参数 `ParamSet` / `ProcessParams`（单位：℃ / s / mm）
 `zone_temps`(list, ℃)、`zone_roles`(list, 与 zone_temps 等长)、`temp_upper`/`temp_lower`(℃)、
 `convection_speed`、`convection_ratio_upper_lower`、`oscillation_speed`、`oscillation_amplitude`、
-`heating_duration_s`(s)、`glass_type`、`thickness_mm`(mm)、`quality_mode`。
+`heating_duration_s`(s)、`glass_type`、`thickness_mm`(mm)、`quality_mode`；
+可选字段（架构讨论稿 §4.2-2，2026-07-02 增，约束规则待 docs/03）：`convection_temp`(℃|None,
+对流风温)、`fan_startup_logic`(str|None, 风机启动逻辑，形态待现场)。
 
 ### 校验结果 `CheckResult`
 `within_limits`(bool)、`blow_up_risk`(bool)、`gradient_ok`(bool)、`violations`(list[str]，含规则编号 C1/C2/C3/安全)。
@@ -43,6 +45,35 @@
 
 ### 归档样本分桶键（L5 `ArchiveSample`）
 `thickness_mm`(厚度)、`glass_type`(品类)、`quality_mode`(质量模式)、`is_ground_truth`(bool)。
+
+### 炉体身份与标注扩展（ArchiveSample v2，2026-07-02）
+- `furnace_id`(str)：炉子标识；**身份缺省用 `"unknown"`**（不是安全限值，故不用 TODO(plant) 字串）。
+- `furnace_config`(FurnaceConfig|None)：炉体配置快照（`schemas/furnace.py`；铭牌未知项一律 None）。
+  含 `commissioning_date`/`last_overhaul_date`(date|None)——老化特征的原料，用 `tools/furnace_setup.py` 向导录入。
+- **特征契约 26 维**（2026-07-02 尾部追加 4 维，勿插队）：`furnace_age_years`/`furnace_age_present`/
+  `days_since_overhaul`/`overhaul_present`；日期缺失或晚于样本时刻（脏）→ 0+presence=0。
+- **人读输出拍板**：工艺参数=Excel 参数单（`tools/param_sheet.py`），建议/说明=中文文本；未过闸门的单子标注"禁止照此操作"。
+- `operator_id` / `repeat_group_id` / `condition_note`(str|None)：老师傅工号 / 一致性重复组号 / 工况备注。
+- `MetricRecord.fringe_score_0_100`(float|None, 0–100)：**外部**应力斑分布打分（独立功能评好随数据到达，本工程只承接不计算）。
+- `ARCHIVE_SCHEMA_VERSION`(模块常量)：只进数据包 manifest，不进样本本体。
+
+### 研判输出层（advisor/，2026-07-02）
+- `AdvisoryReport`：讨论稿 §4.2 六项输出的统一装配（`params`/`energy`/`maintenance`/`loading`/`attribution` + `environment`/`optical` 插槽）。
+- `SectionStatus{ok, missing}`：缺真值节如实 `cannot_determine`；未标定参考值一律 `is_calibrated=False`。
+- 输入载体（schemas/inputs.py，源=架构讨论稿 §2）：`EnvironmentInput{workshop_temp, workshop_humidity_pct, glass_inlet_temp, season_note}`、
+  `OpticalFeatureSlots{optical_power_mdpt, bow_height_mm, wave_amplitude_mm}`（光焦度/弓波插槽，未接恒 None）、
+  `EquipmentUsage{furnace_id, run_hours, changeover_count, load_frac, source_note}`。
+- config 键：`energy.yaml{model,ref_temp_c,kw_per_zone_c,fan_kw_per_speed,base_kw}`、
+  `maintenance.yaml{weights.{hours,cycles,load},service_wear_threshold,components[].{name,rated_hours,rated_cycles}}`、
+  `loading.yaml{strategy,bed_length_mm,bed_width_mm,min_gap_mm}`、`attribution.yaml{rules[].{signal,op,threshold,issue}}`。
+
+### 同步与版本（schemas/datapack.py / tools/model_registry.py）
+- 数据包去重键：`(furnace_id, sample_id)` + `content_sha256`；冲突（同键异内容）绝不静默覆盖。
+- 契约指纹：`feature_schema_sha256` / `delta_fields_sha256`（training/targets.py），模型包导入必校验。
+- config 键：`furnaces.yaml: furnaces[].{furnace_id,zone_count,zone_layout,fan_count,nameplate}`；
+  `sync.yaml: {furnace_id,drop_dir,cloud.{provider,endpoint,auth_ref}}`；
+  `training.yaml: {grade_scores,min_train_samples,val_frac,test_frac,gate.{max_param_mae,regression_tolerance}}`；
+  `dialogue_rules.yaml: {intents,field_aliases}`（顺序即路由优先级）。
 
 ## 3. 受批准大写记号（pep8-naming 例外）
 国标 / GLCM 约定俗成的大写符号，已在 [pyproject.toml](pyproject.toml) `extend-ignore-names` 放行，**仅限**下表，新增需先登记：

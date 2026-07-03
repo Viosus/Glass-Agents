@@ -47,10 +47,15 @@ class ParamSet:
     glass_type: str                         # ultra_clear | clear
     thickness_mm: float
     quality_mode: str                       # high_quality | high_efficiency
+    # ---- 架构讨论稿 §4.2-2 补充字段（可选；约束规则待 docs/03，None 不拦）----
+    convection_temp: float | None = None    # 对流风温（℃，温度类按项目约定不带后缀）
+    fan_startup_logic: str | None = None    # 风机启动逻辑（结构待现场定义，暂自由文本）
 
 
 @dataclass
 class CheckResult:
+    """硬约束校验结果：within_limits=全部通过；violations 列出人类可读原因（含规则编号）。"""
+
     within_limits: bool
     blow_up_risk: bool
     gradient_ok: bool

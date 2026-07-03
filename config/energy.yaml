@@ -1,0 +1,14 @@
+# 能耗代理模型系数（advisor/energy.py 运行时读取；改此文件即时生效）
+# 出处要求：现场电表/PLC 实测回归标定后填入（信息需求清单 E1）。填入前 advisor 能耗线
+# 输出"无法判定"并列明缺此文件；测试/演示可注入 ref dict（结果 is_calibrated=False，不当真值）。
+#
+# 代理公式（线性，形态可随标定升级）：
+#   energy_kwh ≈ [ base_kw
+#                 + kw_per_zone_c × Σ_zone max(zone_temp − ref_temp_c, 0)
+#                 + fan_kw_per_speed × convection_speed ] × heating_duration_s / 3600
+
+model: linear_proxy         # 代理模型形态标识（升级公式时改代码前先改这里对齐）
+ref_temp_c: TODO(plant)     # 参考温度（℃）：加热能耗按分区温度超出该值的部分累计
+kw_per_zone_c: TODO(plant)  # 每分区每 ℃ 的等效加热功率（kW/℃）
+fan_kw_per_speed: TODO(plant)  # 风机等效功率系数（kW / 风速单位）
+base_kw: TODO(plant)        # 基础功率（保温/传动等，kW）

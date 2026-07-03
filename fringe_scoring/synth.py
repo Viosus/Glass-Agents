@@ -55,3 +55,88 @@ def make_glass_image(
         img = img + frame_amp * frame  # 边框带整体压上重应力斑
 
     return img
+
+
+def make_bed_image(
+    sheets: list[tuple[np.ndarray, np.ndarray]],
+    out_shape: tuple[int, int],
+    fill_value: float = 30.0,
+    noise_sigma: float = 1.0,
+    seed: int = 0,
+) -> np.ndarray:
+    """多片玻璃合成整床照片：逐片透视贴图，片外为恒定填充，最后整图加噪声。
+
+    sheets: [(玻璃图, 目标角点(4,2)), ...]，角点约定同 warp_into_quad；
+    片与片不应重叠（后贴覆盖先贴）。用于多片切分（sheets.py）的性质测试与演示。
+    """
+    import cv2
+
+    canvas = np.full(out_shape, float(fill_value), dtype=float)
+    for image, corners in sheets:
+        arr = np.asarray(image, dtype=np.float32)
+        rows, cols = arr.shape
+        src = np.array(
+            [[0, 0], [cols - 1, 0], [cols - 1, rows - 1], [0, rows - 1]], dtype=np.float32
+        )
+        dst = np.asarray(corners, dtype=np.float32).reshape(4, 2)
+        matrix = cv2.getPerspectiveTransform(src, dst)
+        warped = cv2.warpPerspective(
+            arr, matrix, (out_shape[1], out_shape[0]),
+            flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=0.0,
+        )
+        ones = np.ones((rows, cols), dtype=np.float32)
+        inside = cv2.warpPerspective(  # 玻璃区域掩膜：同一变换贴一张全 1 图
+            ones, matrix, (out_shape[1], out_shape[0]),
+            flags=cv2.INTER_NEAREST, borderMode=cv2.BORDER_CONSTANT, borderValue=0.0,
+        ) > 0.5
+        canvas[inside] = np.asarray(warped, dtype=float)[inside]
+
+    if noise_sigma > 0:
+        rng = np.random.default_rng(seed)
+        canvas = canvas + rng.normal(0.0, noise_sigma, size=out_shape)
+    return canvas
+
+
+def warp_into_quad(
+    image: np.ndarray,
+    corners: np.ndarray,
+    out_shape: tuple[int, int],
+    fill_value: float = 30.0,
+    noise_sigma: float = 0.0,
+    seed: int = 0,
+) -> np.ndarray:
+    """把矩形"玻璃"图正向透视贴进画布上的指定四边形，外部用恒定值填充。
+
+    模拟"大图裁切出的非正矩形玻璃"：corners 为 (4,2) 目标角点（x=列, y=行，
+    左上→右上→右下→左下），out_shape=(rows, cols) 为裁切图画布尺寸。
+    noise_sigma>0 时在贴图**之后**只往玻璃区域内加噪声——真实传感器噪声长在
+    大图上、是清晰的（不经过贴图插值），源图应传噪声为零的版本以免双重平滑。
+    """
+    import cv2
+
+    arr = np.asarray(image, dtype=np.float32)
+    rows, cols = arr.shape
+    src = np.array(
+        [[0, 0], [cols - 1, 0], [cols - 1, rows - 1], [0, rows - 1]], dtype=np.float32
+    )
+    dst = np.asarray(corners, dtype=np.float32).reshape(4, 2)
+    matrix = cv2.getPerspectiveTransform(src, dst)
+    out = cv2.warpPerspective(
+        arr,
+        matrix,
+        (out_shape[1], out_shape[0]),
+        flags=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=float(fill_value),
+    )
+    out = np.asarray(out, dtype=float)
+
+    if noise_sigma > 0:
+        ones = np.ones((rows, cols), dtype=np.float32)
+        inside = cv2.warpPerspective(  # 玻璃区域掩膜：同一变换贴一张全 1 图
+            ones, matrix, (out_shape[1], out_shape[0]),
+            flags=cv2.INTER_NEAREST, borderMode=cv2.BORDER_CONSTANT, borderValue=0.0,
+        ) > 0.5
+        rng = np.random.default_rng(seed)
+        out[inside] = out[inside] + rng.normal(0.0, noise_sigma, size=int(inside.sum()))
+    return out
