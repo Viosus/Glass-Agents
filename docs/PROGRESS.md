@@ -49,7 +49,7 @@
 
 ### 2.4 老师傅标注体系（P1，已交付开工）🟡
 - [x] `data/annotation/标注表模板.xlsx`(39列，枚举下拉/冻结表头/字段字典页) + `.csv`(utf-8-sig)；生成器 `tools/make_annotation_template.py`（列定义单一来源）
-- [x] `docs/标注说明.md`：逐列填法 + 分层目标(**200 份深覆盖 4–6 个高产量桶**) + 一致性重复(repeat_group_id) + 红线(缺值 TODO 不猜)
+- [x] `docs/标注说明.md`：已扩为**老师傅工作说明**（2026-07-03）——填表(逐列填法+200 份深覆盖 4–6 桶+一致性重复+红线)之外，收齐复核拍板/参数单读法/研判报告读法/炉子底账/保密全部职责
 - [x] `schemas/archive.py` 扩：`baseline_params`(Δ=最终−基准)、`expert_quality_grade`(主观≠实测)、`cause_tag`
 - [x] `.gitignore`：**填好的标注表=工厂配方，绝不入库**（仅保留模板）
 
