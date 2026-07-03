@@ -19,7 +19,7 @@ TUKEY_C = 4.685
 _IRLS_ITERS = 5
 
 _POLARITIES = ("both", "bright", "dark")
-_METHODS = ("quantile", "robust_z")
+_METHODS = ("quantile", "robust_z", "gray_threshold")
 _S_SCALE_MODES = ("absolute", "per_sheet")
 
 
@@ -162,11 +162,13 @@ def fringe_mask_and_intensity(
     按 s_scale_mode 整体切换判定域（掩膜与强度必须同域，否则"整片重斑"会在
     z 域检测里隐身——z 被自身尺度压扁到 min_z 以下，掩膜为空 → 假满分）：
     - absolute（默认）：掩膜阈值与质控门、强度 s 全在**灰度域**（需传 dev_gray）——
-      quantile 取 dev_gray 最深 top_fraction 且 ≥ min_dev_gray；
+      gray_threshold（默认法）取 dev_gray ≥ min_dev_gray 的**全部**像素（面积不设
+      上限：斑铺得越大罚得越多，决策 #12）；quantile 法取最深 top_fraction 且
+      ≥ min_dev_gray（面积封顶 ≤ top_fraction，会轻判"又深又大"，仅作对照保留）。
       s = clip(dev_gray / s_saturation_gray, 0, 1)。跨片可比（前提：同批曝光固定）。
-    - per_sheet（旧行为）：全在逐片 z 域——quantile 取 dev 最深 top_fraction 且 ≥ min_z；
+    - per_sheet（旧行为）：z 域——quantile 取 dev 最深 top_fraction 且 ≥ min_z；
       s = clip(dev / z_saturation, 0, 1)。仅曝光不可控时退用；整片重斑会撑大自身
-      尺度估计 → 漏罚（排序反转，决策 #11）。
+      尺度估计 → 漏罚（排序反转，决策 #11）。gray_threshold 不支持此模式。
     - robust_z 法的掩膜固定在 z 域（该方法按定义是 z 阈值），s 仍按模式取锚。
     好玻璃即使被硬选 top-q，其偏离≈0 → s≈0 → 惩罚≈0（两种模式同理）。
     """
@@ -185,9 +187,11 @@ def fringe_mask_and_intensity(
             raise ValueError("fringe_mask_and_intensity: absolute 模式需要 dev_gray（灰度域偏离图）")
         dev_gray = np.asarray(dev_gray, dtype=float)
 
-    # 掩膜判定域：absolute+quantile 用灰度域（配 min_dev_gray），其余用 z 域（配 min_z）
-    if mode == "absolute" and method == "quantile":
+    # 掩膜判定域：absolute+quantile/gray_threshold 用灰度域（配 min_dev_gray），其余 z 域（配 min_z）
+    if mode == "absolute" and method in ("quantile", "gray_threshold"):
         base, floor = dev_gray, float(seg_cfg["min_dev_gray"])
+    elif method == "gray_threshold":
+        raise ValueError("fringe_mask_and_intensity: gray_threshold 法仅支持 s_scale_mode=absolute")
     else:
         base, floor = dev, float(seg_cfg["min_z"])
     assert base is not None  # absolute 分支已确保 dev_gray 非 None
@@ -199,6 +203,9 @@ def fringe_mask_and_intensity(
         threshold = float(np.quantile(base[region_mask], 1.0 - top_fraction))
         threshold = max(threshold, floor)  # 质控下限：top-q 且至少中等偏离
         mask = region_mask & (base >= threshold) & (base > 0.0)  # base>0 排除退化全 0
+    elif method == "gray_threshold":
+        # 面积不设上限：所有显著偏离都计罚（斑占比越大罚越重，决策 #12）
+        mask = region_mask & (base >= floor) & (base > 0.0)
     else:
         threshold = float(seg_cfg["z_threshold"])
         mask = region_mask & (dev >= threshold)

@@ -269,6 +269,76 @@ def test_absolute_mode_missing_saturation_raises():
         score_fringe_distribution(img, config=cfg)
 
 
+# ---------------- ⑧ gray_threshold 面积敏感 / bright 极性 / 边缘权重下限（决策 #12） ----------------
+def gray_threshold_config() -> dict:
+    """决策 #12 口径：灰度阈值分割（面积不封顶）+ 只算偏亮。"""
+    cfg = absolute_config()
+    cfg["segment"]["method"] = "gray_threshold"
+    cfg["segment"]["polarity"] = "bright"
+    return cfg
+
+
+def test_gray_threshold_area_sensitive():
+    # 同深度、面积更大的斑 → 分更低（quantile 法面积封顶做不到这一点，正是换法动机）
+    small = make_glass_image(blobs=[(0.5, 0.5, 0.06, 30.0)], seed=41)
+    large = make_glass_image(blobs=[(0.5, 0.5, 0.16, 30.0)], seed=41)
+    cfg = gray_threshold_config()
+    s_small = score_fringe_distribution(small, config=cfg).score_0_100
+    s_large = score_fringe_distribution(large, config=cfg).score_0_100
+    assert s_large < s_small - 1.0
+
+
+def test_gray_threshold_requires_absolute_mode():
+    # gray_threshold 定义在灰度域，per_sheet 模式下必须报错而非静默换义
+    cfg = base_config()
+    cfg["segment"]["method"] = "gray_threshold"
+    img = make_glass_image(blobs=[(0.5, 0.5, 0.08, 6.0)], seed=43)
+    with pytest.raises(ValueError, match="gray_threshold"):
+        score_fringe_distribution(img, config=cfg)
+
+
+def test_bright_polarity_ignores_dark_deviation():
+    # bright 极性：偏暗的偏离不算斑（暗场物理=应力必偏亮；防背景漂移时反标干净暗区）
+    dark_blob = make_glass_image(blobs=[(0.5, 0.5, 0.08, -30.0)], seed=45)
+    cfg = gray_threshold_config()
+    s_bright = score_fringe_distribution(dark_blob, config=cfg).score_0_100
+    cfg_both = gray_threshold_config()
+    cfg_both["segment"]["polarity"] = "both"
+    s_both = score_fringe_distribution(dark_blob, config=cfg_both).score_0_100
+    assert s_bright > s_both  # both 会罚暗斑，bright 不罚
+    assert s_bright > 99.0
+
+
+def test_weight_floor_narrows_edge_forgiveness_but_keeps_center_worse():
+    # floor 的干净性质是相对的：边缘斑/中心斑的罚分比 ρ_edge/ρ_center 随 floor 收窄
+    # （floor 同时抬高 penalty_max，单图分数不保证单调；且斑不能贴边，否则被边框带剔除）
+    edge = make_glass_image(blobs=[(0.5, 0.8, 0.06, 30.0)], seed=47)  # w≈0.4，避开边框带
+    center = make_glass_image(blobs=[(0.5, 0.5, 0.06, 30.0)], seed=47)
+    cfg_floor = gray_threshold_config()
+    cfg_floor["weight"]["floor"] = 0.5
+    cfg_nofloor = gray_threshold_config()
+    cfg_nofloor["weight"]["floor"] = 0.0
+
+    def rho(img, cfg):
+        """罚分比 ρ = 1 − score/100（与刻度锚无关的单调量）。"""
+        return 1.0 - score_fringe_distribution(img, config=cfg).score_0_100 / 100.0
+
+    ratio_floor = rho(edge, cfg_floor) / rho(center, cfg_floor)
+    ratio_nofloor = rho(edge, cfg_nofloor) / rho(center, cfg_nofloor)
+    assert ratio_floor > ratio_nofloor  # 边缘斑相对中心斑的宽恕变少
+    assert rho(center, cfg_floor) > rho(edge, cfg_floor)  # 中心仍然最重罚
+
+
+def test_weight_floor_invalid_raises():
+    # floor 越界 [0,1) → 报错拒绝
+    img = make_glass_image(blobs=[(0.5, 0.5, 0.08, 6.0)], seed=49)
+    for bad in (-0.1, 1.0, 1.5):
+        cfg = gray_threshold_config()
+        cfg["weight"]["floor"] = bad
+        with pytest.raises(ValueError, match="floor"):
+            score_fringe_distribution(img, config=cfg)
+
+
 # ---------------- ⑦ 输出刻度锚（scoring.penalty_ratio_at_zero） ----------------
 def test_score_anchor_lowers_scores_but_keeps_order():
     # 刻度锚是纯单调映射：分数整体下移、排序不变；缺省(不配 scoring 段)=旧行为

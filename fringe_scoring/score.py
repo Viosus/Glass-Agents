@@ -64,16 +64,26 @@ def center_distance(u: np.ndarray, v: np.ndarray, distance_norm: str) -> np.ndar
 
 
 def position_weight(r: np.ndarray, weight_cfg: dict) -> np.ndarray:
-    """距离 r → 惩罚权重 w(r)∈(0,1]：linear=1−r；gaussian=exp(−r²/2σ²)。中心最重。"""
+    """距离 r → 惩罚权重 w(r)∈(0,1]：linear=1−r；gaussian=exp(−r²/2σ²)。中心最重。
+
+    floor（默认 0）为边缘权重下限：w = max(形状值, floor)——边缘重斑不免罚
+    （2026-07-03 人工锚点：边缘集中重斑的片人工判不及格，决策 #12），
+    中心 > 边缘的次序保持不变。
+    """
     kind = weight_cfg.get("kind")
     if kind not in _WEIGHT_KINDS:
         raise ValueError(f"position_weight: 未知 kind {kind!r}，应为 {_WEIGHT_KINDS}")
+    floor = float(weight_cfg.get("floor", 0.0))
+    if not 0.0 <= floor < 1.0:
+        raise ValueError("position_weight: floor 须在 [0,1) 内")
     if kind == "linear":
-        return 1.0 - r
-    sigma = float(weight_cfg["gaussian_sigma"])
-    if sigma <= 0.0:
-        raise ValueError("position_weight: gaussian_sigma 须为正")
-    return np.exp(-(r * r) / (2.0 * sigma * sigma))
+        w = 1.0 - r
+    else:
+        sigma = float(weight_cfg["gaussian_sigma"])
+        if sigma <= 0.0:
+            raise ValueError("position_weight: gaussian_sigma 须为正")
+        w = np.exp(-(r * r) / (2.0 * sigma * sigma))
+    return np.maximum(w, floor)
 
 
 @dataclass
