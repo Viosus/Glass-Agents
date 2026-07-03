@@ -81,6 +81,7 @@ def write_filled_csv(path, rows):
 
 @pytest.fixture
 def furnaces_yaml(tmp_path):
+    """临时炉体登记表 fixture（含一条 TODO(plant) 身份的坏条目）。"""
     p = tmp_path / "furnaces.yaml"
     p.write_text(FURNACES_YAML, encoding="utf-8")
     return p
@@ -97,6 +98,21 @@ def test_registry_loads_and_skips_todo(furnaces_yaml, tmp_path):
     assert load_furnace_registry(tmp_path / "不存在.yaml") == {}
 
 
+# --------------------------- 模板说明行契约 --------------------------- #
+def test_template_label_row_marks_who_fills(tmp_path):
+    """第 2 行中文说明行：师傅列标★、系统列标勿动、outcome 标出炉后补；且被导入器当示例行跳过。"""
+    path = tmp_path / "t.csv"
+    write_csv(path)
+    with open(path, encoding="utf-8-sig", newline="") as f:
+        rows = list(csv.reader(f))
+    labels = dict(zip(rows[0], rows[1]))
+    assert labels["sample_id"].startswith("示例-")          # 借示例行机制跳过，导入零改动
+    assert labels["final_temp_upper_c"].startswith("★填这里")
+    assert labels["baseline_temp_upper_c"].startswith("勿动")
+    assert labels["measured_energy_kwh"].startswith("出炉后补")
+    assert len(rows[1]) == len(HEADER)                      # 说明行与列一一对应（_ZH 全覆盖）
+
+
 # --------------------------- 模板往返 + 身份注入 --------------------------- #
 def test_roundtrip_injects_furnace_identity(tmp_path, furnaces_yaml):
     csv_path = tmp_path / "filled.csv"
@@ -105,7 +121,7 @@ def test_roundtrip_injects_furnace_identity(tmp_path, furnaces_yaml):
 
     report = ingest(csv_path, "F1", out, furnaces_yaml)
     assert report.accepted == 2
-    assert report.skipped_examples == 2             # 模板自带两行“示例-”前缀
+    assert report.skipped_examples == 3             # 模板自带：中文说明行 + 两行示例（均"示例-"前缀）
     assert not report.rejected
 
     loaded = {s.sample_id: s for s in load_all(out)}
@@ -147,7 +163,7 @@ def test_bad_row_rejected_with_row_number(tmp_path, furnaces_yaml):
     assert report.accepted == 1
     assert len(report.rejected) == 1
     row_no, reason = report.rejected[0]
-    assert row_no == 5                              # 表头1 + 示例2 + 好行4 → 坏行=5
+    assert row_no == 6                              # 表头1 + 说明行2 + 示例3-4 + 好行5 → 坏行=6
     assert "final_temp_upper_c" in reason
 
 
@@ -179,6 +195,7 @@ def test_duplicate_and_conflict_handling(tmp_path, furnaces_yaml):
 
 
 def test_dry_run_writes_nothing(tmp_path, furnaces_yaml):
+    """dry-run 只报告不写盘。"""
     csv_path = tmp_path / "filled.csv"
     write_filled_csv(csv_path, [make_row()])
     out = tmp_path / "archive"
@@ -188,6 +205,7 @@ def test_dry_run_writes_nothing(tmp_path, furnaces_yaml):
 
 
 def test_in_table_duplicate_id_rejected(tmp_path, furnaces_yaml):
+    """同一张表内重复 sample_id：后一行拒绝。"""
     csv_path = tmp_path / "filled.csv"
     write_filled_csv(csv_path, [make_row(), make_row(rationale="另一行同 id")])
     report = ingest(csv_path, "F1", tmp_path / "archive", furnaces_yaml)
