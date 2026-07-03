@@ -32,10 +32,15 @@ def robust_scale(values: np.ndarray) -> float:
     return MAD_TO_SIGMA * float(np.median(np.abs(arr - med)))
 
 
-def _block_medians(image: np.ndarray, block_px: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """分块中位数网格：返回 (块中心行坐标, 块中心列坐标, 块中位值)，各为一维数组。
+def _block_quantiles(
+    image: np.ndarray, block_px: int, block_quantile: float = 0.5
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """分块分位数网格：返回 (块中心行坐标, 块中心列坐标, 块分位值)，各为一维数组。
 
-    块内取中位数——对块内 <50% 的斑污染稳健；整块都是斑时交给上层 IRLS 当离群点。
+    block_quantile=0.5 即中位数（旧口径）——对块内 <50% 的斑污染稳健；
+    低分位（如 0.15）= **暗地板锚**（决策 #13，配 polarity=bright）：高频亮条纹块内
+    必有暗隙，低分位落在暗地板上——整片布满亮斑时背景不再被抬到斑的水平；
+    整块全亮（无暗隙）时交给上层 IRLS 当离群点。
     """
     rows, cols = image.shape
     n_row_blocks, n_col_blocks = max(1, rows // block_px), max(1, cols // block_px)
@@ -46,7 +51,7 @@ def _block_medians(image: np.ndarray, block_px: int) -> tuple[np.ndarray, np.nda
         for j in range(n_col_blocks):
             c0 = j * block_px
             c1 = cols if j == n_col_blocks - 1 else c0 + block_px
-            values.append(float(np.median(image[r0:r1, c0:c1])))
+            values.append(float(np.quantile(image[r0:r1, c0:c1], block_quantile)))
             r_centers.append((r0 + r1 - 1) / 2.0)
             c_centers.append((c0 + c1 - 1) / 2.0)
     return np.asarray(r_centers), np.asarray(c_centers), np.asarray(values)
@@ -65,6 +70,7 @@ def background_with_bands(
     bottom_px: int = 0,
     left_px: int = 0,
     right_px: int = 0,
+    block_quantile: float = 0.5,
 ) -> np.ndarray:
     """扣除四边带宽后，用内部分块中位 + Tukey-IRLS 拟合低次多项式背景曲面，整图求值。
 
@@ -82,13 +88,15 @@ def background_with_bands(
     rows, cols = arr.shape
     if rows < 2 or cols < 2:
         raise ValueError("background_with_bands: 图像至少 2×2")
+    if not 0.0 < block_quantile < 1.0:
+        raise ValueError("background_with_bands: block_quantile 须在 (0,1) 内")
     top, bottom, left, right = int(top_px), int(bottom_px), int(left_px), int(right_px)
     core = arr[top: rows - bottom, left: cols - right]
     if core.size == 0:
         raise ValueError("background_with_bands: 扣除边框带后无内部像素")
 
     block_px = max(2, int(round(block_frac * min(core.shape))))
-    r_centers, c_centers, z = _block_medians(core, block_px)
+    r_centers, c_centers, z = _block_quantiles(core, block_px, block_quantile)
 
     # 坐标统一归一到全图 [-1,1]（拟合与求值同一组基，数值条件好）
     u = 2.0 * (c_centers + left) / (cols - 1) - 1.0

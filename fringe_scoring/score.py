@@ -132,6 +132,7 @@ def score_fringe_distribution(
 
     block_frac = float(seg_cfg["background_block_frac"])
     poly_degree = int(seg_cfg["background_poly_degree"])
+    block_q = float(seg_cfg.get("background_block_quantile", 0.5))  # 0.5=中位数旧口径；低分位=暗地板锚
     rows, cols = arr.shape
 
     # ① 定边框带：按带宽上限扣除四边 → 内部拟合背景曲面（整图求值）→ |残差| 剖面扫描。
@@ -139,17 +140,36 @@ def score_fringe_distribution(
     max_frac = float(border_cfg["max_band_frac"])
     cap_rows, cap_cols = int(max_frac * rows), int(max_frac * cols)
     pre_background = background_with_bands(
-        arr, block_frac, poly_degree, cap_rows, cap_rows, cap_cols, cap_cols
+        arr, block_frac, poly_degree, cap_rows, cap_rows, cap_cols, cap_cols, block_q
     )
     bands = band_widths_px(np.abs(arr - pre_background), border_cfg)
-    border = border_mask(arr.shape, bands)
+
+    # 免罚域边框带 = min(实测带宽, 正常允许宽度)：细圈是物理正常（免罚），
+    # 超宽段是质量缺陷 → 留在惩罚域按普通斑计罚（决策 #13，人工语义确认）。
+    # 背景/残差估计仍用实测全带宽（带内像素不进背景拟合，与免罚多宽无关）。
+    normal_frac = border_cfg.get("normal_band_frac")
+    if normal_frac is None:
+        penalty_bands = bands  # 兼容旧配置：不设允许值 = 整带免罚
+    else:
+        normal_frac = float(normal_frac)
+        if not 0.0 <= normal_frac <= 1.0:
+            raise ValueError("score_fringe_distribution: normal_band_frac 须在 [0,1] 内")
+        allow_r, allow_c = int(round(normal_frac * rows)), int(round(normal_frac * cols))
+        penalty_bands = BorderBands(
+            top_px=min(bands.top_px, allow_r),
+            bottom_px=min(bands.bottom_px, allow_r),
+            left_px=min(bands.left_px, allow_c),
+            right_px=min(bands.right_px, allow_c),
+        )
+    border = border_mask(arr.shape, penalty_bands)
     interior = ~border
     if not bool(interior.any()):
         raise ValueError("score_fringe_distribution: 边框带占满整图，无有效像素")
 
     # ② 终版背景 → 残差：只按实测带宽扣除（内部信息最大化利用）
     background = background_with_bands(
-        arr, block_frac, poly_degree, bands.top_px, bands.bottom_px, bands.left_px, bands.right_px
+        arr, block_frac, poly_degree,
+        bands.top_px, bands.bottom_px, bands.left_px, bands.right_px, block_q,
     )
     residual = arr - background
 
@@ -157,10 +177,12 @@ def score_fringe_distribution(
     reference_scale = robust_scale(arr[interior])
     z = robust_z_map(residual, interior, float(seg_cfg["min_contrast_frac"]), reference_scale)
 
-    # ④ 斑分割 + 深浅强度：掩膜在 z 域（相对检测），强度 s 默认灰度域绝对锚（绝对惩罚）
+    # ④ 斑分割 + 深浅强度。dev_gray 的中心与背景块统计取同一分位（block_q）：
+    #    暗地板锚（低分位）下，整片亮斑的残差中位数会落在斑的水平上，
+    #    用中位数居中会把斑重新归零——必须同样锚到暗侧（0.5 时即旧口径中位数）。
     polarity = str(seg_cfg["polarity"])
     dev = deviation_map(z, polarity)
-    dev_gray = deviation_map(residual - float(np.median(residual[interior])), polarity)
+    dev_gray = deviation_map(residual - float(np.quantile(residual[interior], block_q)), polarity)
     fringe, intensity_s = fringe_mask_and_intensity(dev, interior, seg_cfg, dev_gray=dev_gray)
 
     # ⑤ 位置加权惩罚 → 0–100 分

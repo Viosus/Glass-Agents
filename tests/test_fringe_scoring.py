@@ -339,6 +339,64 @@ def test_weight_floor_invalid_raises():
             score_fringe_distribution(img, config=cfg)
 
 
+# ---------------- ⑨ 暗地板背景锚 / 边框带允许宽度（决策 #13） ----------------
+def test_dark_floor_anchor_catches_saturated_sheet():
+    # 均匀饱和盲区回归：整片 70% 占空比亮条纹（几乎无暗净区）——
+    # 中位数背景会被抬到斑的水平 → 假高分；暗地板锚（低分位）必须重罚
+    yy, xx = np.mgrid[0:200, 0:300]
+    stripes = 60.0 * ((xx % 20) < 14)  # 高频亮条纹，暗隙仅 30%
+    img = make_glass_image(seed=51) + stripes
+    cfg_floor = gray_threshold_config()
+    cfg_floor["segment"]["background_block_quantile"] = 0.15
+    cfg_median = gray_threshold_config()
+    cfg_median["segment"]["background_block_quantile"] = 0.5
+    s_floor = score_fringe_distribution(img, config=cfg_floor).score_0_100
+    s_median = score_fringe_distribution(img, config=cfg_median).score_0_100
+    assert s_floor < s_median - 5.0  # 暗地板锚下饱和片显著更差
+    clean = make_glass_image(seed=51)
+    assert score_fringe_distribution(clean, config=cfg_floor).score_0_100 > 99.0  # 干净片不受影响
+
+
+def test_thin_border_band_still_excluded():
+    # 细细一圈（≤允许宽度）：物理正常 → 仍然免罚，分数与无边框基线近似
+    blob = [(0.5, 0.5, 0.08, 30.0)]
+    plain = make_glass_image(blobs=blob, seed=53)
+    thin_frame = make_glass_image(
+        blobs=blob, frame_widths_frac=(0.02, 0.02, 0.02, 0.02), frame_amp=40.0, seed=53
+    )
+    cfg = gray_threshold_config()
+    cfg["border"]["normal_band_frac"] = 0.04
+    s_plain = score_fringe_distribution(plain, config=cfg).score_0_100
+    s_thin = score_fringe_distribution(thin_frame, config=cfg).score_0_100
+    assert abs(s_plain - s_thin) < 1.5
+
+
+def test_wide_border_band_excess_is_penalized():
+    # 边框带宽度过大（人工语义：影响质量）：超出允许宽度的部分按普通斑计罚
+    blob = [(0.5, 0.5, 0.08, 30.0)]
+    thin_frame = make_glass_image(
+        blobs=blob, frame_widths_frac=(0.02, 0.02, 0.02, 0.02), frame_amp=40.0, seed=55
+    )
+    wide_frame = make_glass_image(
+        blobs=blob, frame_widths_frac=(0.15, 0.15, 0.15, 0.15), frame_amp=40.0, seed=55
+    )
+    cfg = gray_threshold_config()
+    cfg["border"]["normal_band_frac"] = 0.04
+    s_thin = score_fringe_distribution(thin_frame, config=cfg).score_0_100
+    s_wide = score_fringe_distribution(wide_frame, config=cfg).score_0_100
+    assert s_wide < s_thin - 3.0
+
+
+def test_normal_band_frac_invalid_raises():
+    # 允许宽度越界 [0,1] → 报错拒绝
+    img = make_glass_image(blobs=[(0.5, 0.5, 0.08, 6.0)], seed=57)
+    for bad in (-0.1, 1.5):
+        cfg = gray_threshold_config()
+        cfg["border"]["normal_band_frac"] = bad
+        with pytest.raises(ValueError, match="normal_band_frac"):
+            score_fringe_distribution(img, config=cfg)
+
+
 # ---------------- ⑦ 输出刻度锚（scoring.penalty_ratio_at_zero） ----------------
 def test_score_anchor_lowers_scores_but_keeps_order():
     # 刻度锚是纯单调映射：分数整体下移、排序不变；缺省(不配 scoring 段)=旧行为
