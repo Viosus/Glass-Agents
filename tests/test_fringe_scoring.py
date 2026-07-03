@@ -269,6 +269,40 @@ def test_absolute_mode_missing_saturation_raises():
         score_fringe_distribution(img, config=cfg)
 
 
+# ---------------- ⑦ 输出刻度锚（scoring.penalty_ratio_at_zero） ----------------
+def test_score_anchor_lowers_scores_but_keeps_order():
+    # 刻度锚是纯单调映射：分数整体下移、排序不变；缺省(不配 scoring 段)=旧行为
+    shallow = make_glass_image(blobs=[(0.5, 0.5, 0.08, 10.0)], seed=31)
+    deep = make_glass_image(blobs=[(0.5, 0.5, 0.08, 30.0)], seed=31)
+    cfg = absolute_config()
+    base_shallow = score_fringe_distribution(shallow, config=cfg).score_0_100
+    base_deep = score_fringe_distribution(deep, config=cfg).score_0_100
+    cfg["scoring"] = {"penalty_ratio_at_zero": 0.2}
+    anch_shallow = score_fringe_distribution(shallow, config=cfg).score_0_100
+    anch_deep = score_fringe_distribution(deep, config=cfg).score_0_100
+    assert anch_shallow < base_shallow and anch_deep < base_deep  # 整体下移
+    assert anch_deep < anch_shallow  # 排序不变
+
+
+def test_score_anchor_clips_at_zero():
+    # 罚分比超过锚值 → 0 分封底，不出负分
+    heavy_blobs = [(r, c, 0.10, 45.0) for r in (0.2, 0.5, 0.8) for c in (0.2, 0.5, 0.8)]
+    heavy = make_glass_image(blobs=heavy_blobs, seed=33)
+    cfg = absolute_config()
+    cfg["scoring"] = {"penalty_ratio_at_zero": 0.001}
+    assert score_fringe_distribution(heavy, config=cfg).score_0_100 == 0.0
+
+
+def test_score_anchor_invalid_raises():
+    # 锚值越界 (0,1] → 报错拒绝
+    img = make_glass_image(blobs=[(0.5, 0.5, 0.08, 6.0)], seed=35)
+    for bad in (0.0, -0.2, 1.5):
+        cfg = absolute_config()
+        cfg["scoring"] = {"penalty_ratio_at_zero": bad}
+        with pytest.raises(ValueError, match="penalty_ratio_at_zero"):
+            score_fringe_distribution(img, config=cfg)
+
+
 def test_quad_low_glass_frac_rejected():
     # 玻璃占比过低（非近恒定图）→ 检测异常，报错拒绝打分，不瞎打
     canvas = np.full((300, 300), 30.0)

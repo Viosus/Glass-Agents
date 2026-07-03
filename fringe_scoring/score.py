@@ -159,8 +159,14 @@ def score_fringe_distribution(
     w = position_weight(r, weight_cfg)
 
     penalty_raw = float((intensity_s * w).sum())           # s 在掩膜外恒为 0
-    penalty_max = float(w[interior].sum())                 # 最差情形：有效区全是最深斑
-    score = 100.0 * (1.0 - penalty_raw / penalty_max)
+    penalty_max = float(w[interior].sum())                 # 理论最差：有效区全是最深斑
+    # 输出刻度锚（人工校准）：罚分比 ρ 达 penalty_ratio_at_zero → 0 分。
+    # 理论最差在分位数法下不可达（掩膜 ≤ top_fraction 面积 → ρ 有 ~0.15 量级上限，
+    # 分数被压在高位）；该锚把"人工判不及格"的罚分比映射到低分段，纯单调不改排序。
+    ratio_at_zero = float(cfg.get("scoring", {}).get("penalty_ratio_at_zero", 1.0))
+    if not 0.0 < ratio_at_zero <= 1.0:
+        raise ValueError("score_fringe_distribution: penalty_ratio_at_zero 须在 (0,1] 内")
+    score = 100.0 * (1.0 - penalty_raw / (penalty_max * ratio_at_zero))
 
     s_total = float(intensity_s.sum())
     centrality = penalty_raw / s_total if s_total > 0.0 else None
