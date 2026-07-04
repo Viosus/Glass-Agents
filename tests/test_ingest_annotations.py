@@ -113,6 +113,23 @@ def test_template_label_row_marks_who_fills(tmp_path):
     assert len(rows[1]) == len(HEADER)                      # 说明行与列一一对应（_ZH 全覆盖）
 
 
+def test_template_xlsx_outline_declared(tmp_path):
+    """xlsx 结构回归：列分组必须带 sheet 级 outlineLevelCol 声明，颜色须 FF 不透明。
+
+    缺 outlineLevelCol 时 Excel/WPS 按"文件损坏"拒载（2026-07-03 现场踩坑）；
+    00-alpha 颜色 WPS 渲染成透明。openpyxl 都不会自动写对，靠本测试锚住。
+    """
+    openpyxl = pytest.importorskip("openpyxl")
+    from tools.make_annotation_template import write_xlsx
+
+    path = tmp_path / "t.xlsx"
+    assert write_xlsx(path)
+    ws = openpyxl.load_workbook(path)["标注表"]
+    assert ws.sheet_format.outlineLevelCol == 1
+    master_col = HEADER.index("final_zone_temps_c") + 1
+    assert ws.cell(1, master_col).fill.start_color.rgb == "FFFFF2CC"
+
+
 # --------------------------- 模板往返 + 身份注入 --------------------------- #
 def test_roundtrip_injects_furnace_identity(tmp_path, furnaces_yaml):
     csv_path = tmp_path / "filled.csv"

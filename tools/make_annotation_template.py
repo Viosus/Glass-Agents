@@ -175,16 +175,17 @@ def write_xlsx(path: Path) -> bool:
     ws.freeze_panes = "B3"  # 冻结表头两行 + 首列 sample_id
 
     # 按"谁填"上色：老师傅=黄底加粗、出炉后补=浅蓝、其余=灰底灰字（勿动）
-    fill_master = PatternFill("solid", start_color="FFF2CC")
-    fill_later = PatternFill("solid", start_color="DDEBF7")
-    fill_other = PatternFill("solid", start_color="E7E6E6")
+    # 颜色必须写全 8 位 ARGB（FF 不透明）：openpyxl 对 6 位值补 "00" alpha，WPS 会渲染成透明
+    fill_master = PatternFill("solid", start_color="FFFFF2CC")
+    fill_later = PatternFill("solid", start_color="FFDDEBF7")
+    fill_other = PatternFill("solid", start_color="FFE7E6E6")
     for idx, (name, group, _desc, who, _ex) in enumerate(COLUMNS, start=1):
         if who == "老师傅":
             fill, font = fill_master, Font(bold=True)
         elif group.startswith("I"):
             fill, font = fill_later, Font(bold=False)
         else:
-            fill, font = fill_other, Font(color="808080")
+            fill, font = fill_other, Font(color="FF808080")
         for r in (1, 2):
             cell = ws.cell(row=r, column=idx)
             cell.fill = fill
@@ -195,7 +196,7 @@ def write_xlsx(path: Path) -> bool:
     # 示例行（3–4）灰斜体，一眼区分于真数据
     for r in (3, 4):
         for idx in range(1, len(COLUMNS) + 1):
-            ws.cell(row=r, column=idx).font = Font(italic=True, color="808080")
+            ws.cell(row=r, column=idx).font = Font(italic=True, color="FF808080")
 
     # 老师傅不碰的组默认折叠（记录员点列上方"+"展开）：A 余项 / C 输入 / D 基准 / H 复核
     header = _header()
@@ -214,6 +215,10 @@ def write_xlsx(path: Path) -> bool:
     ):
         a, b = _span(first, last)
         ws.column_dimensions.group(a, b, hidden=True)
+    # OOXML 规范：列带 outlineLevel 时 sheet 级必须声明 outlineLevelCol，缺了 Excel/WPS
+    # 按"文件损坏"拒载（2026-07-03 现场踩坑）。openpyxl 从零建簿不自动算；保存器只认
+    # column_dimensions.max_outline（并会用它覆盖 sheet_format 上的手动值），故设在这里
+    ws.column_dimensions.max_outline = 1
 
     # 枚举列加下拉校验（数据从第 3 行起；第 2 行是说明行）
     for name, allowed in ENUMS.items():
