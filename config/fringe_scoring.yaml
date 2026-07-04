@@ -18,6 +18,7 @@ indicators:                   # 六指标测量与加权总分（决策#14；统
     gradient_mean: {best: 5.0, worst: 32.0}
     gradient_variance: {best: 30.0, worst: 1100.0}
     ccp: {best: 0.55, worst: 0.97}
+    uniformity: {best: 100.0, worst: 0.0}  # 越大越好方向（best>worst 公式自动同向）；默认等价直通
   calibration:                # 标定项（2026-07-03 拍板：未标定用灰度/像素代理并标注，到位填值即切换）
     gray_to_nm: null          # 灰度→光程差 nm 系数；null=X0.95 输出灰度代理（同设备可比）
     mm_per_px: null           # 空间标定；null=CCP 按原始像素（跨设备不可比，同设备可比）
@@ -70,6 +71,8 @@ segment:
                               # 定：最重斑片斑内 p99≈200–228、最淡片≈64；换曝光/相机需重标此值
   min_dev_gray: 10            # absolute 模式计罚质控下限（灰度）：top-q 且 |残差|≥该值才算斑
                               # （对应 per_sheet 的 min_z；实测最淡片内部 p50≈1.6–2.2、传感噪声量级个位数）
+                              # ⚠️ 决策#13 刻度锚 penalty_ratio_at_zero=0.45 按本值标定，重标锚前勿改；
+                              # GlassApp 侧按"肉眼可见"口径用 30（只为二值图展示，不进总分）
   z_saturation: 8.0           # per_sheet 模式：深浅强度 s 封顶的 z 值（锚定统一 z 尺度）
   background_block_frac: 0.05 # 背景拟合的分块边长 ≈ 内部短边 × 该比例
   background_block_quantile: 0.15  # 块内统计分位：0.15=暗地板锚（决策#13，配 polarity=bright——高频亮

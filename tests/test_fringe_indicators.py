@@ -215,6 +215,34 @@ def test_score_from_raw_new_weights_matches_fresh_compute():
     assert total_fast == pytest.approx(ind_b.total_score)
 
 
+def test_uniformity_default_ref_equals_passthrough():
+    # uniformity 参考默认 {best:100, worst:0} == 直通（旧配置缺该键也直通）
+    from fringe_scoring.indicators import score_from_raw
+
+    img = make_glass_image(blobs=[(0.5, 0.5, 0.10, 25.0)], seed=85)
+    cfg = indicators_config()
+    ind = compute_sheet_indicators(img, full_interior(img), cfg)
+    refs_with = dict(cfg["indicators"]["refs"])
+    refs_with["uniformity"] = {"best": 100.0, "worst": 0.0}
+    sub_a, total_a = score_from_raw(ind.raw_values, cfg["indicators"]["refs"], cfg["indicators"]["weights"])
+    sub_b, total_b = score_from_raw(ind.raw_values, refs_with, cfg["indicators"]["weights"])
+    assert sub_b["uniformity"] == pytest.approx(sub_a["uniformity"])
+    assert total_b == pytest.approx(total_a)
+
+
+def test_uniformity_custom_ref_maps_direction():
+    # 自定义均匀度参考 {best:100, worst:50}：原始 75 → 子分 50（越大越好方向自动成立）
+    from fringe_scoring.indicators import score_from_raw
+
+    raw = {"x095": 20.0, "gray_variance": 1.0, "gradient_mean": 3.0,
+           "gradient_variance": 10.0, "ccp": 0.4, "uniformity": 75.0}
+    cfg = indicators_config()
+    refs = dict(cfg["indicators"]["refs"])
+    refs["uniformity"] = {"best": 100.0, "worst": 50.0}
+    sub, _ = score_from_raw(raw, refs, cfg["indicators"]["weights"])
+    assert sub["uniformity"] == pytest.approx(50.0)
+
+
 # ---------------- ⑤ CCP 对拍 skimage 口径 ----------------
 def test_glcm_matches_skimage_reference():
     # numpy 自实现 GLCM 的 Ca/CPa 与 tools/metrics.py（skimage）容差内一致

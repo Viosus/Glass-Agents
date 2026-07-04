@@ -181,17 +181,20 @@ def score_from_raw(raw: dict, refs: dict, weights: dict) -> tuple[dict[str, floa
     """六项原始指标值 + 评分方案（refs/weights）→ (六子分, 加权总分)。
 
     与 compute_sheet_indicators 的评分段同源（后者内部调本函数）：切换加权方案时
-    直接用缓存的 raw_values 重算，**无需重跑图像**（毫秒级）。uniformity 已是
-    0–100 越高越好，直通；其余五项经 refs 线性映射。
+    直接用缓存的 raw_values 重算，**无需重跑图像**（毫秒级）。
+    六项参考值均可调：线性映射 s=clip(100×(worst−v)/(worst−best)) 对两个方向都成立
+    （深浅类 worst>best=越小越好；uniformity best>worst=越大越好，默认 {best:100,
+    worst:0} 等价直通）。refs 缺 uniformity 时仍直通（旧配置向后兼容）。
     """
     w = _validate_weights(weights)
     refs = refs or {}
     sub_scores = {k: _sub_score(float(raw[k]), refs[k], k)
-                  for k in INDICATOR_KEYS if k != "uniformity" and k in refs}
+                  for k in INDICATOR_KEYS if k in refs}
     missing = set(INDICATOR_KEYS) - {"uniformity"} - set(sub_scores)
     if missing:
         raise ValueError(f"indicators: refs 缺指标 {sorted(missing)}")
-    sub_scores["uniformity"] = float(raw["uniformity"])
+    if "uniformity" not in sub_scores:
+        sub_scores["uniformity"] = float(raw["uniformity"])
     total = sum(w[k] * sub_scores[k] for k in INDICATOR_KEYS) / sum(w.values())
     return sub_scores, float(total)
 
