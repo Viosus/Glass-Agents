@@ -49,9 +49,12 @@ def print_result(name: str, res: FringeScoreResult) -> None:
 
 
 def print_sheets_result(name: str, res: SheetsScoreResult) -> None:
-    """整床结果打印：汇总一行 + 每片一行（阅读序）。"""
+    """整床结果打印：汇总一行 + 每片一到两行（阅读序；配了 indicators 段则加六指标行）。"""
     print(f"\n===== {name}（整床 {res.n_sheets} 片）=====")
-    print(f"  整床汇总: score_min={res.score_min:.2f}（最差片） score_mean={res.score_mean:.2f}")
+    line = f"  整床汇总: score_min={res.score_min:.2f}（最差片） score_mean={res.score_mean:.2f}"
+    if res.sheet_indicators is not None:
+        line += f" | 六指标总分 min={res.total_min:.2f} mean={res.total_mean:.2f}"
+    print(line)
     for i, r in enumerate(res.sheet_results, 1):
         cent = f"{r.centrality:.3f}" if r.centrality is not None else "—(无斑)"
         assert r.quad_corners_px is not None  # 多片模式逐片必带角点
@@ -60,6 +63,14 @@ def print_sheets_result(name: str, res: SheetsScoreResult) -> None:
             f"  片{i} @({cx:.0f},{cy:.0f}): score={r.score_0_100:.2f} "
             f"斑占比={r.fringe_area_frac * 100:.1f}% 集中度={cent}"
         )
+        if res.sheet_indicators is not None:
+            ind = res.sheet_indicators[i - 1]
+            print(
+                f"      六指标: 总分={ind.total_score:.1f} | "
+                f"X0.95={ind.x095:.1f}{ind.x095_unit} 灰度方差={ind.gray_variance:.1f} "
+                f"梯度均={ind.gradient_mean:.1f} 梯度方差={ind.gradient_variance:.1f} "
+                f"CCP={ind.ccp_value:.3f} 均匀度={ind.uniformity:.1f}"
+            )
 
 
 def save_sheets_viz(name: str, image: np.ndarray, res: SheetsScoreResult, viz_dir: Path) -> Path:
@@ -108,10 +119,18 @@ def dump_sheets_store(
     """整床结果落盘到本地调参库：每张照片一个子目录。
 
     内容：逐片矫正裁切图 PNG（文件名带分数，仅供目检——按 0–255 裁剪转 uint8，
-    nm 尺度 .npy 输入会饱和）+ scores.json（分数/角点/诊断量/当次 config 快照）。
-    数值真值以 json 为准；用 json 里的 quad_corners_px 回到原图即可复现打分。
+    nm 尺度 .npy 输入会饱和）+ 斑分割二值掩膜 sheetNN_mask.png（白=判为应力斑）
+    + 并排对照 sheetNN_overlay.png（裁切图｜掩膜）+ scores.json（分数/六指标/角点/
+    诊断量/当次 config 快照）。数值真值以 json 为准。
     """
     import cv2
+
+    def write_png(u8: np.ndarray, filename: str) -> None:
+        """PNG 落盘（imencode+tofile 而非 imwrite：Windows 中文路径安全）。"""
+        ok, buf = cv2.imencode(".png", u8)
+        if not ok:
+            raise ValueError(f"dump_sheets_store: PNG 编码失败（{filename}）")
+        buf.tofile(str(folder / filename))
 
     folder = store_dir / Path(name).stem
     folder.mkdir(parents=True, exist_ok=True)
@@ -120,30 +139,54 @@ def dump_sheets_store(
         assert r.warped_image is not None and r.quad_corners_px is not None  # 多片模式必有
         u8 = np.clip(np.round(r.warped_image), 0, 255).astype(np.uint8)
         crop_name = f"sheet{i:02d}_score{r.score_0_100:.1f}.png"
-        ok, buf = cv2.imencode(".png", u8)
-        if not ok:
-            raise ValueError(f"dump_sheets_store: PNG 编码失败（{crop_name}）")
-        buf.tofile(str(folder / crop_name))  # imencode+tofile 而非 imwrite：Windows 中文路径安全
+        write_png(u8, crop_name)
+
+        # 斑分割可视化：二值掩膜（白=斑）+ 与裁切图并排对照（中间 4px 灰隔条）
+        mask_u8 = (r.fringe_mask.astype(np.uint8)) * 255
+        mask_name = f"sheet{i:02d}_mask.png"
+        write_png(mask_u8, mask_name)
+        gap = np.full((u8.shape[0], 4), 128, dtype=np.uint8)
+        write_png(np.hstack([u8, gap, mask_u8]), f"sheet{i:02d}_overlay.png")
+
         bands = r.border_bands
-        records.append(
-            {
-                "sheet_index": i,
-                "crop_file": crop_name,
-                "score_0_100": r.score_0_100,
-                "penalty_raw": r.penalty_raw,
-                "penalty_max": r.penalty_max,
-                "fringe_area_frac": r.fringe_area_frac,
-                "centrality": r.centrality,
-                "border_px": [bands.top_px, bands.bottom_px, bands.left_px, bands.right_px],
-                "quad_corners_px": r.quad_corners_px.tolist(),
+        record = {
+            "sheet_index": i,
+            "crop_file": crop_name,
+            "mask_file": mask_name,
+            "score_0_100": r.score_0_100,
+            "penalty_raw": r.penalty_raw,
+            "penalty_max": r.penalty_max,
+            "fringe_area_frac": r.fringe_area_frac,
+            "centrality": r.centrality,
+            "border_px": [bands.top_px, bands.bottom_px, bands.left_px, bands.right_px],
+            "quad_corners_px": r.quad_corners_px.tolist(),
+        }
+        if res.sheet_indicators is not None:
+            ind = res.sheet_indicators[i - 1]
+            record["indicators"] = {
+                "total_score": ind.total_score,
+                "x095": ind.x095,
+                "x095_unit": ind.x095_unit,
+                "gray_variance": ind.gray_variance,
+                "gradient_mean": ind.gradient_mean,
+                "gradient_variance": ind.gradient_variance,
+                "ccp": ind.ccp_value,
+                "ccp_ca": ind.ccp_ca,
+                "ccp_cpa": ind.ccp_cpa,
+                "ccp_reference_is_plant_calibrated": ind.ccp_reference_is_plant_calibrated,
+                "uniformity": ind.uniformity,
+                "sub_scores": ind.sub_scores,
+                "weights": ind.weights,
             }
-        )
+        records.append(record)
     payload = {
         "source_image": name,
         "image_shape_hw": list(image.shape),
         "n_sheets": res.n_sheets,
         "score_min": res.score_min,
         "score_mean": res.score_mean,
+        "total_min": res.total_min if res.sheet_indicators is not None else None,
+        "total_mean": res.total_mean if res.sheet_indicators is not None else None,
         "config": cfg,
         "sheets": records,
     }

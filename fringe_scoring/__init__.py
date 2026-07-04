@@ -7,6 +7,7 @@
 """
 
 from fringe_scoring.border import BorderBands, band_widths_px, border_mask
+from fringe_scoring.indicators import INDICATOR_KEYS, SheetIndicators, compute_sheet_indicators
 from fringe_scoring.quad import detect_glass_quad, order_corners, quad_from_hull, warp_to_rect
 from fringe_scoring.score import FringeScoreResult, load_config, score_fringe_distribution
 from fringe_scoring.sheets import SheetsScoreResult, detect_sheet_quads, score_sheets
@@ -25,4 +26,7 @@ __all__ = [
     "SheetsScoreResult",
     "detect_sheet_quads",
     "score_sheets",
+    "INDICATOR_KEYS",
+    "SheetIndicators",
+    "compute_sheet_indicators",
 ]

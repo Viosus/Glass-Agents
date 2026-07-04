@@ -19,6 +19,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from fringe_scoring.indicators import SheetIndicators, compute_sheet_indicators
 from fringe_scoring.quad import quad_from_hull
 from fringe_scoring.score import FringeScoreResult, load_config, score_fringe_distribution
 from fringe_scoring.segment import robust_scale
@@ -111,13 +112,15 @@ def detect_sheet_quads(image: np.ndarray, config: dict | None = None) -> list[np
 
 @dataclass
 class SheetsScoreResult:
-    """整床打分结果：逐片 FringeScoreResult（阅读序）+ 汇总便捷量。
+    """整床打分结果：逐片 FringeScoreResult（阅读序）+ 六指标 + 汇总便捷量。
 
     每片角点在各自 sheet_results[i].quad_corners_px（原图坐标）。
     汇总口径：score_min = 最差片（验收最相关）；score_mean = 简单平均。
+    sheet_indicators：config 含 indicators 段时逐片计算（阅读序对齐），否则 None。
     """
 
     sheet_results: list[FringeScoreResult]
+    sheet_indicators: list[SheetIndicators] | None = None
 
     @property
     def n_sheets(self) -> int:
@@ -139,6 +142,23 @@ class SheetsScoreResult:
         """全床简单平均分。"""
         return float(np.mean(self.scores))
 
+    @property
+    def total_scores(self) -> list[float]:
+        """逐片六指标加权总分（阅读序）；未配 indicators 段时报错提示。"""
+        if self.sheet_indicators is None:
+            raise ValueError("SheetsScoreResult: 未计算六指标（config 缺 indicators 段）")
+        return [ind.total_score for ind in self.sheet_indicators]
+
+    @property
+    def total_min(self) -> float:
+        """最差片的六指标加权总分。"""
+        return min(self.total_scores)
+
+    @property
+    def total_mean(self) -> float:
+        """全床六指标加权总分均值。"""
+        return float(np.mean(self.total_scores))
+
 
 def score_sheets(image: np.ndarray, config: dict | None = None) -> SheetsScoreResult:
     """整床照片 → 切片 → 逐片矫正打分 → SheetsScoreResult。
@@ -150,4 +170,12 @@ def score_sheets(image: np.ndarray, config: dict | None = None) -> SheetsScoreRe
     cfg = config if config is not None else load_config()
     quads = detect_sheet_quads(arr, cfg)
     results = [score_fringe_distribution(arr, config=cfg, quad_corners=q) for q in quads]
-    return SheetsScoreResult(sheet_results=results)
+    indicators = None
+    if cfg.get("indicators"):  # 配了 indicators 段才算六指标（旧配置兼容）
+        indicators = []
+        for r in results:
+            assert r.warped_image is not None  # 多片模式逐片必有矫正图
+            indicators.append(
+                compute_sheet_indicators(r.warped_image, ~r.border_mask_arr, cfg)
+            )
+    return SheetsScoreResult(sheet_results=results, sheet_indicators=indicators)
