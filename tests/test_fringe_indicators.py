@@ -243,6 +243,42 @@ def test_uniformity_custom_ref_maps_direction():
     assert sub["uniformity"] == pytest.approx(50.0)
 
 
+# ---------------- ⑦ 厚度分档参考值（厚玻璃公平性） ----------------
+def test_select_refs_picks_band_and_falls_back():
+    # 取"适用厚度≥查询厚度"的最小档；无厚度/超出全部档 → 回退默认 refs
+    from fringe_scoring.indicators import select_refs
+
+    cfg = indicators_config()["indicators"]
+    cfg["refs_by_thickness"] = [
+        {"max_thickness_mm": 6, "refs": {"x095": {"best": 15.0, "worst": 180.0}}},
+        {"max_thickness_mm": 12, "refs": {"x095": {"best": 120.0, "worst": 220.0}}},
+    ]
+    assert select_refs(cfg, 5.0)["x095"] == {"best": 15.0, "worst": 180.0}    # 5mm → ≤6 档
+    assert select_refs(cfg, 8.0)["x095"] == {"best": 120.0, "worst": 220.0}   # 8mm → ≤12 档
+    # 档内未给的指标继承默认参考（如 ccp/uniformity）
+    assert select_refs(cfg, 8.0)["ccp"] == cfg["refs"]["ccp"]
+    assert select_refs(cfg, None) is cfg["refs"]   # 未知厚度 → 默认
+    assert select_refs(cfg, 19.0) is cfg["refs"]   # 超出全部档 → 默认
+
+
+def test_thickness_band_makes_thick_glass_fairer():
+    # 同一块"重斑"玻璃：厚档（更宽容的参考）下 x095 子分与总分都应更高
+    from fringe_scoring.indicators import score_from_raw, select_refs
+
+    img = make_glass_image(blobs=[(0.5, 0.5, 0.15, 45.0)], seed=91)
+    cfg = indicators_config()
+    ind = compute_sheet_indicators(img, full_interior(img), cfg)
+    ind_cfg = cfg["indicators"]
+    ind_cfg["refs_by_thickness"] = [{
+        "max_thickness_mm": 12,
+        "refs": {**ind_cfg["refs"], "x095": {"best": 120.0, "worst": 300.0}},
+    }]
+    thick_refs = select_refs(ind_cfg, 10.0)
+    sub_thick, total_thick = score_from_raw(ind.raw_values, thick_refs, ind_cfg["weights"])
+    assert sub_thick["x095"] > ind.sub_scores["x095"]
+    assert total_thick > ind.total_score
+
+
 # ---------------- ⑤ CCP 对拍 skimage 口径 ----------------
 def test_glcm_matches_skimage_reference():
     # numpy 自实现 GLCM 的 Ca/CPa 与 tools/metrics.py（skimage）容差内一致

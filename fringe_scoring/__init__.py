@@ -12,6 +12,7 @@ from fringe_scoring.indicators import (
     SheetIndicators,
     compute_sheet_indicators,
     score_from_raw,
+    select_refs,
 )
 from fringe_scoring.quad import detect_glass_quad, order_corners, quad_from_hull, warp_to_rect
 from fringe_scoring.score import FringeScoreResult, load_config, score_fringe_distribution
@@ -35,4 +36,5 @@ __all__ = [
     "SheetIndicators",
     "compute_sheet_indicators",
     "score_from_raw",
+    "select_refs",
 ]

@@ -177,6 +177,24 @@ def _validate_weights(weights: dict) -> dict[str, float]:
     return w
 
 
+def select_refs(ind_cfg: dict, thickness_mm: float | None) -> dict:
+    """按玻璃厚度选参考值档（厚玻璃天生斑重，须与同厚度参考比才公平）。
+
+    机制与国标分级表同构（表按公称厚度分档，行值=适用"≤该厚度"）：
+    refs_by_thickness = [{max_thickness_mm, refs}, ...]，取 max_thickness_mm ≥ 厚度
+    的最小档；无厚度 / 未配分档 / 厚度超出全部档 → 回退默认 refs（全厚度口径）。
+    各档参考值须由工厂用**同厚度**好/差样片标定，本模块不提供臆造默认。
+    """
+    bands = ind_cfg.get("refs_by_thickness") or []
+    if thickness_mm is not None and bands:
+        eligible = [b for b in bands if float(b["max_thickness_mm"]) >= float(thickness_mm)]
+        if eligible:
+            band = min(eligible, key=lambda b: float(b["max_thickness_mm"]))
+            # 档内给的指标覆盖默认，未给的（如 uniformity）继承默认参考
+            return {**(ind_cfg.get("refs") or {}), **band["refs"]}
+    return ind_cfg["refs"]
+
+
 def score_from_raw(raw: dict, refs: dict, weights: dict) -> tuple[dict[str, float], float]:
     """六项原始指标值 + 评分方案（refs/weights）→ (六子分, 加权总分)。
 
@@ -209,7 +227,8 @@ def compute_sheet_indicators(
     if not ind_cfg:
         raise ValueError("compute_sheet_indicators: 配置缺少 indicators 段（六指标参数）")
     calib = ind_cfg.get("calibration") or {}
-    refs = ind_cfg.get("refs") or {}
+    # 参考值按厚度选档（calibration.thickness_mm 为空=未知厚度 → 默认全厚度口径）
+    refs = select_refs(ind_cfg, calib.get("thickness_mm")) or {}
     weights = _validate_weights(ind_cfg.get("weights"))
 
     inside = arr[interior]

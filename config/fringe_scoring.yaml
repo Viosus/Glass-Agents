@@ -19,6 +19,13 @@ indicators:                   # 六指标测量与加权总分（决策#14；统
     gradient_variance: {best: 30.0, worst: 1100.0}
     ccp: {best: 0.55, worst: 0.97}
     uniformity: {best: 100.0, worst: 0.0}  # 越大越好方向（best>worst 公式自动同向）；默认等价直通
+  # refs_by_thickness:        # 可选：按厚度分档的参考值（厚玻璃天生斑重，须与同厚度参考比才公平；
+  #   - max_thickness_mm: 6   #   机制同国标分级表"≤该厚度适用"。各档数值须用同厚度好/差样片标定，
+  #     refs:                 #   TODO(plant)：当前样片厚度未知，无法给任何档的真值——绝不臆造）
+  #       x095: {best: TODO(plant), worst: TODO(plant)}
+  #       ...
+  #   - max_thickness_mm: 10
+  #     refs: ...
   calibration:                # 标定项（2026-07-03 拍板：未标定用灰度/像素代理并标注，到位填值即切换）
     gray_to_nm: null          # 灰度→光程差 nm 系数；null=X0.95 输出灰度代理（同设备可比）
     mm_per_px: null           # 空间标定；null=CCP 按原始像素（跨设备不可比，同设备可比）
