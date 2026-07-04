@@ -32,7 +32,8 @@ cloud_string_patterns:
   - "api_key"
   - "base_url"
 
-# 3) 命名铁律——受批准的大写记号（CONVENTIONS.md §2/§3），命名检查时豁免
+# 3) 命名铁律——受批准的大写记号（CONVENTIONS.md §2/§3），命名检查时豁免。
+#    末尾两项为 Qt 框架强制的虚函数覆写名（GlassApp 界面层）：重命名即失效，非风格违规。
 approved_uppercase_names:
   - L
   - W
@@ -48,3 +49,5 @@ approved_uppercase_names:
   - Cmax
   - CPmax
   - A_max
+  - dragEnterEvent
+  - dropEvent
