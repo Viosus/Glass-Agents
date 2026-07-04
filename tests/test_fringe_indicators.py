@@ -184,6 +184,37 @@ def test_degenerate_refs_raise():
         compute_sheet_indicators(img, full_interior(img), cfg)
 
 
+# ---------------- ⑥ 方案快路径：score_from_raw 与首算一致 ----------------
+def test_score_from_raw_matches_full_compute():
+    # 缓存原始值 + 同方案重算 == 首算（切换加权方案免重跑图像的正确性地基）
+    from fringe_scoring.indicators import score_from_raw
+
+    img = make_glass_image(blobs=[(0.5, 0.5, 0.10, 25.0)], seed=81)
+    cfg = indicators_config()
+    ind = compute_sheet_indicators(img, full_interior(img), cfg)
+    sub, total = score_from_raw(
+        ind.raw_values, cfg["indicators"]["refs"], cfg["indicators"]["weights"]
+    )
+    assert total == pytest.approx(ind.total_score)
+    for key in INDICATOR_KEYS:
+        assert sub[key] == pytest.approx(ind.sub_scores[key])
+
+
+def test_score_from_raw_new_weights_matches_fresh_compute():
+    # 换一套权重：快路径重算 == 用新权重全量重跑（uniformity 等原始值不受权重影响）
+    from fringe_scoring.indicators import score_from_raw
+
+    img = make_glass_image(blobs=[(0.5, 0.5, 0.10, 25.0)], seed=83)
+    cfg_a = indicators_config()
+    ind_a = compute_sheet_indicators(img, full_interior(img), cfg_a)
+    new_weights = {k: (2.0 if k == "uniformity" else 0.5) for k in INDICATOR_KEYS}
+    _, total_fast = score_from_raw(ind_a.raw_values, cfg_a["indicators"]["refs"], new_weights)
+    cfg_b = indicators_config()
+    cfg_b["indicators"]["weights"] = new_weights
+    ind_b = compute_sheet_indicators(img, full_interior(img), cfg_b)
+    assert total_fast == pytest.approx(ind_b.total_score)
+
+
 # ---------------- ⑤ CCP 对拍 skimage 口径 ----------------
 def test_glcm_matches_skimage_reference():
     # numpy 自实现 GLCM 的 Ca/CPa 与 tools/metrics.py（skimage）容差内一致

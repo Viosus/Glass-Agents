@@ -49,6 +49,18 @@ class SheetIndicators:
     weights: dict[str, float] = field(repr=False)      # 当次生效权重（快照，便于追溯）
     total_score: float = 0.0         # 加权总分 0–100
 
+    @property
+    def raw_values(self) -> dict[str, float]:
+        """六项原始值（键=INDICATOR_KEYS）：换加权方案时喂 score_from_raw 免重跑图像。"""
+        return {
+            "x095": self.x095,
+            "gray_variance": self.gray_variance,
+            "gradient_mean": self.gradient_mean,
+            "gradient_variance": self.gradient_variance,
+            "ccp": self.ccp_value,
+            "uniformity": self.uniformity,
+        }
+
 
 def _interior_crop(image: np.ndarray, interior: np.ndarray) -> np.ndarray:
     """内部掩膜（构造上为矩形）→ 裁出内部矩形子图（供 GLCM 等需要 2D 连续域的指标）。"""
@@ -155,6 +167,35 @@ def _sub_score(value: float, ref: dict, key: str) -> float:
     return float(np.clip(100.0 * (worst - value) / (worst - best), 0.0, 100.0))
 
 
+def _validate_weights(weights: dict) -> dict[str, float]:
+    """权重校验：键恰为六指标、非负、总和为正；返回 float 化副本。"""
+    w = {k: float(v) for k, v in (weights or {}).items()}
+    if set(w) != set(INDICATOR_KEYS):
+        raise ValueError(f"indicators: weights 键须恰为 {INDICATOR_KEYS}")
+    if any(v < 0 for v in w.values()) or sum(w.values()) <= 0:
+        raise ValueError("indicators: 权重须非负且总和为正")
+    return w
+
+
+def score_from_raw(raw: dict, refs: dict, weights: dict) -> tuple[dict[str, float], float]:
+    """六项原始指标值 + 评分方案（refs/weights）→ (六子分, 加权总分)。
+
+    与 compute_sheet_indicators 的评分段同源（后者内部调本函数）：切换加权方案时
+    直接用缓存的 raw_values 重算，**无需重跑图像**（毫秒级）。uniformity 已是
+    0–100 越高越好，直通；其余五项经 refs 线性映射。
+    """
+    w = _validate_weights(weights)
+    refs = refs or {}
+    sub_scores = {k: _sub_score(float(raw[k]), refs[k], k)
+                  for k in INDICATOR_KEYS if k != "uniformity" and k in refs}
+    missing = set(INDICATOR_KEYS) - {"uniformity"} - set(sub_scores)
+    if missing:
+        raise ValueError(f"indicators: refs 缺指标 {sorted(missing)}")
+    sub_scores["uniformity"] = float(raw["uniformity"])
+    total = sum(w[k] * sub_scores[k] for k in INDICATOR_KEYS) / sum(w.values())
+    return sub_scores, float(total)
+
+
 def compute_sheet_indicators(
     warped: np.ndarray, interior: np.ndarray, config: dict
 ) -> SheetIndicators:
@@ -166,11 +207,7 @@ def compute_sheet_indicators(
         raise ValueError("compute_sheet_indicators: 配置缺少 indicators 段（六指标参数）")
     calib = ind_cfg.get("calibration") or {}
     refs = ind_cfg.get("refs") or {}
-    weights = {k: float(v) for k, v in (ind_cfg.get("weights") or {}).items()}
-    if set(weights) != set(INDICATOR_KEYS):
-        raise ValueError(f"compute_sheet_indicators: weights 键须恰为 {INDICATOR_KEYS}")
-    if any(w < 0 for w in weights.values()) or sum(weights.values()) <= 0:
-        raise ValueError("compute_sheet_indicators: 权重须非负且总和为正")
+    weights = _validate_weights(ind_cfg.get("weights"))
 
     inside = arr[interior]
     if inside.size == 0:
@@ -201,17 +238,12 @@ def compute_sheet_indicators(
         arr, config=_uniformity_config(config, ind_cfg)
     ).score_0_100
 
-    # ── 子分与加权总分 ──
+    # ── 子分与加权总分（与 score_from_raw 同源，保证方案快路径重算一致） ──
     raw = {
         "x095": x095, "gray_variance": gray_variance, "gradient_mean": gradient_mean,
-        "gradient_variance": gradient_variance, "ccp": ccp_value,
+        "gradient_variance": gradient_variance, "ccp": ccp_value, "uniformity": uniformity,
     }
-    sub_scores = {k: _sub_score(v, refs[k], k) for k, v in raw.items() if k in refs}
-    missing = set(INDICATOR_KEYS) - {"uniformity"} - set(sub_scores)
-    if missing:
-        raise ValueError(f"compute_sheet_indicators: refs 缺指标 {sorted(missing)}")
-    sub_scores["uniformity"] = uniformity  # 已是 0–100 越高越好，直通
-    total = sum(weights[k] * sub_scores[k] for k in INDICATOR_KEYS) / sum(weights.values())
+    sub_scores, total = score_from_raw(raw, refs, weights)
 
     return SheetIndicators(
         x095=x095, x095_unit=x095_unit,
