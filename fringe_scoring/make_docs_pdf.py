@@ -198,7 +198,9 @@ def formula_doc_pages() -> list[list[tuple[str, str]]]:
             ("body",
              "均匀度回答\"斑纹摆放得匀不匀\"：同一图案整体加深，均匀度不变；全白玻璃=100。\n"
              "实现：把第 4 步的深浅换成\"相对本片自身波动\"的口径再走第 6 步罚分\n"
-             "（专属刻度锚 uniformity_ratio_at_zero）："),
+             "（专属刻度锚 uniformity_ratio_at_zero）。均匀度的判定参数是**独立固定口径**\n"
+             "（top_fraction=0.15、min_z=2.5、z_sat=8、只算偏亮）——调\"判斑灵敏度\"等\n"
+             "主判定参数不会牵动均匀度；确需改用 indicators.uniformity_segment 显式覆写："),
             ("space", "0.012"),
             ("formula",
              r"$z(x,y) = \frac{R - \mathrm{median}(R|_M)}{1.4826 \cdot \mathrm{MAD}(R|_M)},"
@@ -208,7 +210,8 @@ def formula_doc_pages() -> list[list[tuple[str, str]]]:
              "符号说明：z(x,y)=该点相对本片平均水平的标准化偏差（除以自身波动量，\n"
              "深浅信息被消掉——这正是\"与深浅解耦\"的来源）；median(R|_M)=残差中位数；\n"
              "MAD(R|_M)=残差的中位绝对偏差；1.4826=换算成标准差口径的统计常数；\n"
-             "s_u=均匀度口径的强度；z_sat=强度封顶的 z 值（z_saturation，默认 8）。"),
+             "s_u=均匀度口径的强度；z_sat=强度封顶的 z 值（均匀度专属口径固定 8，\n"
+             "不随主配置 z_saturation 变——与斑纹判定彻底解耦）。"),
         ],
         # ── P5 深浅五指标 ──
         [
@@ -286,7 +289,8 @@ def formula_doc_pages() -> list[list[tuple[str, str]]]:
              "T_fg 阈值项…………… sheets.fg_min_z / fg_min_rel / bg_quantile / bright_ref_quantile\n"
              "背景块分位 q_b ……… segment.background_block_quantile（暗地板锚，默认 0.15）\n"
              "判斑门槛 d_min ……… segment.min_dev_gray（判斑灵敏度，软件参数页可调）\n"
-             "深浅封顶 s_sat ……… segment.s_saturation_gray；均匀度封顶 z_sat = segment.z_saturation\n"
+             "深浅封顶 s_sat ……… segment.s_saturation_gray\n"
+             "均匀度判定口径 ……… 固定值（indicators.uniformity_segment 可覆写）——与主判定解耦\n"
              "边框免罚宽度 ………… border.normal_band_frac；权重下限 w_floor = weight.floor\n"
              "刻度锚 Z ……………… scoring.penalty_ratio_at_zero；均匀度锚 indicators.uniformity_ratio_at_zero\n"
              "灰度→nm 系数 k_nm … indicators.calibration.gray_to_nm；比例尺 mm_per_px 同段\n"
