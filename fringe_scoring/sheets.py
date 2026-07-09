@@ -21,7 +21,12 @@ import numpy as np
 
 from fringe_scoring.indicators import SheetIndicators, compute_sheet_indicators
 from fringe_scoring.quad import quad_from_hull
-from fringe_scoring.score import FringeScoreResult, load_config, score_fringe_distribution
+from fringe_scoring.score import (
+    FringeScoreResult,
+    compute_pipeline,
+    load_config,
+    score_from_pipeline,
+)
 from fringe_scoring.segment import robust_scale
 
 
@@ -169,13 +174,14 @@ def score_sheets(image: np.ndarray, config: dict | None = None) -> SheetsScoreRe
     arr = np.asarray(image, dtype=float)
     cfg = config if config is not None else load_config()
     quads = detect_sheet_quads(arr, cfg)
-    results = [score_fringe_distribution(arr, config=cfg, quad_corners=q) for q in quads]
+    # 每片先算共享流水线（⓪–③），绝对口径打分与六指标的均匀度口径都从它分叉——
+    # 背景拟合等重活只跑一遍（数值与各自重跑逐位相同，见 score.FringePipeline）
+    pipes = [compute_pipeline(arr, config=cfg, quad_corners=q) for q in quads]
+    results = [score_from_pipeline(p, cfg) for p in pipes]
     indicators = None
     if cfg.get("indicators"):  # 配了 indicators 段才算六指标（旧配置兼容）
-        indicators = []
-        for r in results:
-            assert r.warped_image is not None  # 多片模式逐片必有矫正图
-            indicators.append(
-                compute_sheet_indicators(r.warped_image, ~r.border_mask_arr, cfg)
-            )
+        indicators = [
+            compute_sheet_indicators(p.arr, ~r.border_mask_arr, cfg, pipeline=p)
+            for p, r in zip(pipes, results)
+        ]
     return SheetsScoreResult(sheet_results=results, sheet_indicators=indicators)

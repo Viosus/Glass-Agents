@@ -290,3 +290,54 @@ def test_glcm_matches_skimage_reference():
     ca_sk, cpa_sk = skimage_ca_cpa(img, ng=8)
     assert ca_np == pytest.approx(ca_sk, rel=1e-6)
     assert cpa_np == pytest.approx(cpa_sk, rel=1e-6)
+
+
+# ---------------- ⑥ 均匀度与斑纹判定解耦（2026-07-08 需求） ----------------
+def test_uniformity_decoupled_from_fringe_judgment_params():
+    # 斑纹判定参数（min_dev_gray/top_fraction/min_z/饱和值）怎么调，
+    # 均匀度与五项原始指标一律逐位不变——判定只影响掩膜/惩罚，不进六指标原始值；
+    # 均匀度掩膜口径已固定（_UNIFORMITY_SEG_DEFAULTS），不再继承主 segment
+    img = make_glass_image(blobs=[(0.35, 0.4, 0.12, 30.0)], seed=71)
+    ind0 = compute_sheet_indicators(img, full_interior(img), indicators_config())
+    variants = [
+        {"min_dev_gray": 1.0}, {"min_dev_gray": 60.0}, {"top_fraction": 0.3},
+        {"min_z": 5.0}, {"s_saturation_gray": 30.0}, {"z_saturation": 2.0},
+    ]
+    for mutate in variants:
+        cfg = indicators_config()
+        cfg["segment"].update(mutate)
+        ind = compute_sheet_indicators(img, full_interior(img), cfg)
+        assert ind.uniformity == ind0.uniformity, f"均匀度被 {mutate} 牵连"
+        for k, v in ind0.raw_values.items():
+            assert ind.raw_values[k] == v, f"{k} 被 {mutate} 牵连"
+
+
+def test_uniformity_segment_override_is_effective():
+    # 解耦不是写死：工厂可经 indicators.uniformity_segment 显式改均匀度口径
+    img = make_glass_image(blobs=[(0.3, 0.3, 0.10, 28.0), (0.7, 0.6, 0.08, 22.0)], seed=73)
+    ind_default = compute_sheet_indicators(img, full_interior(img), indicators_config())
+    cfg = indicators_config()
+    cfg["indicators"]["uniformity_segment"] = {"top_fraction": 0.45, "min_z": 0.5}
+    ind_wide = compute_sheet_indicators(img, full_interior(img), cfg)
+    assert ind_wide.uniformity != ind_default.uniformity  # 显式覆写必须生效
+
+
+# ---------------- ⑦ 共享流水线复用 == 独立重算（无损提速回归） ----------------
+def test_pipeline_reuse_bitwise_identical():
+    from fringe_scoring.score import compute_pipeline, score_from_pipeline
+
+    img = make_glass_image(blobs=[(0.5, 0.45, 0.15, 35.0)], seed=75)
+    cfg = indicators_config()
+    pipe = compute_pipeline(img, cfg)
+    ind_pipe = compute_sheet_indicators(pipe.arr, ~pipe.border, cfg, pipeline=pipe)
+    ind_alone = compute_sheet_indicators(pipe.arr, ~pipe.border, cfg)
+    for k, v in ind_alone.raw_values.items():
+        assert ind_pipe.raw_values[k] == v
+    assert ind_pipe.total_score == ind_alone.total_score
+    # 绝对口径打分同样等价：组合入口 == 手工两段
+    from fringe_scoring.score import score_fringe_distribution
+
+    r_two_step = score_from_pipeline(pipe, cfg)
+    r_direct = score_fringe_distribution(img, config=cfg)
+    assert r_two_step.score_0_100 == r_direct.score_0_100
+    assert r_two_step.penalty_raw == r_direct.penalty_raw

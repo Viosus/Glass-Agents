@@ -11,6 +11,11 @@ indicators:                   # 六指标测量与加权总分（决策#14；统
     ccp: 1.0                  # 组合纹理特征
     uniformity: 1.0           # 斑纹空间分布均匀度（与深浅解耦）
   uniformity_ratio_at_zero: 0.33  # 均匀度专属刻度锚（per_sheet 口径罚分比→0 分；0.33≈中心满斑理论上限）
+  uniformity_segment:         # 均匀度专属掩膜口径（2026-07-08 需求：与"斑纹判定"解耦——主 segment 的
+    top_fraction: 0.15        #   判定参数 min_dev_gray/top_fraction/min_z 等怎么调都不影响均匀度）。
+    min_z: 2.5                #   本段缺省时代码取同值内置口径；数值=历史默认，一般无需改动。
+    z_saturation: 8.0         #   背景估计/边框带参数不在此列（那是背景不是判斑，仍与主配置共享）
+    polarity: bright
   refs:                       # 子分映射参考：s=clip(100×(worst−v)/(worst−best))。
                               # 初值=本批 25 片好/差片实测中位（2026-07-03），工厂按自家口径调
     x095: {best: 20.0, worst: 210.0}

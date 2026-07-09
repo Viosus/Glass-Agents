@@ -47,11 +47,14 @@ def load_config(config_path: Path | str | None = None) -> dict:
 
 
 def normalized_coords(shape: tuple[int, int]) -> tuple[np.ndarray, np.ndarray]:
-    """图像 shape → 归一化坐标网格 (u, v)，各维像素中心落在 (-1,1) 内。"""
+    """图像 shape → 归一化坐标网格 (u, v)，各维像素中心落在 (-1,1) 内。
+
+    返回只读广播视图（零拷贝；下游 center_distance 只读不写——需可写时自行 copy）。
+    """
     rows, cols = shape
     u = (2.0 * (np.arange(cols) + 0.5) / cols - 1.0).reshape(1, -1)  # 沿列（长）
     v = (2.0 * (np.arange(rows) + 0.5) / rows - 1.0).reshape(-1, 1)  # 沿行（宽）
-    return np.broadcast_to(u, shape).copy(), np.broadcast_to(v, shape).copy()
+    return np.broadcast_to(u, shape), np.broadcast_to(v, shape)
 
 
 def center_distance(u: np.ndarray, v: np.ndarray, distance_norm: str) -> np.ndarray:
@@ -104,10 +107,26 @@ class FringeScoreResult:
     warped_image: np.ndarray | None = field(repr=False, default=None)     # 实际被打分的（矫正后）图
 
 
-def score_fringe_distribution(
+@dataclass
+class FringePipeline:
+    """步骤⓪–③的共享中间结果：绝对口径与均匀度口径只在掩膜/刻度（④⑤）分叉，
+    矫正/边框带/背景/残差/z 完全同参 → 算一次两处复用（数值与各自重算逐位相同）。"""
+
+    arr: np.ndarray                      # 矫正后被打分图
+    corners: np.ndarray | None           # 原图角点；None=整图即玻璃
+    bands: BorderBands                   # 实测边框带宽
+    border: np.ndarray                   # 免罚边框掩膜（True=剔除）
+    interior: np.ndarray                 # 惩罚域内部
+    residual: np.ndarray                 # 图 − 背景曲面
+    z: np.ndarray                        # 稳健 z 图
+    residual_floor: float                # quantile(residual[interior], block_q)——dev_gray 暗地板锚
+    weight_map: np.ndarray               # 位置权重 w(r)
+
+
+def compute_pipeline(
     image: np.ndarray, config: dict | None = None, quad_corners: np.ndarray | None = None
-) -> FringeScoreResult:
-    """一张玻璃图 → 应力斑分布打分（流水线见模块 docstring 与 docs §2）。
+) -> FringePipeline:
+    """一张玻璃图 → 共享流水线（步骤⓪–③ + 位置权重）。
 
     config=None 时读 config/fringe_scoring.yaml；测试/调参可直接注入同构 dict。
     第 0 步·四边形矫正：quad_corners 显式给角点则直接矫正；否则 config 的
@@ -177,19 +196,41 @@ def score_fringe_distribution(
     reference_scale = robust_scale(arr[interior])
     z = robust_z_map(residual, interior, float(seg_cfg["min_contrast_frac"]), reference_scale)
 
-    # ④ 斑分割 + 深浅强度。dev_gray 的中心与背景块统计取同一分位（block_q）：
-    #    暗地板锚（低分位）下，整片亮斑的残差中位数会落在斑的水平上，
-    #    用中位数居中会把斑重新归零——必须同样锚到暗侧（0.5 时即旧口径中位数）。
-    polarity = str(seg_cfg["polarity"])
-    dev = deviation_map(z, polarity)
-    dev_gray = deviation_map(residual - float(np.quantile(residual[interior], block_q)), polarity)
-    fringe, intensity_s = fringe_mask_and_intensity(dev, interior, seg_cfg, dev_gray=dev_gray)
+    # dev_gray 的中心与背景块统计取同一分位（block_q）：暗地板锚（低分位）下，
+    # 整片亮斑的残差中位数会落在斑的水平上，用中位数居中会把斑重新归零——
+    # 必须同样锚到暗侧（0.5 时即旧口径中位数）。极性无关 → 缓存进流水线。
+    residual_floor = float(np.quantile(residual[interior], block_q))
 
-    # ⑤ 位置加权惩罚 → 0–100 分
+    # 位置权重 w(r)：只依赖形状与 weight 段（两口径共享）
     u, v = normalized_coords(arr.shape)
     r = center_distance(u, v, str(weight_cfg["distance_norm"]))
     w = position_weight(r, weight_cfg)
 
+    return FringePipeline(
+        arr=arr, corners=corners, bands=bands, border=border, interior=interior,
+        residual=residual, z=z, residual_floor=residual_floor, weight_map=w,
+    )
+
+
+def score_from_pipeline(pipe: FringePipeline, config: dict) -> FringeScoreResult:
+    """共享流水线 → 打分（步骤④⑤）。config 只取掩膜级 segment 参数与 scoring 刻度锚。
+
+    前提：config 的背景估计/边框带/weight 参数与生成 pipe 时一致（掩膜级参数
+    method/s_scale_mode/polarity/top_fraction/min_z/min_dev_gray/饱和值可不同）——
+    这正是绝对口径与均匀度口径的分叉面。
+    """
+    cfg = config
+    seg_cfg = cfg["segment"]
+    arr, interior = pipe.arr, pipe.interior
+
+    # ④ 斑分割 + 深浅强度
+    polarity = str(seg_cfg["polarity"])
+    dev = deviation_map(pipe.z, polarity)
+    dev_gray = deviation_map(pipe.residual - pipe.residual_floor, polarity)
+    fringe, intensity_s = fringe_mask_and_intensity(dev, interior, seg_cfg, dev_gray=dev_gray)
+
+    # ⑤ 位置加权惩罚 → 0–100 分
+    w = pipe.weight_map
     penalty_raw = float((intensity_s * w).sum())           # s 在掩膜外恒为 0
     penalty_max = float(w[interior].sum())                 # 理论最差：有效区全是最深斑
     # 输出刻度锚（人工校准）：罚分比 ρ 达 penalty_ratio_at_zero → 0 分。
@@ -210,11 +251,24 @@ def score_fringe_distribution(
         penalty_max=penalty_max,
         fringe_area_frac=fringe_area_frac,
         centrality=centrality,
-        border_bands=bands,
+        border_bands=pipe.bands,
         fringe_mask=fringe,
         intensity_s=intensity_s,
-        border_mask_arr=border,
+        border_mask_arr=pipe.border,
         weight_map=w,
-        quad_corners_px=corners,
+        quad_corners_px=pipe.corners,
         warped_image=arr,
     )
+
+
+def score_fringe_distribution(
+    image: np.ndarray, config: dict | None = None, quad_corners: np.ndarray | None = None
+) -> FringeScoreResult:
+    """一张玻璃图 → 应力斑分布打分（流水线见模块 docstring 与 docs §2）。
+
+    = compute_pipeline（⓪–③）+ score_from_pipeline（④⑤）；对外签名与行为不变。
+    需要在同一片上叠加第二套掩膜口径（如六指标的均匀度）时，持有 pipeline
+    分别打分即可，免整条流水线重跑。
+    """
+    cfg = config if config is not None else load_config()
+    return score_from_pipeline(compute_pipeline(image, cfg, quad_corners), cfg)

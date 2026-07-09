@@ -20,7 +20,11 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from fringe_scoring.score import score_fringe_distribution
+from fringe_scoring.score import (
+    FringePipeline,
+    score_fringe_distribution,
+    score_from_pipeline,
+)
 
 # 六指标固定键名（config indicators.weights / indicators.refs 与此对齐）
 INDICATOR_KEYS = (
@@ -109,12 +113,15 @@ def _glcm_ca_cpa(image: np.ndarray, ng: int = _GLCM_LEVELS) -> tuple[float, floa
     arr = np.asarray(image, dtype=float)
     if arr.ndim != 2:
         raise ValueError("indicators: GLCM 需要二维图像")
+    # 量化级存 uint8（ng²−1 ≤ 255 时配对索引也留在 uint8 域）：数值与 intp 完全相同，
+    # 只为削内存流量（本函数是带宽热点，级数固定 _GLCM_LEVELS=8 → 索引最大 63）
+    idx_dtype = np.uint8 if ng * ng <= 256 else np.intp
     lo, hi = float(arr.min()), float(arr.max())
     if hi <= lo:
-        q = np.zeros(arr.shape, dtype=np.intp)  # 常量图：无纹理
+        q = np.zeros(arr.shape, dtype=idx_dtype)  # 常量图：无纹理
     else:
-        q = np.floor((arr - lo) / (hi - lo) * (ng - 1) + 0.5).astype(np.intp)
-    q = np.clip(q, 0, ng - 1)
+        q = np.clip(np.floor((arr - lo) / (hi - lo) * (ng - 1) + 0.5), 0, ng - 1)
+        q = q.astype(idx_dtype)
     rows, cols = arr.shape
 
     ca_list, cpa_list = [], []
@@ -126,8 +133,10 @@ def _glcm_ca_cpa(image: np.ndarray, ng: int = _GLCM_LEVELS) -> tuple[float, floa
         c0, c1 = max(0, -dc), cols - max(0, dc)
         a = q[r0:r1, c0:c1].ravel()
         b = q[r0 + dr: r1 + dr, c0 + dc: c1 + dc].ravel()
-        counts = np.zeros((ng, ng), dtype=float)
-        np.add.at(counts, (a, b), 1.0)
+        # bincount 按扁平索引 i·Ng+j 计数 == 逐对累加（np.add.at 的等价快路径）；
+        # 索引算术留在 q 的 dtype（uint8 时 ≤63 不溢出），计数结果与 intp 域逐一相同
+        pair_index = a * idx_dtype(ng) + b
+        counts = np.bincount(pair_index, minlength=ng * ng).astype(float).reshape(ng, ng)
         counts = counts + counts.T  # symmetric=True
         total = counts.sum()
         if total <= 0:
@@ -140,13 +149,27 @@ def _glcm_ca_cpa(image: np.ndarray, ng: int = _GLCM_LEVELS) -> tuple[float, floa
     return float(np.mean(ca_list)), float(np.mean(cpa_list))
 
 
+# 均匀度掩膜级参数的固定口径（=2026-07 历史默认；config indicators.uniformity_segment 可覆写）。
+# 结构口径常数而非工艺限值：均匀度须与"斑纹判定"彻底解耦（2026-07-08 需求）——
+# 工厂调判斑灵敏度 min_dev_gray / top_fraction / min_z 等主判定参数时，均匀度不许被牵连。
+_UNIFORMITY_SEG_DEFAULTS = {
+    "top_fraction": 0.15, "min_z": 2.5, "z_saturation": 8.0, "polarity": "bright",
+}
+
+
 def _uniformity_config(cfg: dict, ind_cfg: dict) -> dict:
     """构造均匀度专用配置：per_sheet z 口径（对深浅仿射不变）+ 专属刻度锚。
 
     输入已是矫正后的单片 → 关四边形检测；gray_threshold 只支持 absolute →
-    均匀度掩膜走 quantile z 路径（top_fraction + min_z 沿用主配置）。
+    均匀度掩膜走 quantile z 路径。掩膜级参数（top_fraction/min_z/z_saturation/
+    polarity）**不继承主配置**而取固定口径（indicators.uniformity_segment 可覆写）：
+    斑纹判定参数怎么调都不影响均匀度（min_dev_gray 属 absolute 域，本就不进此路径）。
+    背景估计/边框带/对比度门槛仍与主配置共享——那是"背景"不是"判斑"，
+    且与绝对口径共用一条流水线（见 score.compute_pipeline）的前提就是同参。
     """
     seg = dict(cfg["segment"])
+    seg.update(_UNIFORMITY_SEG_DEFAULTS)
+    seg.update(dict(ind_cfg.get("uniformity_segment") or {}))
     seg["s_scale_mode"] = "per_sheet"
     seg["method"] = "quantile"
     quad = dict(cfg.get("quad") or {})
@@ -218,9 +241,17 @@ def score_from_raw(raw: dict, refs: dict, weights: dict) -> tuple[dict[str, floa
 
 
 def compute_sheet_indicators(
-    warped: np.ndarray, interior: np.ndarray, config: dict
+    warped: np.ndarray,
+    interior: np.ndarray,
+    config: dict,
+    pipeline: FringePipeline | None = None,
 ) -> SheetIndicators:
-    """矫正后单片 + 内部掩膜 → 六指标 + 加权总分（config 须含 indicators 段）。"""
+    """矫正后单片 + 内部掩膜 → 六指标 + 加权总分（config 须含 indicators 段）。
+
+    pipeline：该片已算好的共享流水线（score.compute_pipeline 的产物，须与 warped
+    同一片、同背景参数）——均匀度直接复用其背景/残差/z，免整条流水线重跑
+    （数值与重跑逐位相同，纯提速）；不传则原样重算（外部单独调用向后兼容）。
+    """
     arr = np.asarray(warped, dtype=float)
     interior = np.asarray(interior, dtype=bool)
     ind_cfg = config.get("indicators")
@@ -255,10 +286,12 @@ def compute_sheet_indicators(
         raise ValueError("compute_sheet_indicators: ccp_c_max / ccp_cp_max 须为正")
     ccp_value = 0.5 * ((ca / c_max) ** 0.5 + (cpa / cp_max) ** 0.25)
 
-    # ── 均匀度（只关于斑纹空间分布，与深浅解耦）──
-    uniformity = score_fringe_distribution(
-        arr, config=_uniformity_config(config, ind_cfg)
-    ).score_0_100
+    # ── 均匀度（只关于斑纹空间分布，与深浅解耦；判定参数解耦见 _uniformity_config）──
+    ucfg = _uniformity_config(config, ind_cfg)
+    if pipeline is not None:
+        uniformity = score_from_pipeline(pipeline, ucfg).score_0_100
+    else:
+        uniformity = score_fringe_distribution(arr, config=ucfg).score_0_100
 
     # ── 子分与加权总分（与 score_from_raw 同源，保证方案快路径重算一致） ──
     raw = {

@@ -44,17 +44,31 @@ def _block_quantiles(
     """
     rows, cols = image.shape
     n_row_blocks, n_col_blocks = max(1, rows // block_px), max(1, cols // block_px)
-    r_centers, c_centers, values = [], [], []
-    for i in range(n_row_blocks):
-        r0 = i * block_px
-        r1 = rows if i == n_row_blocks - 1 else r0 + block_px  # 末块吃掉余数
-        for j in range(n_col_blocks):
-            c0 = j * block_px
-            c1 = cols if j == n_col_blocks - 1 else c0 + block_px
-            values.append(float(np.quantile(image[r0:r1, c0:c1], block_quantile)))
-            r_centers.append((r0 + r1 - 1) / 2.0)
-            c_centers.append((c0 + c1 - 1) / 2.0)
-    return np.asarray(r_centers), np.asarray(c_centers), np.asarray(values)
+    row_edges = [(i * block_px, rows if i == n_row_blocks - 1 else (i + 1) * block_px)
+                 for i in range(n_row_blocks)]  # 末块吃掉余数
+    col_edges = [(j * block_px, cols if j == n_col_blocks - 1 else (j + 1) * block_px)
+                 for j in range(n_col_blocks)]
+
+    values = np.empty((n_row_blocks, n_col_blocks))
+    # 规则块（不含末行/末列）：reshape 成 (块行, 块列, 块内像素) 一次算全部分位，
+    # 与逐块 np.quantile 逐值恒等（同一组像素、同一插值），只是消掉 Python 循环
+    if n_row_blocks > 1 and n_col_blocks > 1:
+        core = image[: (n_row_blocks - 1) * block_px, : (n_col_blocks - 1) * block_px]
+        blocks = core.reshape(n_row_blocks - 1, block_px, n_col_blocks - 1, block_px)
+        blocks = blocks.transpose(0, 2, 1, 3).reshape(
+            n_row_blocks - 1, n_col_blocks - 1, block_px * block_px
+        )
+        values[:-1, :-1] = np.quantile(blocks, block_quantile, axis=2)
+    for i, (r0, r1) in enumerate(row_edges):  # 余数块（末行/末列）保持逐块口径
+        for j, (c0, c1) in enumerate(col_edges):
+            if i < n_row_blocks - 1 and j < n_col_blocks - 1:
+                continue
+            values[i, j] = np.quantile(image[r0:r1, c0:c1], block_quantile)
+
+    r_centers_1d = np.array([(r0 + r1 - 1) / 2.0 for r0, r1 in row_edges])
+    c_centers_1d = np.array([(c0 + c1 - 1) / 2.0 for c0, c1 in col_edges])
+    return (np.repeat(r_centers_1d, n_col_blocks), np.tile(c_centers_1d, n_row_blocks),
+            values.ravel())
 
 
 def _poly_terms(u, v, degree: int) -> list:
