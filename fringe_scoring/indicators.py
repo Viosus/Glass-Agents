@@ -182,12 +182,24 @@ def _uniformity_config(cfg: dict, ind_cfg: dict) -> dict:
     }
 
 
+# 子分溢出口径（2026-07-13 拍板）：ccp 标尺 [0.2, 1.4]——劣于 worst 仍封 0，
+# 优于 best 允许 >100（溢出，随加权传导进总分）；其余五项保持 0–100 双向封顶。
+# 三端同步：Dart fringe_algo.dart kOverflowKeys / 小程序 algo.js OVERFLOW_KEYS。
+_OVERFLOW_KEYS = frozenset({"ccp"})
+
+
 def _sub_score(value: float, ref: dict, key: str) -> float:
-    """原始值 → 0–100 子分：s = clip(100×(worst−v)/(worst−best))，越高越好。"""
+    """原始值 → 子分：s = 100×(worst−v)/(worst−best)，越高越好。
+
+    常规指标 clip 到 [0,100]；_OVERFLOW_KEYS 只封下界 0（优于 best 溢出 >100）。
+    """
     best, worst = float(ref["best"]), float(ref["worst"])
     if best == worst:
         raise ValueError(f"indicators: refs.{key} 的 best 与 worst 不能相等")
-    return float(np.clip(100.0 * (worst - value) / (worst - best), 0.0, 100.0))
+    s = 100.0 * (worst - value) / (worst - best)
+    if key in _OVERFLOW_KEYS:
+        return float(max(0.0, s))
+    return float(np.clip(s, 0.0, 100.0))
 
 
 def _validate_weights(weights: dict) -> dict[str, float]:
@@ -226,6 +238,7 @@ def score_from_raw(raw: dict, refs: dict, weights: dict) -> tuple[dict[str, floa
     六项参考值均可调：线性映射 s=clip(100×(worst−v)/(worst−best)) 对两个方向都成立
     （深浅类 worst>best=越小越好；uniformity best>worst=越大越好，默认 {best:100,
     worst:0} 等价直通）。refs 缺 uniformity 时仍直通（旧配置向后兼容）。
+    例外：_OVERFLOW_KEYS（ccp）子分上不封顶，见 _sub_score。
     """
     w = _validate_weights(weights)
     refs = refs or {}

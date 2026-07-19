@@ -4,7 +4,8 @@
 ① 深浅单调：更深斑 → X0.95/灰度方差↑；更花 → 梯度统计↑；
 ② 均匀度深浅解耦：同图案 ×k 加深 → uniformity 不变（±ε），深浅指标变差；
    全白/常量图 → uniformity=100、方差/梯度≈0、总分≈满分；
-③ 子分映射：方向（越差子分越低）与 [0,100] clip；平权总分=六子分均值；权重可调生效；
+③ 子分映射：方向（越差子分越低）与 [0,100] clip（ccp 例外：上不封顶可溢出 >100，
+   下界仍 0，2026-07-13 拍板）；平权总分=六子分均值；权重可调生效；
 ④ 失败契约：缺 indicators 段 / 权重键不齐 / refs 退化 → ValueError；
 ⑤ CCP 对拍：numpy 自实现 GLCM 与 tools/metrics.py 的 skimage 口径容差内一致。
 """
@@ -151,11 +152,38 @@ def test_weight_adjustment_changes_total():
 
 
 def test_sub_scores_clipped_to_0_100():
-    # 超出 worst 参考的极端值 → 子分钳到 0（不出负分）
+    # 超出 worst 参考的极端值 → 子分钳到 0（不出负分）；上界 100 对除 ccp 外五项成立
+    # （ccp 溢出口径见 test_ccp_sub_score_overflow_and_floor）
     deep = make_glass_image(blobs=[(0.5, 0.5, 0.20, 200.0)], seed=71)
     ind = compute_sheet_indicators(deep, full_interior(deep), indicators_config())
     for key, s in ind.sub_scores.items():
-        assert 0.0 <= s <= 100.0, key
+        assert s >= 0.0, key
+        if key != "ccp":
+            assert s <= 100.0, key
+
+
+def test_ccp_sub_score_overflow_and_floor():
+    # ccp 溢出口径（2026-07-13 拍板，生产标尺 [0.2,1.4]）：优于 best → 子分 >100
+    # 且随加权传导进总分；劣于 worst → 仍封 0；其余五项照旧双向封顶。
+    from fringe_scoring.indicators import score_from_raw
+
+    base = {"x095": 100.0, "gray_variance": 1.0, "gradient_mean": 3.0,
+            "gradient_variance": 10.0, "uniformity": 100.0}
+    ind_cfg = indicators_config()["indicators"]
+    refs, weights = ind_cfg["refs"], ind_cfg["weights"]  # 测试 refs：ccp {best:0.4, worst:1.0}
+
+    sub, total = score_from_raw({**base, "ccp": 0.1}, refs, weights)
+    assert sub["ccp"] == pytest.approx(100.0 * (1.0 - 0.1) / (1.0 - 0.4))  # =150 溢出
+    assert sub["ccp"] > 100.0
+    # 总分不另设 clip：平权下 = 六子分均值，随溢出一起 >100
+    assert total == pytest.approx(float(np.mean([sub[k] for k in INDICATOR_KEYS])))
+    assert total > 100.0
+
+    sub_floor, _ = score_from_raw({**base, "ccp": 1.6}, refs, weights)
+    assert sub_floor["ccp"] == 0.0  # 劣于 worst 仍封 0
+
+    sub_other, _ = score_from_raw({**base, "x095": 0.0, "ccp": 0.5}, refs, weights)
+    assert sub_other["x095"] == 100.0  # 非 ccp 指标优于 best 仍封 100
 
 
 # ---------------- ④ 失败契约 ----------------

@@ -9,7 +9,7 @@ Codex（及任何非 Claude Code 的 agent）的开机必读。**Claude Code 用
 - `CONVENTIONS.md` —— 字段名册与命名铁律（单位入名、限值入 config、缺值 `TODO(plant)`）
 
 ## 项目一句话
-Glass Agents = 对流钢化炉 · 本地多 Agent 调参系统（模仿老师傅产出工艺参数）。当前阶段 0「评测靶子」。
+Glass Agents = 对流钢化炉 · 本地多 Agent 调参系统。最终需求**双向**：①正向调参（模仿老师傅产出工艺参数）②**逆向诊断（最终硬目标）**：从玻璃样片反推炉状态（坏了没/参数没调好/哪个区）。方向锚点见 `.claude/rules/项目架构说明.md`。
 
 ## 🔴 铁律（与 CLAUDE.md 同源镜像；改动须两处同步）
 1. **Python 解释器**：只用 venv `D:\Glass Agents\.venv\Scripts\python.exe`（3.12.10）。系统 `python`=3.14、`python3`=Store 假桩，**都不能用**。
