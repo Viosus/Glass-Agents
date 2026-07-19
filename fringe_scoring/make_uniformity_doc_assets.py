@@ -1,9 +1,9 @@
-"""《应力斑均匀度指标_技术说明》实测算例资产生成器（开发壳，不随核心包交付）。
+"""《应力斑位置评分指标_技术说明》实测算例资产生成器（开发壳，不随核心包交付）。
 
 跑真实整床应力斑照片（data/images/stress_fringe/*.PNG）→ 逐片六指标 →
-挑选对比样片（均匀度高/低、CCP 高/低）+ CCP 位置盲区构造演示（同一样片
+挑选对比样片（位置评分高/低、CCP 高/低）+ CCP 位置盲区构造演示（同一样片
 图像整体循环平移：相邻灰度对统计几乎不变 → CCP 基本不动；斑位置改变 →
-均匀度显著变化）。产出：
+位置评分显著变化）。产出：
 - data/derived/uniformity_doc/*.png　　嵌入 PDF 的样片灰度图
 - data/derived/uniformity_doc/values.json　实测数值（PDF 生成器注入正文，图文同源）
 算法调用 D:\\GlassApp\\fringe_scoring 权威实现 + app_config.yaml 生效配置。
@@ -97,7 +97,7 @@ def _rec(ind, photo: str, sheet_no: int, bed_no: int) -> dict:
     """一片的记录（文档要用的量，四舍五入到展示位数）。"""
     return {
         "photo": photo, "sheet": sheet_no, "bed": bed_no,
-        "U": round(ind.uniformity, 1),
+        "U": round(ind.position_score, 1),  # 键名 U 保留（位置评分，原"均匀度"）
         "ccp": round(ind.ccp_value, 3),
         "ca": round(ind.ccp_ca, 4),
         "cpa": round(ind.ccp_cpa, 1),
@@ -129,7 +129,7 @@ def main() -> int:
     by_u = sorted(range(len(records)), key=lambda i: records[i]["U"])
     by_ccp = sorted(range(len(records)), key=lambda i: records[i]["ccp"])
     picks = {
-        "u_lo": by_u[0], "u_hi": by_u[-1],        # 均匀度最低/最高
+        "u_lo": by_u[0], "u_hi": by_u[-1],        # 位置评分最低/最高
         "ccp_hi": by_ccp[-1], "ccp_lo": by_ccp[0],  # CCP 最差/最好
     }
     values: dict = {"bed": bed_rel, "n_photos": len(photos), "n_sheets": len(records),
@@ -137,7 +137,7 @@ def main() -> int:
     for key, idx in picks.items():
         values[key] = {**records[idx], "img": _save_gray(crops[idx], f"{key}.png")}
 
-    # CCP 位置盲区构造演示：取均匀度最低片（斑最集中），先裁除四周边缘应力亮带
+    # CCP 位置盲区构造演示：取位置评分最低片（斑最集中），先裁除四周边缘应力亮带
     # （无缝构造，见 _trim_border），再整体垂直循环平移四分之一板高——斑移离中心
     # 但不贴边（贴边会牵动边框带识别、间接改变 CCP 的评估区域，污染对比）；
     # 相邻灰度对多重集仅在拼接缝一行改变 → CCP 应基本不变；斑离开高权重区 → U 应上升
@@ -145,10 +145,10 @@ def main() -> int:
     rolled = np.roll(base, base.shape[0] // 4, axis=0)
     ind_a, ind_b = _indicators_of(base, cfg), _indicators_of(rolled, cfg)
     values["roll"] = {
-        "a": {"U": round(ind_a.uniformity, 1), "ccp": round(ind_a.ccp_value, 3),
+        "a": {"U": round(ind_a.position_score, 1), "ccp": round(ind_a.ccp_value, 3),
               "ca": round(ind_a.ccp_ca, 4), "cpa": round(ind_a.ccp_cpa, 1),
               "img": _save_gray(base, "roll_a.png")},
-        "b": {"U": round(ind_b.uniformity, 1), "ccp": round(ind_b.ccp_value, 3),
+        "b": {"U": round(ind_b.position_score, 1), "ccp": round(ind_b.ccp_value, 3),
               "ca": round(ind_b.ccp_ca, 4), "cpa": round(ind_b.ccp_cpa, 1),
               "img": _save_gray(rolled, "roll_b.png")},
     }

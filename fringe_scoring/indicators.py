@@ -1,9 +1,11 @@
-"""六指标测量与加权总分：X0.95 / 灰度方差 / 梯度均值 / 梯度方差 / CCP / 均匀度。
+"""六指标测量与加权总分：X0.95 / 灰度方差 / 梯度均值 / 梯度方差 / CCP / 位置评分。
 
-统计域 = 透视矫正后单片内部（扣细圈边框带），与均匀度评分同域（2026-07-03 拍板）。
+统计域 = 透视矫正后单片内部（扣细圈边框带），与位置指标同域（2026-07-03 拍板）。
 - 深浅类五指标（X0.95/灰度方差/梯度均值/梯度方差/CCP）承担"斑有多深/多粗糙"；
-- 均匀度只关于斑纹**空间分布**，与整体灰度深浅解耦（同图案加深不改分，
-  全白/常量图=100）——实现 = per_sheet z 口径的分布评分（对逐片仿射变换不变）。
+- 位置指标只关于斑纹**空间分布**：指标层主量 = 应力斑中心集中度 ρu（越大越差），
+  评分层按刻度锚 ρ0 换算为 0–100 位置评分（position_score，越高越好）。与整体
+  灰度深浅解耦（同图案加深不改分，全白/常量图=100）——实现 = per_sheet z 口径
+  的分布评分（对逐片仿射变换不变）。（2026-07-19 改名，原名"均匀度/uniformity"。）
 - 每指标经 config 好/差参考值线性映射为 0–100 子分（方向统一为越高越好），
   总分 = Σwᵢsᵢ/Σwᵢ，权重默认平权、工厂可调（config indicators 段，运行时读取）。
 
@@ -28,8 +30,11 @@ from fringe_scoring.score import (
 
 # 六指标固定键名（config indicators.weights / indicators.refs 与此对齐）
 INDICATOR_KEYS = (
-    "x095", "gray_variance", "gradient_mean", "gradient_variance", "ccp", "uniformity",
+    "x095", "gray_variance", "gradient_mean", "gradient_variance", "ccp", "position_score",
 )
+# 改名兼容（2026-07-19："uniformity"→"position_score"）：旧配置/旧调参载荷的键迁移
+# 单一事实源——config 迁移、服务器远程调参归一、序列化双写都引用此表
+LEGACY_INDICATOR_ALIASES = {"uniformity": "position_score"}
 _GLCM_LEVELS = 8  # GLCM 灰度级 Ng（草案 §4.4 口径，结构常数非限值）
 # GLCM 四方向 d=1 的 (行偏移, 列偏移)：0° / 45° / 90° / 135°（与 skimage 口径一致）
 _GLCM_OFFSETS = ((0, 1), (-1, 1), (-1, 0), (-1, -1))
@@ -48,7 +53,8 @@ class SheetIndicators:
     ccp_ca: float                    # GLCM 对比度（四方向平均）
     ccp_cpa: float                   # GLCM 聚类突出（四方向平均）
     ccp_reference_is_plant_calibrated: bool  # False=参考值为开发期批内初值，非国标标定
-    uniformity: float                # 斑纹空间分布均匀度 0–100（与深浅解耦）
+    center_concentration: float      # 应力斑中心集中度 ρu ∈ [0,1]（指标层主量，越大越差）
+    position_score: float            # 位置评分 0–100（评分层按 ρ0 换算，越高越好；原"均匀度"）
     sub_scores: dict[str, float] = field(repr=False)   # 六指标 0–100 子分（越高越好）
     weights: dict[str, float] = field(repr=False)      # 当次生效权重（快照，便于追溯）
     total_score: float = 0.0         # 加权总分 0–100
@@ -62,7 +68,7 @@ class SheetIndicators:
             "gradient_mean": self.gradient_mean,
             "gradient_variance": self.gradient_variance,
             "ccp": self.ccp_value,
-            "uniformity": self.uniformity,
+            "position_score": self.position_score,
         }
 
 
@@ -149,37 +155,38 @@ def _glcm_ca_cpa(image: np.ndarray, ng: int = _GLCM_LEVELS) -> tuple[float, floa
     return float(np.mean(ca_list)), float(np.mean(cpa_list))
 
 
-# 均匀度掩膜级参数的固定口径（=2026-07 历史默认；config indicators.uniformity_segment 可覆写）。
-# 结构口径常数而非工艺限值：均匀度须与"斑纹判定"彻底解耦（2026-07-08 需求）——
-# 工厂调判斑灵敏度 min_dev_gray / top_fraction / min_z 等主判定参数时，均匀度不许被牵连。
-_UNIFORMITY_SEG_DEFAULTS = {
+# 位置指标掩膜级参数的固定口径（=2026-07 历史默认；config indicators.position_segment 可覆写）。
+# 结构口径常数而非工艺限值：位置指标须与"斑纹判定"彻底解耦（2026-07-08 需求）——
+# 工厂调判斑灵敏度 min_dev_gray / top_fraction / min_z 等主判定参数时，位置指标不许被牵连。
+_POSITION_SEG_DEFAULTS = {
     "top_fraction": 0.15, "min_z": 2.5, "z_saturation": 8.0, "polarity": "bright",
 }
 
 
-def _uniformity_config(cfg: dict, ind_cfg: dict) -> dict:
-    """构造均匀度专用配置：per_sheet z 口径（对深浅仿射不变）+ 专属刻度锚。
+def _position_indicator_config(cfg: dict, ind_cfg: dict) -> dict:
+    """构造位置指标（中心集中度 ρu）专用配置：per_sheet z 口径（对深浅仿射不变）。
 
     输入已是矫正后的单片 → 关四边形检测；gray_threshold 只支持 absolute →
-    均匀度掩膜走 quantile z 路径。掩膜级参数（top_fraction/min_z/z_saturation/
-    polarity）**不继承主配置**而取固定口径（indicators.uniformity_segment 可覆写）：
-    斑纹判定参数怎么调都不影响均匀度（min_dev_gray 属 absolute 域，本就不进此路径）。
+    位置指标掩膜走 quantile z 路径。掩膜级参数（top_fraction/min_z/z_saturation/
+    polarity）**不继承主配置**而取固定口径（indicators.position_segment 可覆写；
+    旧键 uniformity_segment 仍识别，deprecated）：斑纹判定参数怎么调都不影响
+    位置指标（min_dev_gray 属 absolute 域，本就不进此路径）。
     背景估计/边框带/对比度门槛仍与主配置共享——那是"背景"不是"判斑"，
     且与绝对口径共用一条流水线（见 score.compute_pipeline）的前提就是同参。
+    指标层不注入、不读取刻度锚 ρ0——ρu→位置评分的换算在评分层
+    （compute_sheet_indicators 的评分段）完成。
     """
     seg = dict(cfg["segment"])
-    seg.update(_UNIFORMITY_SEG_DEFAULTS)
-    seg.update(dict(ind_cfg.get("uniformity_segment") or {}))
+    seg.update(_POSITION_SEG_DEFAULTS)
+    seg_override = ind_cfg.get("position_segment")
+    if seg_override is None:  # deprecated：改名前旧键回退
+        seg_override = ind_cfg.get("uniformity_segment")
+    seg.update(dict(seg_override or {}))
     seg["s_scale_mode"] = "per_sheet"
     seg["method"] = "quantile"
     quad = dict(cfg.get("quad") or {})
     quad["auto_detect"] = False
-    return {
-        **cfg,
-        "segment": seg,
-        "quad": quad,
-        "scoring": {"penalty_ratio_at_zero": float(ind_cfg["uniformity_ratio_at_zero"])},
-    }
+    return {**cfg, "segment": seg, "quad": quad}
 
 
 # 子分溢出口径（2026-07-13 拍板）：ccp 标尺 [0.2, 1.4]——劣于 worst 仍封 0，
@@ -225,7 +232,7 @@ def select_refs(ind_cfg: dict, thickness_mm: float | None) -> dict:
         eligible = [b for b in bands if float(b["max_thickness_mm"]) >= float(thickness_mm)]
         if eligible:
             band = min(eligible, key=lambda b: float(b["max_thickness_mm"]))
-            # 档内给的指标覆盖默认，未给的（如 uniformity）继承默认参考
+            # 档内给的指标覆盖默认，未给的（如 position_score）继承默认参考
             return {**(ind_cfg.get("refs") or {}), **band["refs"]}
     return ind_cfg["refs"]
 
@@ -236,19 +243,19 @@ def score_from_raw(raw: dict, refs: dict, weights: dict) -> tuple[dict[str, floa
     与 compute_sheet_indicators 的评分段同源（后者内部调本函数）：切换加权方案时
     直接用缓存的 raw_values 重算，**无需重跑图像**（毫秒级）。
     六项参考值均可调：线性映射 s=clip(100×(worst−v)/(worst−best)) 对两个方向都成立
-    （深浅类 worst>best=越小越好；uniformity best>worst=越大越好，默认 {best:100,
-    worst:0} 等价直通）。refs 缺 uniformity 时仍直通（旧配置向后兼容）。
+    （深浅类 worst>best=越小越好；position_score best>worst=越大越好，默认 {best:100,
+    worst:0} 等价直通）。refs 缺 position_score 时仍直通（旧配置向后兼容）。
     例外：_OVERFLOW_KEYS（ccp）子分上不封顶，见 _sub_score。
     """
     w = _validate_weights(weights)
     refs = refs or {}
     sub_scores = {k: _sub_score(float(raw[k]), refs[k], k)
                   for k in INDICATOR_KEYS if k in refs}
-    missing = set(INDICATOR_KEYS) - {"uniformity"} - set(sub_scores)
+    missing = set(INDICATOR_KEYS) - {"position_score"} - set(sub_scores)
     if missing:
         raise ValueError(f"indicators: refs 缺指标 {sorted(missing)}")
-    if "uniformity" not in sub_scores:
-        sub_scores["uniformity"] = float(raw["uniformity"])
+    if "position_score" not in sub_scores:
+        sub_scores["position_score"] = float(raw["position_score"])
     total = sum(w[k] * sub_scores[k] for k in INDICATOR_KEYS) / sum(w.values())
     return sub_scores, float(total)
 
@@ -299,17 +306,39 @@ def compute_sheet_indicators(
         raise ValueError("compute_sheet_indicators: ccp_c_max / ccp_cp_max 须为正")
     ccp_value = 0.5 * ((ca / c_max) ** 0.5 + (cpa / cp_max) ** 0.25)
 
-    # ── 均匀度（只关于斑纹空间分布，与深浅解耦；判定参数解耦见 _uniformity_config）──
-    ucfg = _uniformity_config(config, ind_cfg)
+    # ── 位置指标·指标层（只关于斑纹空间分布，与深浅解耦；判定参数解耦见
+    #    _position_indicator_config）：主量 ρu = penalty_raw / penalty_max，不读 ρ0 ──
+    ucfg = _position_indicator_config(config, ind_cfg)
     if pipeline is not None:
-        uniformity = score_from_pipeline(pipeline, ucfg).score_0_100
+        u_res = score_from_pipeline(pipeline, ucfg)
     else:
-        uniformity = score_fringe_distribution(arr, config=ucfg).score_0_100
+        u_res = score_fringe_distribution(arr, config=ucfg)
+    penalty_raw, penalty_max = u_res.penalty_raw, u_res.penalty_max
+    center_concentration = penalty_raw / penalty_max
+
+    # ── 位置指标·评分层：刻度锚 ρ0 只在此处读取（indicators.scoring 段，
+    #    旧键 uniformity_ratio_at_zero 回退，deprecated）。表达式与旧实现逐算子
+    #    同序同型（100·(1−praw/(pmax·ρ0)) 再 clip），保证改名前后位级相同——
+    #    不得改写成 100·(1−ρu/ρ0)（除法结合次序不同，舍入可差 1 ulp）──
+    sc_cfg = ind_cfg.get("scoring") or {}
+    rho0 = sc_cfg.get("position_ratio_at_zero", ind_cfg.get("uniformity_ratio_at_zero"))
+    if rho0 is None:
+        raise ValueError(
+            "compute_sheet_indicators: 缺位置评分刻度锚 "
+            "indicators.scoring.position_ratio_at_zero（旧键 uniformity_ratio_at_zero 亦可）"
+        )
+    rho0 = float(rho0)
+    if not 0.0 < rho0 <= 1.0:
+        raise ValueError("compute_sheet_indicators: position_ratio_at_zero 须在 (0,1] 内")
+    position_score = float(
+        np.clip(100.0 * (1.0 - penalty_raw / (penalty_max * rho0)), 0.0, 100.0)
+    )
 
     # ── 子分与加权总分（与 score_from_raw 同源，保证方案快路径重算一致） ──
     raw = {
         "x095": x095, "gray_variance": gray_variance, "gradient_mean": gradient_mean,
-        "gradient_variance": gradient_variance, "ccp": ccp_value, "uniformity": uniformity,
+        "gradient_variance": gradient_variance, "ccp": ccp_value,
+        "position_score": position_score,
     }
     sub_scores, total = score_from_raw(raw, refs, weights)
 
@@ -321,6 +350,7 @@ def compute_sheet_indicators(
         ccp_reference_is_plant_calibrated=bool(
             calib.get("ccp_reference_is_plant_calibrated", False)
         ),
-        uniformity=uniformity,
+        center_concentration=center_concentration,
+        position_score=position_score,
         sub_scores=sub_scores, weights=weights, total_score=float(total),
     )
