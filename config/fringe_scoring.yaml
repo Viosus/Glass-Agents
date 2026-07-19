@@ -12,6 +12,13 @@ indicators:                   # 六指标测量与加权总分（决策#14；统
     position_score: 1.0       # 应力斑位置评分（斑纹空间分布，与深浅解耦；原"uniformity/均匀度"，2026-07-19 改名）
   scoring:                    # 位置指标·评分层（指标层只出中心集中度 ρu，不读本段）
     position_ratio_at_zero: 0.33  # 位置评分刻度锚 ρ0（ρu 达该值→0 分；0.33≈中心满斑理论上限；原 uniformity_ratio_at_zero）
+  baseline_flip:              # 基准翻转门闩（2026-07-19，仅位置指标路径；修"斑过半→中位数落斑内→跳分"）
+    enabled: true             # false=恒走单遍（旧行为，供与历史结果对拍）
+    p_flip: 0.05              # 触发阈=暗尾占比 p_dark 超此判翻转（未标定，工程初值 TODO(plant)）
+    q_lo: 0.25                # 暗侧子总体分位 q 下限（未标定；任务书初值 0.05，按 T6 边界实测上调——见 segment.BASELINE_FLIP_Q_LO 注释）
+    q_max: 0.5                # q 上限：不越过中位（未标定）
+    min_dark_abs: 1000        # 暗侧样本绝对下限，不足则回退置 aborted（未标定）
+    min_dark_frac: 0.005      # 暗侧样本相对下限 ×|M|（未标定）
   position_segment:           # 位置指标专属掩膜口径（2026-07-08 需求：与"斑纹判定"解耦——主 segment 的
     top_fraction: 0.15        #   判定参数 min_dev_gray/top_fraction/min_z 等怎么调都不影响位置指标）。
     min_z: 2.5                #   本段缺省时代码取同值内置口径；数值=历史默认，一般无需改动。

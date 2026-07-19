@@ -24,8 +24,8 @@ import numpy as np
 
 from fringe_scoring.score import (
     FringePipeline,
-    score_fringe_distribution,
-    score_from_pipeline,
+    compute_pipeline,
+    measure_center_concentration,
 )
 
 # 六指标固定键名（config indicators.weights / indicators.refs 与此对齐）
@@ -58,6 +58,9 @@ class SheetIndicators:
     sub_scores: dict[str, float] = field(repr=False)   # 六指标 0–100 子分（越高越好）
     weights: dict[str, float] = field(repr=False)      # 当次生效权重（快照，便于追溯）
     total_score: float = 0.0         # 加权总分 0–100
+    # 位置指标诊断量（任务3，2026-07-19）：spot_area_ratio / p_dark / baseline_flipped /
+    # baseline_flip_aborted / threshold_T / quantile_bound / m_R / sigma_R / sigma_ref
+    position_diagnostics: dict = field(default_factory=dict, repr=False)
 
     @property
     def raw_values(self) -> dict[str, float]:
@@ -186,7 +189,10 @@ def _position_indicator_config(cfg: dict, ind_cfg: dict) -> dict:
     seg["method"] = "quantile"
     quad = dict(cfg.get("quad") or {})
     quad["auto_detect"] = False
-    return {**cfg, "segment": seg, "quad": quad}
+    # 基准翻转门闩（2026-07-19）：默认启用；config indicators.baseline_flip 段可覆写/
+    # 关闭（与历史结果对拍用）。只挂位置指标路径——主分布评分不受影响
+    flip = {"enabled": True, **(ind_cfg.get("baseline_flip") or {})}
+    return {**cfg, "segment": seg, "quad": quad, "baseline_flip": flip}
 
 
 # 子分溢出口径（2026-07-13 拍板）：ccp 标尺 [0.2, 1.4]——劣于 worst 仍封 0，
@@ -269,7 +275,7 @@ def compute_sheet_indicators(
     """矫正后单片 + 内部掩膜 → 六指标 + 加权总分（config 须含 indicators 段）。
 
     pipeline：该片已算好的共享流水线（score.compute_pipeline 的产物，须与 warped
-    同一片、同背景参数）——均匀度直接复用其背景/残差/z，免整条流水线重跑
+    同一片、同背景参数）——位置指标直接复用其背景/残差/z，免整条流水线重跑
     （数值与重跑逐位相同，纯提速）；不传则原样重算（外部单独调用向后兼容）。
     """
     arr = np.asarray(warped, dtype=float)
@@ -307,14 +313,24 @@ def compute_sheet_indicators(
     ccp_value = 0.5 * ((ca / c_max) ** 0.5 + (cpa / cp_max) ** 0.25)
 
     # ── 位置指标·指标层（只关于斑纹空间分布，与深浅解耦；判定参数解耦见
-    #    _position_indicator_config）：主量 ρu = penalty_raw / penalty_max，不读 ρ0 ──
+    #    _position_indicator_config）：主量 ρu = penalty_raw / penalty_max，不读 ρ0；
+    #    含基准翻转门闩与诊断量（score.measure_center_concentration）──
     ucfg = _position_indicator_config(config, ind_cfg)
-    if pipeline is not None:
-        u_res = score_from_pipeline(pipeline, ucfg)
-    else:
-        u_res = score_fringe_distribution(arr, config=ucfg)
+    pipe_u = pipeline if pipeline is not None else compute_pipeline(arr, ucfg)
+    u_res = measure_center_concentration(pipe_u, ucfg)
     penalty_raw, penalty_max = u_res.penalty_raw, u_res.penalty_max
-    center_concentration = penalty_raw / penalty_max
+    center_concentration = u_res.center_concentration
+    position_diagnostics = {
+        "spot_area_ratio": u_res.spot_area_ratio,
+        "p_dark": u_res.p_dark,
+        "baseline_flipped": u_res.baseline_flipped,
+        "baseline_flip_aborted": u_res.baseline_flip_aborted,
+        "threshold_T": u_res.threshold_t,
+        "quantile_bound": u_res.quantile_bound,
+        "m_R": u_res.m_r,
+        "sigma_R": u_res.sigma_r,
+        "sigma_ref": u_res.sigma_ref,
+    }
 
     # ── 位置指标·评分层：刻度锚 ρ0 只在此处读取（indicators.scoring 段，
     #    旧键 uniformity_ratio_at_zero 回退，deprecated）。表达式与旧实现逐算子
@@ -353,4 +369,5 @@ def compute_sheet_indicators(
         center_concentration=center_concentration,
         position_score=position_score,
         sub_scores=sub_scores, weights=weights, total_score=float(total),
+        position_diagnostics=position_diagnostics,
     )

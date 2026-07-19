@@ -178,6 +178,7 @@ def dump_sheets_store(
                 "center_concentration": ind.center_concentration,
                 "position_score": ind.position_score,
                 "uniformity": ind.position_score,  # deprecated：旧消费方兼容，值=position_score
+                "position_diagnostics": ind.position_diagnostics,
                 "sub_scores": ind.sub_scores,
                 "weights": ind.weights,
             }

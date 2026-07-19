@@ -57,6 +57,60 @@ def make_glass_image(
     return img
 
 
+def make_band_image(
+    coverage: float,
+    rows: int = 320,
+    cols: int = 420,
+    background_level: float = 100.0,
+    band_amp: float = 40.0,
+    noise_sigma: float = 2.0,
+    seed: int = 97,
+) -> np.ndarray:
+    """中央横带覆盖率可控的合成片（位置指标 T3 连续性/基准翻转验证用）。
+
+    coverage ∈ (0,1)：居中横带占图高比例，带内整体加 band_amp（偏亮斑）；
+    背景为常量 + 高斯噪声（同 seed 下噪声场固定，相邻覆盖率只差带行数，
+    专供"覆盖率 49%→51% 基准翻转"的连续性检验）。
+    """
+    rng = np.random.default_rng(seed)
+    img = np.full((rows, cols), float(background_level))
+    img = img + rng.normal(0.0, noise_sigma, size=(rows, cols))
+    half = float(coverage) / 2.0
+    r0 = int(round((0.5 - half) * rows))
+    r1 = int(round((0.5 + half) * rows))
+    img[r0:r1, :] += float(band_amp)
+    return img
+
+
+def make_flipped_baseline_image(seed: int = 97, coverage: float = 0.6) -> np.ndarray:
+    """基准已翻转的合成片（覆盖率过半 → 逐片中位数落进斑内）：T1 翻转路径用。"""
+    return make_band_image(coverage, seed=seed)
+
+
+def make_dark_tail_image(
+    dark_frac: float,
+    rows: int = 320,
+    cols: int = 420,
+    background_level: float = 100.0,
+    dark_amp: float = 30.0,
+    noise_sigma: float = 2.0,
+    seed: int = 99,
+) -> np.ndarray:
+    """暗向尾部占比可控的合成片（门闩边界 T6 扫描用：p_dark ≈ dark_frac）。
+
+    居中横带整体压暗 dark_amp（负向偏离；居中避免牵动边框带扫描），
+    其余为常量背景 + 噪声。同 seed 噪声场固定。
+    """
+    rng = np.random.default_rng(seed)
+    img = np.full((rows, cols), float(background_level))
+    img = img + rng.normal(0.0, noise_sigma, size=(rows, cols))
+    half = float(dark_frac) / 2.0
+    r0 = int(round((0.5 - half) * rows))
+    r1 = int(round((0.5 + half) * rows))
+    img[r0:r1, :] -= float(dark_amp)
+    return img
+
+
 def make_bed_image(
     sheets: list[tuple[np.ndarray, np.ndarray]],
     out_shape: tuple[int, int],

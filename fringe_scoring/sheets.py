@@ -174,7 +174,7 @@ def score_sheets(image: np.ndarray, config: dict | None = None) -> SheetsScoreRe
     arr = np.asarray(image, dtype=float)
     cfg = config if config is not None else load_config()
     quads = detect_sheet_quads(arr, cfg)
-    # 每片先算共享流水线（⓪–③），绝对口径打分与六指标的均匀度口径都从它分叉——
+    # 每片先算共享流水线（⓪–③），绝对口径打分与六指标的位置指标口径都从它分叉——
     # 背景拟合等重活只跑一遍（数值与各自重跑逐位相同，见 score.FringePipeline）
     pipes = [compute_pipeline(arr, config=cfg, quad_corners=q) for q in quads]
     results = [score_from_pipeline(p, cfg) for p in pipes]
