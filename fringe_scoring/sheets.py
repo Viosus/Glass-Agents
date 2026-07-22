@@ -50,6 +50,35 @@ def _sort_reading_order(quads: list[np.ndarray]) -> list[np.ndarray]:
     return [quads[int(i)] for i in order]
 
 
+def _drop_contained_hulls(hulls: list, drop_frac: float) -> list:
+    """剔除凸包被更大候选凸包包含（交叠占自身面积 ≥ drop_frac）的连通域。
+
+    语义：玻璃片不可能整片落在另一片之内——被包含的候选只能是片内亮纹理
+    （前景阈值只抓亮区的副产物）。仅候选 ≥2 时才计算，单候选路径零开销、
+    结果与旧实现逐位相同。
+    """
+    import cv2
+
+    if len(hulls) <= 1:
+        return hulls
+    areas = [float(cv2.contourArea(h)) for h in hulls]
+    kept = []
+    for i, (h, a) in enumerate(zip(hulls, areas)):
+        contained = False
+        for j, (h2, a2) in enumerate(zip(hulls, areas)):
+            if j == i or a2 <= a or a <= 0:
+                continue
+            inter, _ = cv2.intersectConvexConvex(
+                h.reshape(-1, 2).astype(np.float32), h2.reshape(-1, 2).astype(np.float32)
+            )
+            if inter / a >= drop_frac:
+                contained = True
+                break
+        if not contained:
+            kept.append(h)
+    return kept
+
+
 def detect_sheet_quads(image: np.ndarray, config: dict | None = None) -> list[np.ndarray]:
     """整床照片 → 每片玻璃的 (4,2) 角点列表（原图坐标，阅读序）。
 
@@ -93,14 +122,21 @@ def detect_sheet_quads(image: np.ndarray, config: dict | None = None) -> list[np
     min_area = float(sheets_cfg["min_area_frac"]) * inner.shape[0] * inner.shape[1]
     min_side = float(sheets_cfg["min_side_frac"]) * min(inner.shape)
     epsilon_frac = float(sheets_cfg["poly_epsilon_frac"])
-    quads = []
+    # 先收齐候选凸包再做"包含剔除"，最后才拟合四角：前景阈值只抓亮区，玻璃片
+    # 内部的亮带/亮团会成为独立连通域（2026-07-22，121 片单片测试集 017/088 实测：
+    # 017 的中带亮条还会因拟不出四角把整图拖进拒判）——其凸包必然落在所属玻璃
+    # 片的凸包之内，而两片真实玻璃物理上不可能互相包含，按"片内纹理"剔除
+    hulls = []
     for c in contours:
         if cv2.contourArea(c) < min_area:
             continue
         rect_w, rect_h = cv2.minAreaRect(c)[1]
         if min(rect_w, rect_h) < min_side:
             continue  # 细长条（亮线纹/反光）不可能是玻璃片，按干扰剔除
-        quads.append(quad_from_hull(cv2.convexHull(c), epsilon_frac) + float(trim))  # 还原到原图坐标
+        hulls.append(cv2.convexHull(c))
+    drop_frac = float(sheets_cfg.get("contained_drop_frac", 0.95))
+    quads = [quad_from_hull(h, epsilon_frac) + float(trim)  # 还原到原图坐标
+             for h in _drop_contained_hulls(hulls, drop_frac)]
     if not quads:
         raise ValueError(
             "detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 min_area_frac），"
