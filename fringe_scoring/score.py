@@ -269,18 +269,29 @@ def score_from_pipeline(pipe: FringePipeline, config: dict) -> FringeScoreResult
     )
 
 
+# 覆盖支路的覆盖判斑灰度阈 G0 默认值（2026-07-22，位置口径专属固定工程口径）：
+# 独立于工厂判斑灵敏度 segment.min_dev_gray——判斑灵敏度解耦要求（2026-07-08）对
+# 覆盖支路同样成立；config indicators.scoring.position_coverage.min_dev_gray 可覆写。
+POSITION_COVERAGE_MIN_DEV_GRAY = 30.0
+
+
 @dataclass
 class CenterConcentrationResult:
     """位置指标（应力斑中心集中度）逐片测量结果：主量 ρu + 诊断量（任务3 全项）。
 
     指标层产物——不含 0–100 评分、不读刻度锚 ρ0；位置评分由评分层
     （indicators.compute_sheet_indicators 的评分段）按原表达式另行换算。
+    weighted_coverage 为评分层覆盖度支路的测量输入（2026-07-22）：固定灰度阈
+    G0 下的位置加权判斑覆盖度——逐片自标准化的 ρu 对"整片皆斑"自吞（尺度
+    等变必然除掉整体纹理强度），该量在绝对灰度域补上这一维（同批曝光一致前提，
+    与主口径绝对评分同前提；对逐片仿射变换**不**具备 ρu 的不变性）。
     """
 
     center_concentration: float   # ρu = penalty_raw / penalty_max ∈ [0,1]，越大越差
     penalty_raw: float            # Σ_{Ωu} s·w（评分层按原表达式换算位置评分用）
     penalty_max: float            # Σ_M w（理论最差总罚）
     spot_area_ratio: float        # |Ωu| / |M|——区分"斑少且靠边"与"斑多顶翻基准"
+    weighted_coverage: float      # A_w = Σ_{devgray≥G0} w / Σ_M w（覆盖支路测量输入）
     threshold_t: float            # 判斑阈值 T（复算核对；序列化键仍为 threshold_T）
     quantile_bound: str           # T 由谁决定："quantile" | "min_z"
     p_dark: float                 # 暗向尾部占比（翻转判据本身）
@@ -324,11 +335,20 @@ def measure_center_concentration(
     w = pipe.weight_map
     penalty_raw = float((intensity_s * w).sum())           # s 在掩膜外恒为 0
     penalty_max = float(w[interior].sum())                 # 理论最差：有效区全是最深斑
+
+    # 位置加权覆盖度（评分层覆盖支路的测量输入）：固定灰度阈 G0 判"绝对域斑"，
+    # 位置权重加权求占比——斑压中心计得重；G0 独立于工厂判斑灵敏度（见常数注释）
+    cov_cfg = cfg.get("position_coverage") or {}
+    g0 = float(cov_cfg.get("min_dev_gray", POSITION_COVERAGE_MIN_DEV_GRAY))
+    cov_mask = interior & (dev_gray >= g0)
+    weighted_coverage = float(w[cov_mask].sum()) / penalty_max
+
     return CenterConcentrationResult(
         center_concentration=penalty_raw / penalty_max,
         penalty_raw=penalty_raw,
         penalty_max=penalty_max,
         spot_area_ratio=float(mask.sum()) / float(interior.sum()),
+        weighted_coverage=weighted_coverage,
         threshold_t=float(info["threshold"]),
         quantile_bound=str(info["bound"]),
         p_dark=flip.p_dark,

@@ -11,7 +11,11 @@ indicators:                   # 六指标测量与加权总分（决策#14；统
     ccp: 1.0                  # 组合纹理特征
     position_score: 1.0       # 应力斑位置评分（斑纹空间分布，与深浅解耦；原"uniformity/均匀度"，2026-07-19 改名）
   scoring:                    # 位置指标·评分层（指标层只出中心集中度 ρu，不读本段）
-    position_ratio_at_zero: 0.33  # 位置评分刻度锚 ρ0（ρu 达该值→0 分；0.33≈中心满斑理论上限；原 uniformity_ratio_at_zero）
+    position_ratio_at_zero: 0.33  # 集中度支路刻度锚 ρ0（ρu 达该值→0 分；0.33≈中心满斑理论上限；原 uniformity_ratio_at_zero）
+    position_coverage:        # 覆盖度支路（2026-07-22 按 121 片人工标注初标）：位置评分=min(集中度支路, 覆盖度支路)
+      min_dev_gray: 30.0      #   G0 覆盖判斑灰度阈（固定工程口径，独立于主判斑灵敏度 segment.min_dev_gray——解耦保持）
+      cov_full: 0.10          #   C0：位置加权覆盖度 ≤ 此值覆盖支路不扣分
+      cov_zero: 0.65          #   C1：加权覆盖度 ≥ 此值覆盖支路 0 分（"整片皆斑"封顶——ρu 逐片自标准化对满板重纹理自吞）
   baseline_flip:              # 基准翻转门闩（2026-07-19，仅位置指标路径；修"斑过半→中位数落斑内→跳分"）
     enabled: true             # false=恒走单遍（旧行为，供与历史结果对拍）
     p_flip: 0.05              # 触发阈=暗尾占比 p_dark 超此判翻转（未标定，工程初值 TODO(plant)）

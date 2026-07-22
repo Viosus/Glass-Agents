@@ -108,15 +108,17 @@ def test_busier_texture_raises_gradient_stats():
 
 
 # ---------------- ② 位置指标与深浅解耦 ----------------
-def test_position_score_invariant_to_depth():
-    # 同一斑纹图案整体 ×k：position_score/ρu 不变（空间分布未变），X0.95/方差变差
+def test_center_concentration_invariant_to_depth():
+    # 同一斑纹图案整体 ×k：指标主量 ρu 不变（空间分布未变），X0.95/方差变差。
+    # 2026-07-22 起位置评分=双支路取小（覆盖支路为固定灰度口径 G0），评分本身
+    # 不再对加深不变——只断言方向：加深不得升分（覆盖只会增不会减）
     base = make_glass_image(blobs=[(0.5, 0.5, 0.10, 20.0)], seed=65)
     deeper = 1.8 * base  # 乘性加深：图案不变、幅度变大
     cfg = indicators_config()
     ind_a = compute_sheet_indicators(base, full_interior(base), cfg)
     ind_b = compute_sheet_indicators(deeper, full_interior(deeper), cfg)
-    assert abs(ind_a.position_score - ind_b.position_score) < 1e-6  # 仿射不变（per_sheet 口径）
     assert abs(ind_a.center_concentration - ind_b.center_concentration) < 1e-8
+    assert ind_b.position_score <= ind_a.position_score + 1e-9  # 加深不升分
     assert ind_b.x095 > ind_a.x095
     assert ind_b.gray_variance > ind_a.gray_variance
 

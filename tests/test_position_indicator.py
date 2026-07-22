@@ -110,33 +110,38 @@ def test_latch_is_noop_on_normal_sheets_bitwise():
 
 # ---------------- T3 · 连续性（中央横带展宽族，本任务核心验收） ----------------
 def test_band_widening_continuity_and_flip_fix():
+    # 2026-07-22 起位置评分=min(集中度支路 u_rho, 覆盖度支路 u_cov)：门闩语义
+    # 全部落在 u_rho 上断言（band_amp=40 ≥ G0，该族覆盖支路亦活跃且随 f 线性
+    # 收紧——最终评分只另验连续性与方向保守）
     covs = [0.30, 0.35, 0.40, 0.45, 0.47, 0.49, 0.50, 0.51, 0.53, 0.55, 0.60, 0.70]
-    us, flips = {}, {}
+    us, urhos, flips = {}, {}, {}
     for f in covs:
         ind, d = run_position(make_band_image(f))
-        us[f], flips[f] = ind.position_score, d["baseline_flipped"]
+        us[f], urhos[f], flips[f] = ind.position_score, d["u_rho"], d["baseline_flipped"]
 
-    # ① 门闩消除灾难性假高分：未修版在覆盖率过半后给假满分
-    ind_off, _ = run_position(make_band_image(0.51), flip={"enabled": False})
-    assert ind_off.position_score > 95.0          # 原缺陷：斑最重反而近满分
-    assert ind_off.position_score - us[0.51] > 30.0  # 门闩把假满分拉回
+    # ① 门闩消除集中度支路的灾难性假高分：未修版在覆盖率过半后 u_rho 近满分
+    _, d_off = run_position(make_band_image(0.51), flip={"enabled": False})
+    assert d_off["u_rho"] > 95.0                  # 原缺陷：斑最重反而近满分
+    assert d_off["u_rho"] - urhos[0.51] > 30.0    # 门闩把假满分拉回
 
-    # ② 分支内连续：相邻两点 ≤5 分/百分点（切换点单独看③）
+    # ② 分支内连续：u_rho 与最终位置评分相邻两点均 ≤5 分/百分点（切换点看③）
     for f0, f1 in zip(covs, covs[1:]):
         if flips[f0] != flips[f1]:
             continue
-        step_per_pct = abs(us[f1] - us[f0]) / (100.0 * (f1 - f0))
-        assert step_per_pct <= 5.0, f"{f0}->{f1} 每百分点 {step_per_pct:.1f} 分"
+        for name, series in (("u_rho", urhos), ("position_score", us)):
+            step_per_pct = abs(series[f1] - series[f0]) / (100.0 * (f1 - f0))
+            assert step_per_pct <= 5.0, f"{name} {f0}->{f1} 每百分点 {step_per_pct:.1f} 分"
 
     # ③ 切换点方向保守（只向下，不产生假好），台阶有界；允许非单调
     switch = [(f0, f1) for f0, f1 in zip(covs, covs[1:]) if flips[f0] != flips[f1]]
     assert len(switch) == 1
     f0, f1 = switch[0]
-    assert us[f1] < us[f0], "翻转点必须向下（保守），不得向上跳假好"
-    assert us[f0] - us[f1] <= 35.0
+    assert urhos[f1] < urhos[f0], "翻转点必须向下（保守），不得向上跳假好"
+    assert urhos[f0] - urhos[f1] <= 35.0
+    assert us[f1] <= us[f0] + 1e-9                # min 结构不放大台阶、方向同样保守
 
-    # ④ 翻转侧与低覆盖侧数值接续（门闩恢复的正是干净基准下的口径）
-    assert abs(us[0.51] - us[0.30]) <= 10.0
+    # ④ 翻转侧与低覆盖侧的集中度支路数值接续（门闩恢复的正是干净基准下的口径）
+    assert abs(urhos[0.51] - urhos[0.30]) <= 10.0
 
 
 # ---------------- T4 · 确定性 ----------------
@@ -159,6 +164,8 @@ def test_constant_image_and_empty_interior():
     assert d["spot_area_ratio"] == 0.0
     assert d["p_dark"] == 0.0
     assert not d["baseline_flipped"] and not d["baseline_flip_aborted"]
+    assert d["weighted_coverage"] == 0.0 and d["u_cov"] == 100.0  # 覆盖支路同样退化自洽
+    assert d["binding_branch"] == "concentration"
     # M 为空：维持现行拒绝出分行为（不因新增诊断字段而崩溃/静默给分）
     img = make_glass_image(seed=61)
     with pytest.raises(ValueError, match="无有效像素"):
@@ -167,11 +174,13 @@ def test_constant_image_and_empty_interior():
 
 # ---------------- T6 · 门闩边界（p_dark ≈ p_flip 家族） ----------------
 def test_dark_tail_boundary_family():
+    # 门闩为集中度支路机制 → 在 u_rho 上断言（dark_amp=30 恰在覆盖阈 G0 边界，
+    # 最终评分对该族含覆盖支路噪声，不作为门闩边界的判据）
     fracs = [0.040, 0.045, 0.049, 0.051, 0.055, 0.060]
     us, flips = {}, {}
     for f in fracs:
-        ind, d = run_position(make_dark_tail_image(f))
-        us[f], flips[f] = ind.position_score, d["baseline_flipped"]
+        _, d = run_position(make_dark_tail_image(f))
+        us[f], flips[f] = d["u_rho"], d["baseline_flipped"]
         assert not d["baseline_flip_aborted"]
     assert not flips[fracs[0]] and flips[fracs[-1]]  # 家族确实跨越了 p_flip
     for f0, f1 in zip(fracs, fracs[1:]):
@@ -194,6 +203,50 @@ def test_flip_abort_guard_small_dark_sample():
     assert d_on["baseline_flip_aborted"] and not d_on["baseline_flipped"]
     assert ind_on.center_concentration.hex() == ind_off.center_concentration.hex()
     assert ind_on.position_score.hex() == ind_off.position_score.hex()
+
+
+# ---------------- 覆盖度支路（2026-07-22 双支路评分） ----------------
+def test_coverage_branch_monotone_in_area():
+    # 同幅度（band_amp=40 ≥ G0）斑面积越大 → 加权覆盖度越大 → 位置评分不升
+    us, covs = [], []
+    for f in (0.10, 0.25, 0.40, 0.60):
+        ind, d = run_position(make_band_image(f))
+        us.append(ind.position_score)
+        covs.append(d["weighted_coverage"])
+    assert all(b > a for a, b in zip(covs, covs[1:]))
+    assert all(b <= a + 1e-9 for a, b in zip(us, us[1:]))
+
+
+def test_coverage_g0_decoupled_from_factory_sensitivity():
+    # G0 为位置口径专属固定阈：工厂调主判斑灵敏度 min_dev_gray，
+    # 位置评分与加权覆盖度必须位级不变（判斑灵敏度解耦要求延伸到覆盖支路）
+    img = make_band_image(0.40)
+    ind0, d0 = run_position(img)
+    cfg = position_config()
+    cfg["segment"]["min_dev_gray"] = 60.0
+    ind1 = compute_sheet_indicators(img, full_interior(img), cfg)
+    assert ind1.position_score.hex() == ind0.position_score.hex()
+    assert ind1.position_diagnostics["weighted_coverage"] == d0["weighted_coverage"]
+
+
+def test_binding_branch_semantics():
+    # 中央小深斑：覆盖度低 → 集中度支路主导；满板宽亮带：覆盖支路封顶
+    _, d_small = run_position(make_glass_image(blobs=[(0.5, 0.5, 0.08, 45.0)], seed=91))
+    _, d_wide = run_position(make_band_image(0.70))
+    assert d_small["binding_branch"] == "concentration"
+    assert d_wide["binding_branch"] == "coverage"
+    assert d_wide["u_cov"] < d_wide["u_rho"]
+
+
+def test_coverage_params_override_effective():
+    # scoring.position_coverage 覆写生效：拉宽 C1 → 覆盖支路更宽容 → 评分上升
+    img = make_band_image(0.45)
+    ind0, d0 = run_position(img)
+    assert d0["binding_branch"] == "coverage"  # 前提：该图确由覆盖支路封顶
+    cfg = position_config()
+    cfg["indicators"]["scoring"]["position_coverage"] = {"cov_zero": 0.95}
+    ind1 = compute_sheet_indicators(img, full_interior(img), cfg)
+    assert ind1.position_score > ind0.position_score
 
 
 # ---------------- 附 · 样片乙照片版连续性（照片不入库，存在才跑） ----------------

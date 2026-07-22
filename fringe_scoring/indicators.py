@@ -165,6 +165,16 @@ _POSITION_SEG_DEFAULTS = {
     "top_fraction": 0.15, "min_z": 2.5, "z_saturation": 8.0, "polarity": "bright",
 }
 
+# 评分层覆盖度支路默认参数（2026-07-22，按 121 片人工标注初标；config
+# indicators.scoring.position_coverage 可覆写）。min_dev_gray=G0 为覆盖判斑
+# 灰度阈（固定工程口径，独立于工厂判斑灵敏度 segment.min_dev_gray——解耦
+# 要求保持）；cov_full=C0 加权覆盖不扣分下限；cov_zero=C1 覆盖支路零分上限。
+# 动机：逐片自标准化的 ρu 对"整片皆斑"自吞（满板重纹理撑大 σR → z 压扁），
+# 121 片实测位置评分与人工分秩相关仅 0.44 且最重片反最高分；覆盖支路在绝对
+# 灰度域封顶后 0.87、八个人工分档均值严格单调。三端同步：Dart local_config
+# PositionCoverageCfg / 小程序 local_config.js position_coverage。
+_POSITION_COVERAGE_DEFAULTS = {"min_dev_gray": 30.0, "cov_full": 0.10, "cov_zero": 0.65}
+
 
 def _position_indicator_config(cfg: dict, ind_cfg: dict) -> dict:
     """构造位置指标（中心集中度 ρu）专用配置：per_sheet z 口径（对深浅仿射不变）。
@@ -192,7 +202,12 @@ def _position_indicator_config(cfg: dict, ind_cfg: dict) -> dict:
     # 基准翻转门闩（2026-07-19）：默认启用；config indicators.baseline_flip 段可覆写/
     # 关闭（与历史结果对拍用）。只挂位置指标路径——主分布评分不受影响
     flip = {"enabled": True, **(ind_cfg.get("baseline_flip") or {})}
-    return {**cfg, "segment": seg, "quad": quad, "baseline_flip": flip}
+    # 覆盖支路的测量口径 G0（2026-07-22）：只注入灰度阈供 measure 计算加权覆盖度；
+    # C0/C1 评分参数不进指标层配置（与 ρ0 同理，在评分段读取）
+    sc_cfg = ind_cfg.get("scoring") or {}
+    cov = {**_POSITION_COVERAGE_DEFAULTS, **(sc_cfg.get("position_coverage") or {})}
+    return {**cfg, "segment": seg, "quad": quad, "baseline_flip": flip,
+            "position_coverage": {"min_dev_gray": float(cov["min_dev_gray"])}}
 
 
 # 子分溢出口径（2026-07-13 拍板）：ccp 标尺 [0.2, 1.4]——劣于 worst 仍封 0，
@@ -333,9 +348,9 @@ def compute_sheet_indicators(
     }
 
     # ── 位置指标·评分层：刻度锚 ρ0 只在此处读取（indicators.scoring 段，
-    #    旧键 uniformity_ratio_at_zero 回退，deprecated）。表达式与旧实现逐算子
-    #    同序同型（100·(1−praw/(pmax·ρ0)) 再 clip），保证改名前后位级相同——
-    #    不得改写成 100·(1−ρu/ρ0)（除法结合次序不同，舍入可差 1 ulp）──
+    #    旧键 uniformity_ratio_at_zero 回退，deprecated）。集中度支路表达式与旧
+    #    实现逐算子同序同型（100·(1−praw/(pmax·ρ0)) 再 clip）——不得改写成
+    #    100·(1−ρu/ρ0)（除法结合次序不同，舍入可差 1 ulp）──
     sc_cfg = ind_cfg.get("scoring") or {}
     rho0 = sc_cfg.get("position_ratio_at_zero", ind_cfg.get("uniformity_ratio_at_zero"))
     if rho0 is None:
@@ -346,9 +361,28 @@ def compute_sheet_indicators(
     rho0 = float(rho0)
     if not 0.0 < rho0 <= 1.0:
         raise ValueError("compute_sheet_indicators: position_ratio_at_zero 须在 (0,1] 内")
-    position_score = float(
+    u_rho = float(
         np.clip(100.0 * (1.0 - penalty_raw / (penalty_max * rho0)), 0.0, 100.0)
     )
+
+    # ── 覆盖度支路（2026-07-22，按 121 片人工标注初标）：加权覆盖 ≤C0 不扣分、
+    #    ≥C1 记 0，中间线性；位置评分 = 两支路取小——"整片皆斑"由覆盖支路封顶
+    #    （逐片自标准化的 ρu 对满板重纹理自吞：σR 被撑大、z 压扁，121 片实测
+    #    最重片反得最高分；机理与分工见技术说明 4.1/4.7）──
+    cov_cfg = {**_POSITION_COVERAGE_DEFAULTS, **(sc_cfg.get("position_coverage") or {})}
+    c0, c1 = float(cov_cfg["cov_full"]), float(cov_cfg["cov_zero"])
+    if not 0.0 <= c0 < c1:
+        raise ValueError("compute_sheet_indicators: 须满足 0 ≤ cov_full < cov_zero")
+    u_cov = float(
+        np.clip(100.0 * (1.0 - (u_res.weighted_coverage - c0) / (c1 - c0)), 0.0, 100.0)
+    )
+    position_score = min(u_rho, u_cov)
+    position_diagnostics.update({
+        "weighted_coverage": u_res.weighted_coverage,
+        "u_rho": u_rho,
+        "u_cov": u_cov,
+        "binding_branch": "coverage" if u_cov < u_rho else "concentration",
+    })
 
     # ── 子分与加权总分（与 score_from_raw 同源，保证方案快路径重算一致） ──
     raw = {
