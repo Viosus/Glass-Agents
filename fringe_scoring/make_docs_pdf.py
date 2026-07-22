@@ -266,14 +266,15 @@ def formula_doc_pages() -> list[list[tuple[str, str]]]:
         # ── P6 位置评分 ──
         [
             ("space", "0.04"),
-            ("h2", "7. 位置评分（六指标之一：只看斑长在哪，不看深浅；原名\"均匀度\"）"),
+            ("h2", "7. 位置评分（六指标之一：只看斑长在哪、铺多广；原名\"均匀度\"）"),
             ("body",
-             "同一图案整体加深，位置评分不变；全白玻璃=100。做法：把第 4 节的深浅\n"
-             "换成\"和本片自己比\"的口径，再按第 6 节**同一张位置权重图** w(r) 计罚——\n"
-             "位置评分和分布评分共用一台\"罚分机器\"，只换判斑口径和刻度锚两样。\n"
-             "它的判定口径是独立固定的——调\"判斑灵敏度\"等主判定参数不会牵动它\n"
-             "（确要改在配置 indicators.position_segment 显式覆写）。指标主量是\"中心\n"
-             "集中度 ρu\"（越大越差，与其余五项同向）；0–100 的评分由 ρu 换算而来。"),
+             "全白玻璃=100。做法：把第 4 节的深浅换成\"和本片自己比\"的口径，再按第\n"
+             "6 节**同一张位置权重图** w(r) 计罚——位置评分和分布评分共用一台\"罚分\n"
+             "机器\"，只换判斑口径和刻度锚。它的判定口径是独立固定的——调\"判斑\n"
+             "灵敏度\"等主判定参数不会牵动它（确要改在配置 indicators.position_segment\n"
+             "显式覆写）。指标主量是\"中心集中度 ρu\"（越大越差，与其余五项同向；\n"
+             "同一图案整体加深 ρu 不变）；最终评分 = 集中度、覆盖度两条支路取低者\n"
+             "（2026-07-22 起，见本节末）。"),
             ("formula",
              r"自比偏差与强度　$z(x,y) = \frac{R - \mathrm{med}(R)}{1.4826 \cdot \mathrm{MAD}(R)},"
              r" \qquad s_u = \mathrm{clip}(|z| / z_{sat},\ 0,\ 1)$"),
@@ -288,8 +289,8 @@ def formula_doc_pages() -> list[list[tuple[str, str]]]:
              "深浅被除掉了——剩下的只有\"斑摆在哪、摆得匀不匀\"。"),
             ("space", "0.016"),
             ("formula",
-             r"中心集中度与位置评分　$\rho_u = \frac{\sum_{\Omega_u} s_u\cdot w(r)}{\sum_{M} w(r)},"
-             r" \qquad U = \mathrm{clip}\left(100 \times \left(1 -"
+             r"中心集中度与集中度支路　$\rho_u = \frac{\sum_{\Omega_u} s_u\cdot w(r)}{\sum_{M} w(r)},"
+             r" \qquad U_\rho = \mathrm{clip}\left(100 \times \left(1 -"
              r" \frac{\rho_u}{\rho_0}\right),\ 0,\ 100\right)$"),
             ("space", "0.010"),
             ("vars",
@@ -297,14 +298,29 @@ def formula_doc_pages() -> list[list[tuple[str, str]]]:
              "$w(r)$ ＝ 位置权重——与第 6 节是**同一张图**（中心 1 最重、贴边至少 0.3）\n"
              "$\\rho_u$ ＝ 中心集中度=位置口径的罚分比（指标主量，越大越差；算法同第 6 节\n"
              "　　　 的 ρ，换用 $s_u$ 与 $\\Omega_u$）\n"
-             "$\\rho_0$ ＝ 位置评分专属刻度锚（默认 0.33，与分布评分的 Z 各管各；评分层参数）\n"
-             "$U$ ＝ 位置评分（0–100，越大越好=斑越少越散越靠边）"),
+             "$\\rho_0$ ＝ 集中度支路刻度锚（默认 0.33，与分布评分的 Z 各管各；评分层参数）"),
+        ],
+        # ── P6b 位置评分·覆盖度支路与门闩 ──
+        [
+            ("space", "0.04"),
+            ("formula",
+             r"覆盖度支路与最终评分　$A_w = \frac{\sum_{\mathrm{dev}_g \geq G_0} w(r)}{\sum_{M} w(r)},"
+             r" \quad U_{cov} = \mathrm{clip}\left(100 \times \left(1 - \frac{A_w - C_0}{C_1 - C_0}\right),\ 0,\ 100\right),"
+             r" \quad U = \min(U_\rho, U_{cov})$"),
+            ("space", "0.010"),
+            ("vars",
+             "$A_w$ ＝ 位置加权覆盖度：亮差 ≥ $G_0$（固定 30 灰度）的\"明显斑\"占了多少\n"
+             "　　　 加权版面——斑压中心计得重；与主判斑灵敏度无关（G0 独立固定）\n"
+             "$C_0/C_1$ ＝ 0.10 / 0.65：覆盖 ≤C0 不扣分、≥C1 记 0 分（2026-07-22 按\n"
+             "　　　 121 片人工标注样片初标）\n"
+             "$U$ ＝ 位置评分（0–100，越大越好=斑越少、越散、越靠边、铺得越少）"),
             ("plain",
-             "【怎么理解】位置评分不是\"分块算方差\"，而是把位置权重图再用一遍：斑（按\n"
-             "相对口径判定）越集中在中心罚得越重、评分越低；散在四边则罚得轻。\n"
-             "位置权重在代码里只算一次、两个口径共用——电脑端藏在共享流水线里\n"
-             "（位置评分代码段看不见它，但确实乘了），手机/小程序端是摊开逐点乘的，\n"
-             "两种写法数值完全一致。"),
+             "【怎么理解】\"和自己比\"有个死角：整片密布重斑时，斑成了这片玻璃的\n"
+             "\"正常水平\"，ρu 反而测不出来（越重越测不出）。覆盖度支路用固定亮度线\n"
+             "数\"明显发亮的地方占了多少版面\"，专门兜住这类片——两条支路谁低听谁的。\n"
+             "121 片人工标注实测：只用集中度支路时评分与老师傅打分的排序一致性只有\n"
+             "0.44，双支路后 0.89。位置权重在代码里只算一次、各口径共用——电脑端藏在\n"
+             "共享流水线里，手机/小程序端是摊开逐点乘的，数值完全一致。"),
             ("space", "0.010"),
             ("body",
              "基准翻转门闩（2026-07-19 修订）：\"和本片自己比\"的基准是中位数，斑铺满\n"
@@ -418,7 +434,8 @@ def formula_doc_pages() -> list[list[tuple[str, str]]]:
              "位置指标判定口径 …… 固定值（indicators.position_segment 可覆写）——与主判定解耦\n"
              "判斑二值图开关 ……… app.render_masks（设置页；只影响出图与存图，不影响数值）\n"
              "边框免罚宽度 ………… border.normal_band_frac；权重下限 w_floor = weight.floor\n"
-             "刻度锚 Z ……………… scoring.penalty_ratio_at_zero；位置评分锚 indicators.scoring.position_ratio_at_zero\n"
+             "刻度锚 Z ……………… scoring.penalty_ratio_at_zero；集中度支路锚 indicators.scoring.position_ratio_at_zero\n"
+             "覆盖支路 G0/C0/C1 … indicators.scoring.position_coverage.{min_dev_gray, cov_full, cov_zero}\n"
              "换算系数 k_nm ……… indicators.calibration.gray_to_nm；比例尺 mm_per_px 同段\n"
              "CCP 参考 Cmax/CPmax  indicators.calibration.ccp_c_max / ccp_cp_max\n"
              "子分参考 best/worst   indicators.refs.<指标>（六项全可调）；权重 indicators.weights.<指标>\n"
