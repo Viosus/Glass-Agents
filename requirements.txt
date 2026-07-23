@@ -57,3 +57,4 @@ openpyxl            # 生成老师傅标注表 xlsx（枚举下拉校验）
 # ---- 本地 LLM 推理（Teacher / 翻译官 / 知识库 / review）----
 # llama-cpp-python 需从预编译 CPU 源装（Blackwell 无匹配 CUDA wheel）：
 #   pip install "llama-cpp-python==0.3.30" --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+python-docx         # 简明说明/检测报告的 Word 版生成（make_docx_versions.py）
