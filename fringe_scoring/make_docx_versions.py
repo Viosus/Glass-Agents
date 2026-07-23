@@ -28,6 +28,7 @@ from docx.shared import Inches, Pt, RGBColor
 
 from fringe_scoring.make_batch_report_doc import report_pages
 from fringe_scoring.make_position_brief_doc import brief_pages
+from fringe_scoring.make_uniformity_gb_doc import doc_pages
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -39,14 +40,22 @@ except Exception:
 plt.rcParams["font.sans-serif"] = ["Microsoft YaHei", "SimHei"]
 plt.rcParams["axes.unicode_minus"] = False
 
-# 行内 mathtext → Unicode 文本（"式中"注释/表格用；公式本体整行转图片不走此表）
+# 行内 mathtext → Unicode 文本（"式中"注释/表格用；公式本体整行转图片不走此表）。
+# 先专有组合、后通用符号，最后清理花括号/间距命令——技术说明全部行内符号覆盖，
+# 生成后以"document.xml 无残留反斜杠命令"作机器校验（见 main）。
 _TEX_MAP = [
     (r"\\rho_u", "ρu"), (r"\\rho_0", "ρ0"), (r"\\sigma_\{?ref\}?", "σ_ref"),
-    (r"\\sigma_R", "σ_R"), (r"\\Omega_u", "Ω_u"), (r"\\Omega", "Ω"),
-    (r"\\mathrm\{([^}]*)\}", r"\1"), (r"\\max", "max"), (r"\\min", "min"),
+    (r"\\hat\{\\sigma\}", "σ̂"), (r"U_\\rho", "U_ρ"),
+    (r"\\mathrm\{([^}]*)\}", r"\1"), (r"\\mathcal\{([^}]*)\}", r"\1"),
+    (r"\\sqrt\{([^}]*)\}", r"√\1"), (r"\\sqrt", "√"),
+    (r"\\sigma", "σ"), (r"\\rho", "ρ"), (r"\\Omega", "Ω"), (r"\\omega", "ω"),
+    (r"\\beta", "β"), (r"\\mu", "μ"), (r"\\kappa", "κ"), (r"\\Phi", "Φ"),
+    (r"\\ell", "ℓ"), (r"\\max", "max"), (r"\\min", "min"),
     (r"\\geq", "≥"), (r"\\leq", "≤"), (r"\\in\b", "∈"), (r"\\times", "×"),
-    (r"\\equiv", "≡"), (r"\\cdot", "·"), (r"U_\\rho", "U_ρ"),
-    (r"Q_\{([^}]*)\}", r"Q_\1"), (r"_\{([^}]*)\}", r"_\1"),
+    (r"\\equiv", "≡"), (r"\\cdot", "·"), (r"\\subseteq", "⊆"), (r"\\exp", "exp"),
+    (r"\\lceil", "⌈"), (r"\\rceil", "⌉"), (r"\\lfloor", "⌊"), (r"\\rfloor", "⌋"),
+    (r"\^\{-1\}", "⁻¹"), (r"Q_\{([^}]*)\}", r"Q_\1"),
+    (r"_\{([^}]*)\}", r"_\1"), (r"\^\{([^}]*)\}", r"^\1"),
     (r"\\,|\\;|\\ ", " "), (r"[{}]", ""),
 ]
 
@@ -156,16 +165,16 @@ def build_docx(pages: list[list[tuple[str, str]]], out_path: Path) -> None:
                 if kind == "space":
                     continue
                 if kind == "h1":
-                    _para(doc, text, 16, bold=True, center=True)
+                    _para(doc, tex_to_text(text), 16, bold=True, center=True)
                 elif kind == "sub":
-                    _para(doc, text, 12, center=True)
+                    _para(doc, tex_to_text(text), 12, center=True)
                 elif kind == "cnote":
-                    _para(doc, text, 9, gray=True, center=True)
+                    _para(doc, tex_to_text(text), 9, gray=True, center=True)
                 elif kind == "h2":
-                    p = _para(doc, text, 13, bold=True)
+                    p = _para(doc, tex_to_text(text), 13, bold=True)
                     p.paragraph_format.space_before = Pt(10)
                 elif kind == "h3":
-                    p = _para(doc, text, 11, bold=True)
+                    p = _para(doc, tex_to_text(text), 11, bold=True)
                     p.paragraph_format.space_before = Pt(6)
                 elif kind == "formula":
                     fi += 1
@@ -177,7 +186,7 @@ def build_docx(pages: list[list[tuple[str, str]]], out_path: Path) -> None:
                 elif kind == "tbl":
                     _add_table(doc, text)
                 elif kind == "note":
-                    _para(doc, text, 9, gray=True)
+                    _para(doc, tex_to_text(text), 9, gray=True)
                 elif kind == "img":
                     rel, _h = text.rsplit("::", 1)
                     _add_centered_picture(doc, ROOT / rel, 5.6)
@@ -189,10 +198,29 @@ def build_docx(pages: list[list[tuple[str, str]]], out_path: Path) -> None:
     print(f"已生成 → {out_path}")
 
 
+def _assert_no_tex_residue(path: Path) -> None:
+    """机器校验：document.xml 里不得残留未映射的 mathtext 命令（反斜杠+字母）。"""
+    import zipfile
+
+    with zipfile.ZipFile(path) as z:
+        xml = z.read("word/document.xml").decode("utf-8")
+    m = re.search(r"\\[A-Za-z]+", xml)
+    if m:
+        ctx = xml[max(0, m.start() - 90): m.end() + 40]
+        raise ValueError(f"{path}: 行内数学残留 {m.group(0)!r}，上下文 {ctx!r}")
+
+
 def main() -> int:
-    """生成两份 Word 版到 docs/。"""
-    build_docx(brief_pages(), ROOT / "docs" / "应力斑位置评分指标_简明说明.docx")
-    build_docx(report_pages(), ROOT / "docs" / "应力斑位置评分_测试集检测报告.docx")
+    """生成三份 Word 版到 docs/，并校验无 mathtext 残留。"""
+    outs = [
+        (brief_pages(), ROOT / "docs" / "应力斑位置评分指标_简明说明.docx"),
+        (report_pages(), ROOT / "docs" / "应力斑位置评分_测试集检测报告.docx"),
+        (doc_pages(), ROOT / "docs" / "应力斑位置评分指标_技术说明.docx"),
+    ]
+    for pages, out in outs:
+        build_docx(pages, out)
+        _assert_no_tex_residue(out)
+    print("行内数学残留校验：全部通过")
     return 0
 
 
