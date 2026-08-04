@@ -1,0 +1,62 @@
+# 26 块带厚度标注样片 · 照片名册（2026-08-04 到样，规格表.jpeg 人工转录）
+# 照片按仓库规则不入库（本地放置 data/images/明之言检测结果/）；本名册与产物入库。
+# 规格表原件即缺 5#/9#/17# 三个编号（非遗漏）；合计 26 块、28 张照片（1#/16# 中空各 2 张）。
+# category: core=纯普白钢化（进厚度档统计）| special=特种片（单列不入统计）| control=未钢化对照
+# thickness_mm: 单片公称厚度；中空/夹层记 null（组分见 type/notes）
+# manual_quad: 检测失败/QA 不过后人工目检回填 [[x,y]×4]（原图像素坐标，左上起顺时针）；null=自动检测
+
+photo_dir: data/images/明之言检测结果
+
+qa:
+  aniso_warn: 0.05        # 两轴 mm/px 相对差 >5% 记 warn（探针实测正常片 0.6%~3%）
+  aniso_fail: 0.10        # >10% 记 fail（13# 错检实测 84%，差一个数量级）
+  mm_per_px_lo: 0.5       # 合理域（本批导出缩图实测应在 0.95~1.10）
+  mm_per_px_hi: 2.0
+
+photos:
+  - {file: 1-1.png, sample_id: "1#",   category: special, type: "5+10A+5 钢化中空",        thickness_mm: null, spec_mm: [510, 360], expected_sheets: 1, manual_quad: null, notes: "两片 5mm；同一样片两张照片之一"}
+  - {file: 1-2.png, sample_id: "1#",   category: special, type: "5+10A+5 钢化中空",        thickness_mm: null, spec_mm: [510, 360], expected_sheets: 1, manual_quad: [[31,125],[513,125],[513,463],[31,463]], notes: "同一样片两张照片之二（重复性估计对）"}
+  - {file: 2.png,   sample_id: "2#",   category: special, type: "5+1.14PVB+5 钢化夹层",    thickness_mm: null, spec_mm: [610, 610], expected_sheets: 1, manual_quad: null, notes: "两片 5mm 夹 PVB"}
+  - {file: 3.png,   sample_id: "3#",   category: special, type: "6mm 超白钢化 防火",        thickness_mm: 6,    spec_mm: [610, 610], expected_sheets: 1, manual_quad: null, notes: "超白基片，与 6mm 普白档并排定性对照"}
+  - {file: 4.png,   sample_id: "4#",   category: core,    type: "5mm 普白钢化",            thickness_mm: 5,    spec_mm: [610, 610], expected_sheets: 1, manual_quad: null, notes: ""}
+  - {file: 6.png,   sample_id: "6#",   category: core,    type: "4mm 普白钢化",            thickness_mm: 4,    spec_mm: [610, 610], expected_sheets: 1, manual_quad: null, notes: ""}
+  - {file: 7.png,   sample_id: "7#",   category: special, type: "10mm 均质钢化",           thickness_mm: 10,   spec_mm: [610, 610], expected_sheets: 1, manual_quad: null, notes: "均质（热浸）工艺；10mm 档唯一样片，n=1 不入 refs 草案"}
+  - {file: 8-1.png, sample_id: "8#-1", category: control, type: "4mm 普白 未钢化",         thickness_mm: 4,    spec_mm: [610, 610], expected_sheets: 1, manual_quad: [[29,15],[629,15],[629,627],[29,627]], notes: "零点对照；暗场下预期不发亮、自动检测预期失败"}
+  - {file: 8-2.png, sample_id: "8#-2", category: control, type: "4mm 普白 未钢化",         thickness_mm: 4,    spec_mm: [610, 610], expected_sheets: 1, manual_quad: [[25,15],[631,15],[631,626],[25,626]], notes: "零点对照第二片"}
+  - {file: 10.png,  sample_id: "10#",  category: core,    type: "6mm 普白钢化",            thickness_mm: 6,    spec_mm: [610, 610], expected_sheets: 1, manual_quad: null, notes: ""}
+  - {file: 11.png,  sample_id: "11#",  category: core,    type: "8mm 普白钢化",            thickness_mm: 8,    spec_mm: [610, 610], expected_sheets: 1, manual_quad: null, notes: ""}
+  - {file: 12.png,  sample_id: "12#",  category: core,    type: "8mm 普白钢化",            thickness_mm: 8,    spec_mm: [610, 610], expected_sheets: 1, manual_quad: null, notes: ""}
+  - {file: 13.png,  sample_id: "13#",  category: special, type: "3.2mm 太阳能光伏 压花",    thickness_mm: 3.2,  spec_mm: [610, 610], expected_sheets: 1, manual_quad: [[21,15],[626,15],[626,628],[21,628]], notes: "压花纹理；探针实测错检成 2 片（QA 预期 fail），待人工定角"}
+  - {file: 14.png,  sample_id: "14#",  category: special, type: "12mm 普白钢化 高应力防火", thickness_mm: 12,   spec_mm: [610, 610], expected_sheets: 1, manual_quad: null, notes: "应力刻意偏高；12mm 档唯一样片，n=1 不入 refs 草案"}
+  - {file: 15.png,  sample_id: "15#",  category: core,    type: "15mm 普白钢化",           thickness_mm: 15,   spec_mm: [610, 610], expected_sheets: 1, manual_quad: null, notes: "15mm 档唯一样片，n=1 出观测值、不入 refs 草案"}
+  - {file: 16-1.png, sample_id: "16#", category: special, type: "6Low-E+12A+6 钢化中空",   thickness_mm: null, spec_mm: [510, 360], expected_sheets: 1, manual_quad: [[29,141],[509,141],[509,468],[29,468]], notes: "同一样片两张照片之一"}
+  - {file: 16-2.png, sample_id: "16#", category: special, type: "6Low-E+12A+6 钢化中空",   thickness_mm: null, spec_mm: [510, 360], expected_sheets: 1, manual_quad: [[21,142],[498,142],[498,470],[21,470]], notes: "同一样片两张照片之二（重复性估计对）"}
+  - {file: 18.png,  sample_id: "18#",  category: special, type: "6mm Low-E 钢化单片",      thickness_mm: 6,    spec_mm: [510, 360], expected_sheets: 1, manual_quad: null, notes: "镀膜改变光学幅度，与 6mm 普白并排定性对照"}
+  - {file: 19.png,  sample_id: "19#",  category: special, type: "6mm Low-E 钢化单片",      thickness_mm: 6,    spec_mm: [510, 360], expected_sheets: 1, manual_quad: null, notes: ""}
+  - {file: 20.png,  sample_id: "20#",  category: core,    type: "6mm 普白钢化",            thickness_mm: 6,    spec_mm: [510, 360], expected_sheets: 1, manual_quad: null, notes: "本批唯一 510×360 的普白钢化"}
+  - {file: 21.png,  sample_id: "21#",  category: core,    type: "6mm 普白钢化",            thickness_mm: 6,    spec_mm: [610, 610], expected_sheets: 1, manual_quad: null, notes: ""}
+  - {file: 22.png,  sample_id: "22#",  category: core,    type: "8mm 普白钢化",            thickness_mm: 8,    spec_mm: [610, 610], expected_sheets: 1, manual_quad: null, notes: ""}
+  - {file: 23.png,  sample_id: "23#",  category: core,    type: "5mm 普白钢化",            thickness_mm: 5,    spec_mm: [610, 610], expected_sheets: 1, manual_quad: null, notes: ""}
+  - {file: 24.png,  sample_id: "24#",  category: core,    type: "6mm 普白钢化",            thickness_mm: 6,    spec_mm: [610, 610], expected_sheets: 1, manual_quad: null, notes: ""}
+  - {file: 25.png,  sample_id: "25#",  category: core,    type: "5mm 普白钢化",            thickness_mm: 5,    spec_mm: [610, 610], expected_sheets: 1, manual_quad: null, notes: ""}
+  - {file: 26.png,  sample_id: "26#",  category: core,    type: "8mm 普白钢化",            thickness_mm: 8,    spec_mm: [610, 610], expected_sheets: 1, manual_quad: null, notes: ""}
+  - {file: 27.png,  sample_id: "27#",  category: core,    type: "4mm 普白钢化",            thickness_mm: 4,    spec_mm: [610, 610], expected_sheets: 1, manual_quad: null, notes: ""}
+  - {file: 28.png,  sample_id: "28#",  category: core,    type: "6mm 普白钢化",            thickness_mm: 6,    spec_mm: [610, 610], expected_sheets: 1, manual_quad: null, notes: ""}
+
+# 第三方参考：Softsolution LineScanner L2 各向异性协议（北玻送测，扫描日 2026-06-30，
+# 报告与对应表在 data/images/北玻 2026. 8.4/，人工转录自 样品编号对应关系.xlsx）。
+# match: same_sheet=同一块玻璃（直接可比）| same_furnace=同一炉仅供参考（批级代理，非同片）
+# q95_nm/q98_nm：L2 评估域内光程差分位（nm；其评估域=扣角 75mm/扣边 25mm，与本报告口径不同）
+l2_reference:
+  - {sample_id: "1#",   q95_nm: 47,  q98_nm: 51,  l2_id: 6762, match: same_sheet}
+  - {sample_id: "2#",   q95_nm: 116, q98_nm: 131, l2_id: 6752, match: same_sheet}
+  - {sample_id: "3#",   q95_nm: 45,  q98_nm: 49,  l2_id: 6753, match: same_sheet}
+  - {sample_id: "4#",   q95_nm: 47,  q98_nm: 53,  l2_id: 6754, match: same_sheet}
+  - {sample_id: "6#",   q95_nm: 45,  q98_nm: 48,  l2_id: 6755, match: same_furnace}
+  - {sample_id: "7#",   q95_nm: 78,  q98_nm: 84,  l2_id: 6744, match: same_furnace}
+  - {sample_id: "8#-1", q95_nm: 35,  q98_nm: 37,  l2_id: 6741, match: same_furnace}
+  - {sample_id: "11#",  q95_nm: 75,  q98_nm: 84,  l2_id: 6757, match: same_furnace}
+  - {sample_id: "12#",  q95_nm: 72,  q98_nm: 80,  l2_id: 6756, match: same_furnace}
+  - {sample_id: "13#",  q95_nm: null, q98_nm: null, l2_id: null, match: same_sheet}   # L2 测量失败（压花）
+  - {sample_id: "16#",  q95_nm: 56,  q98_nm: 70,  l2_id: 6764, match: same_sheet}
+  - {sample_id: "18#",  q95_nm: 84,  q98_nm: 307, l2_id: 6759, match: same_sheet}    # 98% 大尾部
