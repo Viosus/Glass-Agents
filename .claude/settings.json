@@ -162,7 +162,10 @@
       "Bash(.venv/Scripts/python.exe -X utf8 -c ' *)",
       "Bash(PYTHONIOENCODING=utf-8 \"D:/Glass Agents/.venv/Scripts/python.exe\" dump_pdf_g0.py 5 6)",
       "Bash(echo \"\\(exit=$?  no output means key absent\\)\")",
-      "Bash(\"D:/Glass Agents/.venv/Scripts/python.exe\" \"C:/Users/Administrator/AppData/Local/Temp/claude/d--Glass-Agents/7f1de21d-0670-4a47-9362-eb18e5327964/scratchpad/roll_test.py\")"
+      "Bash(\"D:/Glass Agents/.venv/Scripts/python.exe\" \"C:/Users/Administrator/AppData/Local/Temp/claude/d--Glass-Agents/7f1de21d-0670-4a47-9362-eb18e5327964/scratchpad/roll_test.py\")",
+      "Bash(PYTHONIOENCODING=utf-8 'D:/Glass Agents/.venv/Scripts/python.exe' -c ' *)",
+      "PowerShell($env:PYTHONIOENCODING='utf-8'; Set-Location \"d:\\\\Glass Agents\"; & \"D:\\\\Glass Agents\\\\.venv\\\\Scripts\\\\python.exe\" tools\\\\review.py \"D:\\\\GlassApp\\\\app\\\\uploader.py\" \"D:\\\\GlassApp\\\\app\\\\settings_page.py\" \"D:\\\\GlassApp\\\\app\\\\history_page.py\" \"D:\\\\GlassApp\\\\app\\\\results_store.py\" \"D:\\\\GlassApp\\\\app\\\\watcher.py\" \"D:\\\\GlassApp\\\\app\\\\main_window.py\" \"D:\\\\GlassApp\\\\server\\\\ingest.py\" \"D:\\\\GlassApp\\\\server\\\\analysis.py\" \"D:\\\\GlassApp\\\\app\\\\analysis_page.py\")",
+      "PowerShell($env:PYTHONIOENCODING='utf-8'; Set-Location D:\\\\GlassApp; & \"D:\\\\Glass Agents\\\\.venv\\\\Scripts\\\\python.exe\" -m app.main --selftest \"d:\\\\Glass Agents\\\\data\\\\images\\\\stress_fringe\\\\003_系统59.1_人工80.png\" 2>&1 | Select-Object -Last 2; & \"D:\\\\Glass Agents\\\\.venv\\\\Scripts\\\\python.exe\" \"C:\\\\Users\\\\Administrator\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--Glass-Agents\\\\6dce5797-abb0-47a9-8b90-1f4a01048056\\\\scratchpad\\\\ingest_test.py\")"
     ],
     "additionalDirectories": [
       "D:\\明之言小程序\\pages\\index",
