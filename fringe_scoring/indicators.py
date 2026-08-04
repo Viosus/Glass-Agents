@@ -113,6 +113,22 @@ def _resample_to_1px_per_mm(image: np.ndarray, mm_per_px: float) -> np.ndarray:
     return np.asarray(cv2.resize(arr, (cols, rows), interpolation=interp), dtype=float)
 
 
+def _glcm_quantize(arr: np.ndarray, ng: int) -> tuple[np.ndarray, type]:
+    """灰度图（float 2D）→ Ng 级量化索引 q 与索引 dtype。
+
+    量化级存 uint8（ng²−1 ≤ 255 时配对索引也留在 uint8 域）：数值与 intp 完全相同，
+    只为削内存流量（GLCM 是带宽热点，_GLCM_LEVELS=8 → 索引最大 63）。
+    """
+    idx_dtype = np.uint8 if ng * ng <= 256 else np.intp
+    lo, hi = float(arr.min()), float(arr.max())
+    if hi <= lo:
+        q = np.zeros(arr.shape, dtype=idx_dtype)  # 常量图：无纹理
+    else:
+        q = np.clip(np.floor((arr - lo) / (hi - lo) * (ng - 1) + 0.5), 0, ng - 1)
+        q = q.astype(idx_dtype)
+    return q, idx_dtype
+
+
 def _glcm_ca_cpa(image: np.ndarray, ng: int = _GLCM_LEVELS) -> tuple[float, float]:
     """灰度共生矩阵（d=1，四方向，对称+归一）→ (Ca 对比度, CPa 聚类突出)，四方向平均。
 
@@ -122,15 +138,7 @@ def _glcm_ca_cpa(image: np.ndarray, ng: int = _GLCM_LEVELS) -> tuple[float, floa
     arr = np.asarray(image, dtype=float)
     if arr.ndim != 2:
         raise ValueError("indicators: GLCM 需要二维图像")
-    # 量化级存 uint8（ng²−1 ≤ 255 时配对索引也留在 uint8 域）：数值与 intp 完全相同，
-    # 只为削内存流量（本函数是带宽热点，级数固定 _GLCM_LEVELS=8 → 索引最大 63）
-    idx_dtype = np.uint8 if ng * ng <= 256 else np.intp
-    lo, hi = float(arr.min()), float(arr.max())
-    if hi <= lo:
-        q = np.zeros(arr.shape, dtype=idx_dtype)  # 常量图：无纹理
-    else:
-        q = np.clip(np.floor((arr - lo) / (hi - lo) * (ng - 1) + 0.5), 0, ng - 1)
-        q = q.astype(idx_dtype)
+    q, idx_dtype = _glcm_quantize(arr, ng)
     rows, cols = arr.shape
 
     ca_list, cpa_list = [], []

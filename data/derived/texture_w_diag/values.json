@@ -1,0 +1,184 @@
+{
+  "step_sweep": {
+    "table": [
+      {
+        "d_mm": 1,
+        "n": 115,
+        "ca_median": 0.0583,
+        "ca_frac_of_bound": 0.00119,
+        "branch1_median": 0.0345,
+        "branch2_median": 0.5058,
+        "ratio_b2_over_b1": 14.7,
+        "rho_ca_only": -0.922,
+        "rho_cpa_only": -0.883,
+        "rho_combined": -0.893,
+        "branch1_var_share": 0.0019
+      },
+      {
+        "d_mm": 2,
+        "n": 115,
+        "ca_median": 0.1139,
+        "ca_frac_of_bound": 0.00232,
+        "branch1_median": 0.0482,
+        "branch2_median": 0.5043,
+        "ratio_b2_over_b1": 10.5,
+        "rho_ca_only": -0.921,
+        "rho_cpa_only": -0.883,
+        "rho_combined": -0.896,
+        "branch1_var_share": 0.0038
+      },
+      {
+        "d_mm": 5,
+        "n": 115,
+        "ca_median": 0.3013,
+        "ca_frac_of_bound": 0.00615,
+        "branch1_median": 0.0784,
+        "branch2_median": 0.4967,
+        "ratio_b2_over_b1": 6.3,
+        "rho_ca_only": -0.921,
+        "rho_cpa_only": -0.882,
+        "rho_combined": -0.899,
+        "branch1_var_share": 0.0133
+      },
+      {
+        "d_mm": 10,
+        "n": 115,
+        "ca_median": 0.5682,
+        "ca_frac_of_bound": 0.0116,
+        "branch1_median": 0.1077,
+        "branch2_median": 0.4825,
+        "ratio_b2_over_b1": 4.5,
+        "rho_ca_only": -0.926,
+        "rho_cpa_only": -0.886,
+        "rho_combined": -0.905,
+        "branch1_var_share": 0.0339
+      },
+      {
+        "d_mm": 20,
+        "n": 115,
+        "ca_median": 0.7232,
+        "ca_frac_of_bound": 0.01476,
+        "branch1_median": 0.1215,
+        "branch2_median": 0.4655,
+        "ratio_b2_over_b1": 3.8,
+        "rho_ca_only": -0.931,
+        "rho_cpa_only": -0.906,
+        "rho_combined": -0.914,
+        "branch1_var_share": 0.0461
+      },
+      {
+        "d_mm": 50,
+        "n": 115,
+        "ca_median": 1.0779,
+        "ca_frac_of_bound": 0.022,
+        "branch1_median": 0.1483,
+        "branch2_median": 0.4228,
+        "ratio_b2_over_b1": 2.9,
+        "rho_ca_only": -0.938,
+        "rho_cpa_only": -0.898,
+        "rho_combined": -0.917,
+        "branch1_var_share": 0.0753
+      },
+      {
+        "d_mm": 100,
+        "n": 115,
+        "ca_median": 1.4272,
+        "ca_frac_of_bound": 0.02913,
+        "branch1_median": 0.1707,
+        "branch2_median": 0.4008,
+        "ratio_b2_over_b1": 2.3,
+        "rho_ca_only": -0.93,
+        "rho_cpa_only": -0.89,
+        "rho_combined": -0.909,
+        "branch1_var_share": 0.1528
+      }
+    ],
+    "current_d_mm": 1,
+    "best_d_mm": 50,
+    "rho_at_current": -0.893,
+    "rho_at_best": -0.917,
+    "note": "步距 d 以毫米计（mm/px=1 故 px≡mm）。判别力在 d≈20~50 mm 出峰，与应力斑的几十毫米特征尺度一致；但该优势（约 0.02）远小于饱和裁剪的影响量级，且未控制饱和，故不足以支撑改动已定的读法A（d=1 mm）"
+  },
+  "stratified_by_saturation": {
+    "groups": [
+      {
+        "sat_lo": 0.0027,
+        "sat_hi": 0.0266,
+        "n": 38,
+        "rho_w_vs_man": -0.28,
+        "rho_sat_vs_man": 0.372,
+        "man_lo": 75.0,
+        "man_hi": 95.0
+      },
+      {
+        "sat_lo": 0.0266,
+        "sat_hi": 0.07167,
+        "n": 38,
+        "rho_w_vs_man": -0.906,
+        "rho_sat_vs_man": -0.873,
+        "man_lo": 60.0,
+        "man_hi": 95.0
+      },
+      {
+        "sat_lo": 0.07167,
+        "sat_hi": 0.14279,
+        "n": 39,
+        "rho_w_vs_man": -0.811,
+        "rho_sat_vs_man": -0.397,
+        "man_lo": 50.0,
+        "man_hi": 75.0
+      }
+    ],
+    "note": "组内饱和度已拉平，此时 W 仍有的相关性是它自己挣的。低饱和组（全为好片、人工分跨度窄）相关性塌缩，说明指标在'好片之间挑更好的'这一段基本失效；中高饱和组仍强"
+  },
+  "branch_resolvability": {
+    "n": 480,
+    "branch1_contrib_median": 0.01474,
+    "branch1_contrib_std": 0.00377,
+    "branch2_contrib_median": 0.19865,
+    "branch2_contrib_std": 0.05729,
+    "neighbor_gap_median": 0.000331,
+    "std_over_gap": 11.4,
+    "n_rank_changed": 424,
+    "max_rank_move": 32,
+    "inversion_frac": 0.01262,
+    "reported_differs_by_decimals": {
+      "1": 14,
+      "2": 140,
+      "3": 428,
+      "4": 473
+    },
+    "min_decimals_recommended": 3,
+    "grade_flip": {
+      "tertile": {
+        "lines": [
+          0.1898,
+          0.2432
+        ],
+        "n_flipped": 11,
+        "frac": 0.0229
+      },
+      "p20_p80": {
+        "lines": [
+          0.1617,
+          0.2669
+        ],
+        "n_flipped": 15,
+        "frac": 0.0312
+      }
+    },
+    "note": "支路1 的方差占比虽小（<1%），但其 1σ 幅度约为相邻名次间距的 11 倍，故在分数中可分辨。前提：报数精度至少 3 位小数——保留 2 位时 71% 的片看不出支路1 的作用"
+  },
+  "selection_bias": {
+    "n_splits": 1000,
+    "in_sample_mean_abs_rho": 0.9319,
+    "held_out_mean_abs_rho": 0.9223,
+    "optimism_bias": 0.0096,
+    "form_picked_counts": {
+      "geometric": 721,
+      "ca_only": 279
+    },
+    "note": "形式评比与最终报数用了同一批 115 片，故存在乐观偏差；实测约 +0.01，可接受。但纯数据驱动的选择更常选中其它形式——现行形式的选定还权衡了病态行为，不是纯相关性最优"
+  },
+  "_口径说明": "全部基于原生分辨率（mm/px=1，px≡mm）；幅度为 8-bit 强度域"
+}
