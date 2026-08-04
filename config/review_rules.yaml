@@ -63,6 +63,7 @@ approved_uppercase_names:
   # Qt 框架强制的虚函数覆写名（GlassApp 界面层；重命名即失效，非本仓命名铁律适用对象）
   - dragEnterEvent
   - dropEvent
+  - closeEvent
   - wheelEvent
   - mousePressEvent
   - mouseDoubleClickEvent
