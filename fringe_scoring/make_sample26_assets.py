@@ -4,19 +4,20 @@
 ① 六指标全量 + 普白钢化按厚度分档统计 → refs_by_thickness 初标草案（只出报告与
    可粘贴 yaml 片段，GlassApp config 零改动——用户 2026-08-04 拍板）；
 ② 未钢化对照（8#-1/8#-2）验指标零点 + ε 条款候选窗口（不写 config，TODO(plant)）；
-③ 已知物理尺寸（610×610 / 510×360 mm）反解逐张 mm/px（首次非产线空间标定）。
+③ 已知物理尺寸（610×610 / 510×360 mm）核验逐张裁切覆盖度（尺度先验 1 px/mm）。
 
 口径要点：
-- 一遍打分流：检出角点 → compute_pipeline 一次 → 由矫正尺寸反解 mm/px →
-  逐片 deepcopy(cfg) 注入 calibration.{mm_per_px, thickness_mm} → 六指标。
-  mm_per_px 只被 compute_sheet_indicators 的 W_w 链路消费，pipeline 无需重跑；
-  每片另跑 mm_per_px=None 的原生对照口径（只多一次 GLCM）。
+- **尺度先验 = 1 px/mm**（2026-08-04 用户澄清：本批与产线同为线扫原生口径，
+  全帧高恒 630px=扫描幅宽佐证；规格表尺寸=玻璃在图中应有的像素数）。
+  calibration.mm_per_px 恒注入 1.0（恒等映射即标准口径）。
+- 规格对照降级为**裁切覆盖度 QA**：warp/spec 的偏差是裁切误差（自动检测内咬
+  边界 ~0.5–1.2%、框装中空压边遮挡 6–9%），**绝不反推缩放系数**——早期版本
+  曾把该偏差当 mm/px 反解并注入重采样，属口径错误，已废。
+- 一遍打分流：检出角点 → compute_pipeline 一次 → 裁切 QA → 六指标。
 - 角点三分支：manifest.manual_quad > 自动检测 > detection_failed（不出值，等人工定角）。
-- 几何 QA：检出片数 / 两轴 mm/px 相对差（aniso）/ mm/px 合理域；容差在 manifest.qa。
+- 几何 QA：检出片数 / 长宽比偏差（aniso）/ 覆盖度合理域；容差在 manifest.qa。
 - 防污染硬断言：进分档统计必须 core + qa 非 fail + provenance∈{auto,manual} + 单片；
   scored + excluded_from_stats + failed = 照片总数守恒。
-- ⚠️ 本批照片为 ~650×630 导出缩图（非相机原始分辨率），mm/px≈1.0 是导出缩放的
-  产物；「重采样 1px/mm」在此近似恒等，原始光学分辨率已丢——报告须披露。
 
 算法调用 D:\\GlassApp\\fringe_scoring 权威实现（v1.12 texture_w 版）；本仓自带的
 fringe_scoring 是 ccp 旧版，启动断言防混用。照片不入库；本脚本产物入库。
@@ -104,20 +105,22 @@ def _load_gray(path: Path) -> np.ndarray:
     return np.asarray(img, dtype=float)
 
 
-def _mm_per_px(spec_mm: list, warp_w: int, warp_h: int) -> dict:
-    """已知物理尺寸 + 矫正像素尺寸 → mm/px（长边配长边；正方形规格免配准）。
+def _crop_check(spec_mm: list, warp_w: int, warp_h: int) -> dict:
+    """裁切覆盖度 QA：矫正像素尺寸 vs 玻璃物理尺寸（尺度先验 1 px/mm）。
 
-    两轴各得一个估计，相对差 aniso = |m_long/m_short − 1|——它同时就是
-    「矫正长宽比 vs 规格长宽比」的偏差，是几何 QA 的主判据。
+    2026-08-04 用户澄清后的正确语义：本批与产线同为线扫原生 1 px/mm（全帧高
+    恒 630px=幅宽佐证），规格表尺寸就是玻璃在图中**应有的像素数**——
+    warp/spec 的偏差是**裁切误差**（检测内咬边界/框装压边遮挡），不是缩放系数。
+    coverage=warp/spec（长边配长边）；aniso=两轴覆盖度相对差，即「矫正长宽比
+    vs 规格长宽比」的偏差，仍是错检的主判据（13# 错检即由它抓出）。
     """
     spec_long, spec_short = sorted((float(spec_mm[0]), float(spec_mm[1])), reverse=True)
     warp_long, warp_short = sorted((int(warp_w), int(warp_h)), reverse=True)
-    m_long = spec_long / warp_long
-    m_short = spec_short / warp_short
+    cov_long = warp_long / spec_long
+    cov_short = warp_short / spec_short
     return {
-        "long": round(m_long, 5), "short": round(m_short, 5),
-        "mean": round((m_long + m_short) / 2.0, 5),
-        "aniso": round(abs(m_long / m_short - 1.0), 5),
+        "coverage_long": round(cov_long, 5), "coverage_short": round(cov_short, 5),
+        "aniso": round(abs(cov_long / cov_short - 1.0), 5),
     }
 
 
@@ -133,14 +136,15 @@ def _qa_check(n_sheets: int, expected: int, mppx: dict | None,
         level = "fail"
     if mppx is not None:
         if mppx["aniso"] > qa_cfg["aniso_fail"]:
-            reasons.append(f"两轴 mm/px 相对差 {mppx['aniso']:.1%} > {qa_cfg['aniso_fail']:.0%}")
+            reasons.append(f"长宽比偏差 {mppx['aniso']:.1%} > {qa_cfg['aniso_fail']:.0%}")
             level = "fail"
         elif mppx["aniso"] > qa_cfg["aniso_warn"]:
-            reasons.append(f"两轴 mm/px 相对差 {mppx['aniso']:.1%} > {qa_cfg['aniso_warn']:.0%}")
+            reasons.append(f"长宽比偏差 {mppx['aniso']:.1%} > {qa_cfg['aniso_warn']:.0%}")
             level = "warn" if level == "pass" else level
-        if not qa_cfg["mm_per_px_lo"] <= mppx["mean"] <= qa_cfg["mm_per_px_hi"]:
-            reasons.append(f"mm/px={mppx['mean']} 出合理域 "
-                           f"[{qa_cfg['mm_per_px_lo']}, {qa_cfg['mm_per_px_hi']}]")
+        cov = (mppx["coverage_long"] + mppx["coverage_short"]) / 2.0
+        if not qa_cfg["coverage_lo"] <= cov <= qa_cfg["coverage_hi"]:
+            reasons.append(f"裁切覆盖度 {cov:.1%} 出合理域 "
+                           f"[{qa_cfg['coverage_lo']:.0%}, {qa_cfg['coverage_hi']:.0%}]")
             level = "fail"
     if provenance == "fullframe":
         reasons.append("整图口径（未检出玻璃边界，含背景污染）")
@@ -192,14 +196,14 @@ def _score_photo(entry: dict, base_cfg: dict, qa_cfg: dict, photo_dir: Path,
         except ValueError as e:
             rec["detection"] = {"provenance": "detection_failed", "n_sheets": 0,
                                 "error": str(e)[:160]}
-            rec["mm_per_px"] = None
+            rec["crop_check"] = None
             rec["qa"] = _qa_check(0, entry["expected_sheets"], None, "detection_failed", qa_cfg)
             rec["indicators"] = None
             return rec
     rec["detection"] = {"provenance": provenance, "n_sheets": n_sheets}
 
     if quad is None:  # 片数不符：只记检测信息，指标空缺等人工定角
-        rec["mm_per_px"] = None
+        rec["crop_check"] = None
         rec["qa"] = _qa_check(n_sheets, entry["expected_sheets"], None, provenance, qa_cfg)
         rec["indicators"] = None
         return rec
@@ -208,29 +212,23 @@ def _score_photo(entry: dict, base_cfg: dict, qa_cfg: dict, photo_dir: Path,
     pipe = api["compute_pipeline"](arr, config=base_cfg, quad_corners=quad)
     warp_h, warp_w = pipe.arr.shape
     rec["warp_px"] = [int(warp_w), int(warp_h)]
-    mppx = _mm_per_px(entry["spec_mm"], warp_w, warp_h)
-    rec["mm_per_px"] = mppx
-    rec["qa"] = _qa_check(n_sheets, entry["expected_sheets"], mppx, provenance, qa_cfg)
+    crop = _crop_check(entry["spec_mm"], warp_w, warp_h)
+    rec["crop_check"] = crop
+    rec["qa"] = _qa_check(n_sheets, entry["expected_sheets"], crop, provenance, qa_cfg)
     if rec["qa"]["level"] == "fail":
         rec["indicators"] = None
         return rec
 
+    # 尺度先验：线扫原生 1 px/mm（用户 2026-08-04 确认，与产线同口径）——
+    # 恒等映射即标准口径；规格对照只作裁切 QA，绝不反推缩放系数
     cfg_cal = copy.deepcopy(base_cfg)
     calib = cfg_cal["indicators"]["calibration"]
-    calib["mm_per_px"] = mppx["mean"]
+    calib["mm_per_px"] = 1.0
     calib["thickness_mm"] = entry.get("thickness_mm")
     r = api["score_from_pipeline"](pipe, cfg_cal)
     ind = api["compute_sheet_indicators"](pipe.arr, ~r.border_mask_arr, cfg_cal, pipeline=pipe)
     rec["indicators"] = _ind_payload(ind)
 
-    # 原生对照口径（不重采样）：只为量化 mm/px 注入对 W_w 的实际影响
-    cfg_nat = copy.deepcopy(base_cfg)
-    cfg_nat["indicators"]["calibration"]["mm_per_px"] = None
-    ind_nat = api["compute_sheet_indicators"](pipe.arr, ~r.border_mask_arr, cfg_nat, pipeline=pipe)
-    rec["indicators_native"] = {
-        "texture_w": round(ind_nat.texture_w, 4),
-        "texture_w_dynamic_range": round(ind_nat.texture_w_dynamic_range, 2),
-    }
     # 内缩 5% 的动态范围（诊断量：剔除边缘辉光/矫正边界对 max−min 的污染）
     mh, mw = max(1, int(0.05 * warp_h)), max(1, int(0.05 * warp_w))
     inset = pipe.arr[mh:warp_h - mh, mw:warp_w - mw]
@@ -408,7 +406,7 @@ def main() -> int:
     epsilon = {
         "note": "官方判据（整片 max−min）实测无区分力——片上标签纸/边缘辉光把对照片 DR "
                 "拉到与钢化片同域；内缩 5% 口径才分离。ε 落地须 (a) 无标签样本重测或 "
-                "(b) 判据改内缩域（工程决策），且本批为导出缩图非产线原生分辨率——"
+                "(b) 判据改内缩域（工程决策），并在产线批复核——"
                 "ε 定值仍 TODO(plant)",
         "controls_dr": [r["indicators"]["texture_w_dynamic_range"] for r in ctrl],
         "controls_dr_inset5": [r.get("dynamic_range_inset5") for r in ctrl],
@@ -436,9 +434,10 @@ def main() -> int:
             repeat[sid] = {
                 "d_texture_w": round(abs(rs[0]["indicators"]["texture_w"]
                                          - rs[1]["indicators"]["texture_w"]), 4),
-                "d_mm_per_px": (round(abs(rs[0]["mm_per_px"]["mean"]
-                                          - rs[1]["mm_per_px"]["mean"]), 5)
-                                if rs[0]["mm_per_px"] and rs[1]["mm_per_px"] else None),
+                "d_coverage": (round(abs(
+                    (rs[0]["crop_check"]["coverage_long"] + rs[0]["crop_check"]["coverage_short"])
+                    - (rs[1]["crop_check"]["coverage_long"] + rs[1]["crop_check"]["coverage_short"])
+                ) / 2.0, 5) if rs[0]["crop_check"] and rs[1]["crop_check"] else None),
                 "d_total": round(abs(rs[0]["indicators"]["total_score"]
                                      - rs[1]["indicators"]["total_score"]), 2),
             }
@@ -476,7 +475,7 @@ def main() -> int:
         "meta": {"date": DATE, "config_sha256_16": cfg_sha,
                  "script": "fringe_scoring/make_sample26_assets.py",
                  "评估域": "整片矫正图（W_w）/ 扣免罚边框带内部（其余五项）",
-                 "口径": "逐片 mm/px 注入重采样 1px/mm；照片为导出缩图，见 ⚠️ 披露"},
+                 "口径": "尺度先验 1px/mm（线扫原生，用户确认）；规格对照=裁切覆盖度 QA"},
         "n_photos": len(records), "n_scored": len(scored),
         "n_no_indicators": len(records) - len(scored),
         "photos": records,

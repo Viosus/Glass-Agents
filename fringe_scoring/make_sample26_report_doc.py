@@ -2,7 +2,7 @@
 
 只读 data/derived/sample26_thickness/values.json（make_sample26_assets.py 产物），
 渲染管线复用 make_uniformity_gb_doc.render_pages（PDF）与 make_docx_versions（Word）。
-章节：方法口径 / 名册与 mm/px 标定 / 逐片明细 / 厚度分档与趋势 / 特种片对照 /
+章节：方法口径 / 名册与裁切覆盖度核验 / 逐片明细 / 厚度分档与趋势 / 特种片对照 /
 未钢化零点与 ε / 检测异常处置 / refs 初标草案 / 局限清单。
 用法：venv python fringe_scoring/make_sample26_report_doc.py
 """
@@ -39,12 +39,13 @@ def _vals() -> dict:
 def _detail_row(r: dict) -> str:
     """逐片明细一行。"""
     i = r["indicators"]
-    m = r["mm_per_px"]
+    m = r["crop_check"]
     prov = {"auto": "自动", "manual": "人工", "fullframe": "整图"}.get(
         r["detection"]["provenance"], r["detection"]["provenance"])
     qa = {"pass": "", "warn": " (warn)", "fail": " (FAIL)"}[r["qa"]["level"]]
+    cov = (m["coverage_long"] + m["coverage_short"]) / 2
     return (f"{r['sample_id']:6s}　{r['thickness_mm'] if r['thickness_mm'] else '—':>4}　"
-            f"{m['mean']:.4f}　{i['x095']:>5.0f}　{i['gray_variance']:>7.1f}　"
+            f"{cov:6.1%}　{i['x095']:>5.0f}　{i['gray_variance']:>7.1f}　"
             f"{i['gradient_mean']:>5.2f}　{i['texture_w']:.4f}　"
             f"{i['position_score']:>5.1f}　{i['total_score']:>6.2f}　{prov}{qa}")
 
@@ -58,14 +59,19 @@ def report_pages() -> list[list[tuple[str, str]]]:
     control = [r for r in photos if r["category"] == "control"]
     eps = V["epsilon"]
     rep = V["repeatability"]
-    mppx_all = [r["mm_per_px"]["mean"] for r in photos if r["mm_per_px"]]
-    aniso_all = [r["mm_per_px"]["aniso"] for r in photos if r["mm_per_px"]]
+    cov_all = [(r["crop_check"]["coverage_long"] + r["crop_check"]["coverage_short"]) / 2
+               for r in photos if r["crop_check"]]
+    aniso_all = [r["crop_check"]["aniso"] for r in photos if r["crop_check"]]
 
     def band_row(b):
         """厚度档统计表一行：厚度/n/成员/W_w 均值与极差/总分均值。"""
         return (f"{b['thickness_mm']:>4}mm　n={b['n']}　{'/'.join(b['members']):24s}　"
                 f"{b['texture_w']['mean']:.4f}　[{b['texture_w']['min']:.4f}, "
                 f"{b['texture_w']['max']:.4f}]　{b['total_score']['mean']:>6.2f}")
+
+    def band_mean(t):
+        """指定厚度档的 W_w 均值（数据驱动，勿写死）。"""
+        return next(b["texture_w"]["mean"] for b in V["bands"] if b["thickness_mm"] == t)
 
     return [
         # ── P1 封面 + 方法口径 ──
@@ -81,25 +87,27 @@ def report_pages() -> list[list[tuple[str, str]]]:
              "未钢化对照（8#-1/8#-2）与中空/夹层/超白/Low-E/压花特种片。\n"
              "\n"
              "方法：GlassApp v1.12 六指标（X0.95/灰度方差/梯度均值/梯度方差/纹理指数\n"
-             "W_w/位置评分），逐张由已知物理尺寸反解 mm/px 并注入 1px/mm 重采样\n"
-             "（仅影响 W_w）；评估域=整片矫正图（W_w）/扣免罚边框带内部（其余五项）。\n"
+             "W_w/位置评分），尺度先验=线扫原生 1 px/mm（与产线同口径），恒等映射\n"
+             "即标准口径；评估域=整片矫正图（W_w）/扣免罚边框带内部（其余五项）。\n"
              "检出失败或错检的照片以人工角点（剖面法定界+目检交叉验证）补测，\n"
              "来源在明细表如实标注；判定层默认停用，本报告只出分数不下结论。"),
             ("space", "0.008"),
             ("note",
-             "三条前置披露：① 本批照片为 ~650×630 导出缩图（非相机原始分辨率），\n"
-             "mm/px≈1.0 是导出缩放的产物，原始光学分辨率已丢失；② 全批曝光一致性未知，\n"
+             "三条前置披露：① 尺度为先验而非反解——线扫原生 1 px/mm（全帧高恒 630px\n"
+             "=扫描幅宽佐证），规格表尺寸即玻璃应有像素数；② 全批曝光一致性未知，\n"
              "绝对灰度类指标（X0.95/灰度方差/梯度两项）的跨片可比性以此为前提；\n"
              "③ 本批无人工质量评分——所有统计只反映指标行为，不构成质量判级。"),
             ("space", "0.010"),
-            ("h2", "二、mm/px 标定（已知尺寸反解）"),
+            ("h2", "二、裁切覆盖度核验（已知尺寸对照）"),
             ("body",
-             f"可反解的 {len(mppx_all)} 张：mm/px ∈ [{min(mppx_all):.4f}, {max(mppx_all):.4f}]，"
-             f"中位 {sorted(mppx_all)[len(mppx_all)//2]:.4f}；\n"
-             f"两轴各向异性（长宽比偏差）最大 {max(aniso_all):.1%}（QA 容差：>5% warn、\n"
-             ">10% fail）。同一样片两张照片的标定重复性：\n"
+             f"尺度先验 1 px/mm 下，矫正尺寸/规格尺寸=裁切覆盖度。可核验的 {len(cov_all)} 张：\n"
+             f"自动检出片覆盖度 ∈ [{min(cov_all):.1%}, {max(cov_all):.1%}]——检测沿亮边内咬\n"
+             "约 0.5~1.2%（评估域略小于整片，属检测器口径，如实记录）；框装中空\n"
+             "（1#/16#）可见口径 91~94%（压边遮挡，非错误）。两轴长宽比偏差最大\n"
+             f"{max(aniso_all):.1%}（QA 容差 >5% warn、>10% fail；13# 错检即由此抓出）。\n"
+             "同一样片两张照片的重复性：\n"
              + "\n".join(
-                 f"　{sid}：Δmm/px = {d['d_mm_per_px']}，ΔW_w = {d['d_texture_w']}，"
+                 f"　{sid}：Δ覆盖度 = {d['d_coverage']}，ΔW_w = {d['d_texture_w']}，"
                  f"Δ总分 = {d['d_total']}" for sid, d in rep.items())
              + "\n——单拍 W_w 的重复性差 ≈0.02~0.04，与相邻厚度档的档均值差同量级，\n"
              "解读分档结论时须带上这个不确定度。"),
@@ -109,7 +117,7 @@ def report_pages() -> list[list[tuple[str, str]]]:
             ("space", "0.04"),
             ("h2", "三、逐片明细（编号序）"),
             ("tbl",
-             "编号　　厚度mm　mm/px　X0.95　灰度方差　梯度均　 W_w　　位置分　 总分　角点来源\n"
+             "编号　　厚度mm　覆盖度　X0.95　灰度方差　梯度均　 W_w　　位置分　 总分　角点来源\n"
              + "\n".join(_detail_row(r) for r in photos)),
             ("space", "0.006"),
             ("note",
@@ -132,9 +140,10 @@ def report_pages() -> list[list[tuple[str, str]]]:
              f"跨档趋势：Spearman(W_w, 厚度) = **{V['spearman_w_vs_thickness']:+.4f}**"
              f"（并列平均秩，n={V['eligible_n']}）——\n"
              "**W_w 随厚度显著上升**，「厚片天生斑重」首次获得受控样本支撑。\n"
-             "两点注意：① 6mm 档均值（0.2499）高于 8mm 档（0.2380），在单拍重复性\n"
+             f"两点注意：① 6mm 档均值（{band_mean(6):.4f}）高于 8mm 档（{band_mean(8):.4f}），"
+             "在单拍重复性\n"
              "±0.02~0.04 的量级内属可容忍倒挂，不宜过度解读；② 15mm 仅 1 片\n"
-             "（W_w=0.3047，全批钢化片最高），单点不入档、只作趋势参考。"),
+             f"（W_w={band_mean(15):.4f}，全批钢化片最高），单点不入档、只作趋势参考。"),
             ("space", "0.006"),
             ("img", f"{V['scatter']}::0.30"),
             ("cnote", "图 4-1　W_w 与公称厚度：实心=普白钢化（分档），方框=均质/高应力 n=1，"
@@ -153,7 +162,7 @@ def report_pages() -> list[list[tuple[str, str]]]:
                  for r in special)),
             ("space", "0.008"),
             ("body",
-             "定性读法（与 6mm 普白档均值 W_w=0.2499 对照）：\n"
+             f"定性读法（与 6mm 普白档均值 W_w={band_mean(6):.4f} 对照）：\n"
              "· 3# 超白 0.2103、19# Low-E 0.1873 落在普白 6mm 分布下沿附近；18# Low-E\n"
              "　 0.2902 偏高——Low-E 两片同厚同膜差 0.10，膜面方向/批次差异可疑，n=2 不下结论；\n"
              "· 14# 高应力防火 0.3494 为全批最高，与「应力刻意偏高」的工艺预期一致；\n"
@@ -260,11 +269,11 @@ def report_pages() -> list[list[tuple[str, str]]]:
              "① 无人工质量评分：一切统计只反映指标行为，非质量判级依据；\n"
              "② 样本量：核心档 n=2~5、三个厚度 n=1，档间差异与单拍重复性（ΔW_w\n"
              "　 0.02~0.04）同量级——分档 refs 是初值不是刻度；\n"
-             "③ 导出缩图：非原始分辨率，1px/mm 重采样近似恒等但光学细节已丢，\n"
-             "　 W_w 的 d=1≡1mm 口径此处指「导出后像素」；\n"
+             "③ 尺度先验依赖「线扫原生 1 px/mm」承诺（用户确认+幅宽佐证），未经标定物\n"
+             "　 独立复核；检测内咬 ~1% 使评估域略小于整片，影响可忽略但如实记录；\n"
              "④ 曝光一致性未知：绝对灰度类指标跨片可比性存疑（W_w 仿射不变不受此限，\n"
              "　 但 8-bit 饱和裁剪属非仿射污染，本批未逐片核查饱和占比）；\n"
-             "⑤ 人工角点 6 张：定界误差直接进 mm/px 与评估域（aniso ≤3.5% 可控）；\n"
+             "⑤ 人工角点 6 张：定界误差直接进评估域与覆盖度（aniso ≤3.5% 可控）；\n"
              "⑥ 特种片结论全部定性：中空/夹层双片光路、压花几何纹理均使 W_w 语义\n"
              "　 偏离单片钢化应力斑，不得横向比较；\n"
              "⑦ ε 候选窗口依赖内缩口径与本批成像条件，定值须产线原生数据。"),

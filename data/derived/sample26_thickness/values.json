@@ -4,7 +4,7 @@
   "config_sha256_16": "212d8ce563aa047e",
   "script": "fringe_scoring/make_sample26_assets.py",
   "评估域": "整片矫正图（W_w）/ 扣免罚边框带内部（其余五项）",
-  "口径": "逐片 mm/px 注入重采样 1px/mm；照片为导出缩图，见 ⚠️ 披露"
+  "口径": "尺度先验 1px/mm（线扫原生，用户确认）；规格对照=裁切覆盖度 QA"
  },
  "n_photos": 28,
  "n_scored": 28,
@@ -33,11 +33,10 @@
     480,
     329
    ],
-   "mm_per_px": {
-    "long": 1.0625,
-    "short": 1.09422,
-    "mean": 1.07836,
-    "aniso": 0.02899
+   "crop_check": {
+    "coverage_long": 0.94118,
+    "coverage_short": 0.91389,
+    "aniso": 0.02986
    },
    "qa": {
     "level": "pass",
@@ -49,10 +48,10 @@
     "gray_variance": 1378.6,
     "gradient_mean": 22.45,
     "gradient_variance": 803.9,
-    "texture_w": 0.2365,
-    "texture_w_ca_w": 0.0564,
-    "texture_w_cpa_w": 119.0,
-    "texture_w_dynamic_range": 248.18,
+    "texture_w": 0.2378,
+    "texture_w_ca_w": 0.0632,
+    "texture_w_cpa_w": 119.7,
+    "texture_w_dynamic_range": 248.26,
     "texture_w_degenerate": false,
     "position_score": 63.8,
     "center_concentration": 0.0471,
@@ -63,19 +62,15 @@
      "gray_variance": 66.4,
      "gradient_mean": 35.4,
      "gradient_variance": 27.7,
-     "texture_w": 40.4,
+     "texture_w": 39.8,
      "position_score": 63.8
     },
-    "total_score": 46.72,
+    "total_score": 46.61,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.2378,
-    "texture_w_dynamic_range": 248.26
    },
    "dynamic_range_inset5": 244.71
   },
@@ -102,11 +97,10 @@
     482,
     338
    ],
-   "mm_per_px": {
-    "long": 1.05809,
-    "short": 1.06509,
-    "mean": 1.06159,
-    "aniso": 0.00657
+   "crop_check": {
+    "coverage_long": 0.9451,
+    "coverage_short": 0.93889,
+    "aniso": 0.00661
    },
    "qa": {
     "level": "pass",
@@ -118,10 +112,10 @@
     "gray_variance": 1543.8,
     "gradient_mean": 28.76,
     "gradient_variance": 2599.9,
-    "texture_w": 0.2133,
-    "texture_w_ca_w": 0.0679,
-    "texture_w_cpa_w": 73.5,
-    "texture_w_dynamic_range": 252.82,
+    "texture_w": 0.2146,
+    "texture_w_ca_w": 0.0762,
+    "texture_w_cpa_w": 73.9,
+    "texture_w_dynamic_range": 253.0,
     "texture_w_degenerate": false,
     "position_score": 53.8,
     "center_concentration": 0.0417,
@@ -132,19 +126,15 @@
      "gray_variance": 62.2,
      "gradient_mean": 12.0,
      "gradient_variance": 0.0,
-     "texture_w": 52.2,
+     "texture_w": 51.5,
      "position_score": 53.8
     },
-    "total_score": 37.13,
+    "total_score": 37.02,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.2146,
-    "texture_w_dynamic_range": 253.0
    },
    "dynamic_range_inset5": 234.39
   },
@@ -171,10 +161,9 @@
     605,
     605
    ],
-   "mm_per_px": {
-    "long": 1.00826,
-    "short": 1.00826,
-    "mean": 1.00826,
+   "crop_check": {
+    "coverage_long": 0.9918,
+    "coverage_short": 0.9918,
     "aniso": 0.0
    },
    "qa": {
@@ -187,10 +176,10 @@
     "gray_variance": 3421.4,
     "gradient_mean": 56.32,
     "gradient_variance": 3864.5,
-    "texture_w": 0.3063,
-    "texture_w_ca_w": 0.1312,
-    "texture_w_cpa_w": 316.7,
-    "texture_w_dynamic_range": 248.78,
+    "texture_w": 0.3061,
+    "texture_w_ca_w": 0.1342,
+    "texture_w_cpa_w": 314.6,
+    "texture_w_dynamic_range": 249.47,
     "texture_w_degenerate": false,
     "position_score": 2.5,
     "center_concentration": 0.0213,
@@ -201,19 +190,15 @@
      "gray_variance": 14.6,
      "gradient_mean": 0.0,
      "gradient_variance": 0.0,
-     "texture_w": 5.2,
+     "texture_w": 5.3,
      "position_score": 2.5
     },
-    "total_score": 3.94,
+    "total_score": 3.96,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.3061,
-    "texture_w_dynamic_range": 249.47
    },
    "dynamic_range_inset5": 245.91
   },
@@ -240,10 +225,9 @@
     602,
     603
    ],
-   "mm_per_px": {
-    "long": 1.01161,
-    "short": 1.01329,
-    "mean": 1.01245,
+   "crop_check": {
+    "coverage_long": 0.98852,
+    "coverage_short": 0.98689,
     "aniso": 0.00166
    },
    "qa": {
@@ -256,10 +240,10 @@
     "gray_variance": 424.0,
     "gradient_mean": 15.26,
     "gradient_variance": 410.1,
-    "texture_w": 0.2103,
-    "texture_w_ca_w": 0.0504,
-    "texture_w_cpa_w": 72.9,
-    "texture_w_dynamic_range": 250.32,
+    "texture_w": 0.211,
+    "texture_w_ca_w": 0.0544,
+    "texture_w_cpa_w": 73.0,
+    "texture_w_dynamic_range": 250.44,
     "texture_w_degenerate": false,
     "position_score": 90.0,
     "center_concentration": 0.0329,
@@ -270,19 +254,15 @@
      "gray_variance": 90.5,
      "gradient_mean": 62.0,
      "gradient_variance": 64.5,
-     "texture_w": 53.7,
+     "texture_w": 53.3,
      "position_score": 90.0
     },
-    "total_score": 72.28,
+    "total_score": 72.22,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.211,
-    "texture_w_dynamic_range": 250.44
    },
    "dynamic_range_inset5": 197.14
   },
@@ -309,11 +289,10 @@
     604,
     609
    ],
-   "mm_per_px": {
-    "long": 1.00164,
-    "short": 1.00993,
-    "mean": 1.00579,
-    "aniso": 0.00821
+   "crop_check": {
+    "coverage_long": 0.99836,
+    "coverage_short": 0.99016,
+    "aniso": 0.00828
    },
    "qa": {
     "level": "pass",
@@ -325,10 +304,10 @@
     "gray_variance": 802.5,
     "gradient_mean": 13.79,
     "gradient_variance": 434.1,
-    "texture_w": 0.1961,
-    "texture_w_ca_w": 0.0468,
-    "texture_w_cpa_w": 54.5,
-    "texture_w_dynamic_range": 248.72,
+    "texture_w": 0.1966,
+    "texture_w_ca_w": 0.0501,
+    "texture_w_cpa_w": 54.6,
+    "texture_w_dynamic_range": 248.96,
     "texture_w_degenerate": false,
     "position_score": 83.7,
     "center_concentration": 0.0539,
@@ -339,19 +318,15 @@
      "gray_variance": 80.9,
      "gradient_mean": 67.4,
      "gradient_variance": 62.2,
-     "texture_w": 60.8,
+     "texture_w": 60.6,
      "position_score": 83.7
     },
-    "total_score": 68.58,
+    "total_score": 68.54,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.1966,
-    "texture_w_dynamic_range": 248.96
    },
    "dynamic_range_inset5": 236.89
   },
@@ -378,10 +353,9 @@
     607,
     606
    ],
-   "mm_per_px": {
-    "long": 1.00494,
-    "short": 1.0066,
-    "mean": 1.00577,
+   "crop_check": {
+    "coverage_long": 0.99508,
+    "coverage_short": 0.99344,
     "aniso": 0.00165
    },
    "qa": {
@@ -394,10 +368,10 @@
     "gray_variance": 433.8,
     "gradient_mean": 12.66,
     "gradient_variance": 486.6,
-    "texture_w": 0.1689,
-    "texture_w_ca_w": 0.0395,
-    "texture_w_cpa_w": 29.3,
-    "texture_w_dynamic_range": 247.31,
+    "texture_w": 0.1696,
+    "texture_w_ca_w": 0.0426,
+    "texture_w_cpa_w": 29.4,
+    "texture_w_dynamic_range": 247.74,
     "texture_w_degenerate": false,
     "position_score": 75.4,
     "center_concentration": 0.05,
@@ -408,19 +382,15 @@
      "gray_variance": 90.3,
      "gradient_mean": 71.6,
      "gradient_variance": 57.3,
-     "texture_w": 74.6,
+     "texture_w": 74.3,
      "position_score": 75.4
     },
-    "total_score": 73.99,
+    "total_score": 73.93,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.1696,
-    "texture_w_dynamic_range": 247.74
    },
    "dynamic_range_inset5": 232.66
   },
@@ -447,11 +417,10 @@
     609,
     601
    ],
-   "mm_per_px": {
-    "long": 1.00164,
-    "short": 1.01498,
-    "mean": 1.00831,
-    "aniso": 0.01314
+   "crop_check": {
+    "coverage_long": 0.99836,
+    "coverage_short": 0.98525,
+    "aniso": 0.01331
    },
    "qa": {
     "level": "pass",
@@ -463,10 +432,10 @@
     "gray_variance": 2611.6,
     "gradient_mean": 42.97,
     "gradient_variance": 2890.4,
-    "texture_w": 0.2521,
-    "texture_w_ca_w": 0.1033,
-    "texture_w_cpa_w": 141.3,
-    "texture_w_dynamic_range": 248.94,
+    "texture_w": 0.2527,
+    "texture_w_ca_w": 0.1066,
+    "texture_w_cpa_w": 141.8,
+    "texture_w_dynamic_range": 249.0,
     "texture_w_degenerate": false,
     "position_score": 1.5,
     "center_concentration": 0.0056,
@@ -477,19 +446,15 @@
      "gray_variance": 35.1,
      "gradient_mean": 0.0,
      "gradient_variance": 0.0,
-     "texture_w": 32.5,
+     "texture_w": 32.2,
      "position_score": 1.5
     },
-    "total_score": 13.92,
+    "total_score": 13.87,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.2527,
-    "texture_w_dynamic_range": 249.0
    },
    "dynamic_range_inset5": 248.0
   },
@@ -516,11 +481,10 @@
     600,
     612
    ],
-   "mm_per_px": {
-    "long": 0.99673,
-    "short": 1.01667,
-    "mean": 1.0067,
-    "aniso": 0.01961
+   "crop_check": {
+    "coverage_long": 1.00328,
+    "coverage_short": 0.98361,
+    "aniso": 0.02
    },
    "qa": {
     "level": "pass",
@@ -532,10 +496,10 @@
     "gray_variance": 7.6,
     "gradient_mean": 3.3,
     "gradient_variance": 38.5,
-    "texture_w": 0.1315,
-    "texture_w_ca_w": 0.0201,
-    "texture_w_cpa_w": 11.1,
-    "texture_w_dynamic_range": 239.96,
+    "texture_w": 0.1338,
+    "texture_w_ca_w": 0.0282,
+    "texture_w_cpa_w": 11.3,
+    "texture_w_dynamic_range": 240.62,
     "texture_w_degenerate": false,
     "position_score": 92.7,
     "center_concentration": 0.0241,
@@ -546,19 +510,15 @@
      "gray_variance": 100.0,
      "gradient_mean": 100.0,
      "gradient_variance": 99.2,
-     "texture_w": 93.5,
+     "texture_w": 92.3,
      "position_score": 92.7
     },
-    "total_score": 97.49,
+    "total_score": 97.3,
     "verification": {
      "triggered": true,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.1338,
-    "texture_w_dynamic_range": 240.62
    },
    "dynamic_range_inset5": 19.88
   },
@@ -585,11 +545,10 @@
     606,
     611
    ],
-   "mm_per_px": {
-    "long": 0.99836,
-    "short": 1.0066,
-    "mean": 1.00248,
-    "aniso": 0.00818
+   "crop_check": {
+    "coverage_long": 1.00164,
+    "coverage_short": 0.99344,
+    "aniso": 0.00825
    },
    "qa": {
     "level": "pass",
@@ -601,10 +560,10 @@
     "gray_variance": 19.5,
     "gradient_mean": 3.37,
     "gradient_variance": 167.6,
-    "texture_w": 0.1367,
-    "texture_w_ca_w": 0.0208,
+    "texture_w": 0.1386,
+    "texture_w_ca_w": 0.0287,
     "texture_w_cpa_w": 13.1,
-    "texture_w_dynamic_range": 240.17,
+    "texture_w_dynamic_range": 240.84,
     "texture_w_degenerate": false,
     "position_score": 92.0,
     "center_concentration": 0.0264,
@@ -615,19 +574,15 @@
      "gray_variance": 100.0,
      "gradient_mean": 100.0,
      "gradient_variance": 87.1,
-     "texture_w": 90.9,
+     "texture_w": 89.9,
      "position_score": 92.0
     },
-    "total_score": 94.96,
+    "total_score": 94.8,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.1386,
-    "texture_w_dynamic_range": 240.84
    },
    "dynamic_range_inset5": 20.2
   },
@@ -654,10 +609,9 @@
     609,
     610
    ],
-   "mm_per_px": {
-    "long": 1.0,
-    "short": 1.00164,
-    "mean": 1.00082,
+   "crop_check": {
+    "coverage_long": 1.0,
+    "coverage_short": 0.99836,
     "aniso": 0.00164
    },
    "qa": {
@@ -671,9 +625,9 @@
     "gradient_mean": 24.97,
     "gradient_variance": 1121.4,
     "texture_w": 0.2262,
-    "texture_w_ca_w": 0.0827,
-    "texture_w_cpa_w": 91.6,
-    "texture_w_dynamic_range": 249.26,
+    "texture_w_ca_w": 0.0846,
+    "texture_w_cpa_w": 91.2,
+    "texture_w_dynamic_range": 249.73,
     "texture_w_degenerate": false,
     "position_score": 74.3,
     "center_concentration": 0.0629,
@@ -693,10 +647,6 @@
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.2262,
-    "texture_w_dynamic_range": 249.73
    },
    "dynamic_range_inset5": 248.13
   },
@@ -723,11 +673,10 @@
     610,
     606
    ],
-   "mm_per_px": {
-    "long": 1.0,
-    "short": 1.0066,
-    "mean": 1.0033,
-    "aniso": 0.00656
+   "crop_check": {
+    "coverage_long": 1.0,
+    "coverage_short": 0.99344,
+    "aniso": 0.0066
    },
    "qa": {
     "level": "pass",
@@ -739,10 +688,10 @@
     "gray_variance": 1280.5,
     "gradient_mean": 36.52,
     "gradient_variance": 1337.3,
-    "texture_w": 0.2336,
-    "texture_w_ca_w": 0.1084,
-    "texture_w_cpa_w": 99.7,
-    "texture_w_dynamic_range": 248.57,
+    "texture_w": 0.2339,
+    "texture_w_ca_w": 0.1109,
+    "texture_w_cpa_w": 99.8,
+    "texture_w_dynamic_range": 249.0,
     "texture_w_degenerate": false,
     "position_score": 37.9,
     "center_concentration": 0.0211,
@@ -753,19 +702,15 @@
      "gray_variance": 68.8,
      "gradient_mean": 0.0,
      "gradient_variance": 0.0,
-     "texture_w": 41.9,
+     "texture_w": 41.8,
      "position_score": 37.9
     },
-    "total_score": 32.56,
+    "total_score": 32.53,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.2339,
-    "texture_w_dynamic_range": 249.0
    },
    "dynamic_range_inset5": 216.52
   },
@@ -792,11 +737,10 @@
     611,
     607
    ],
-   "mm_per_px": {
-    "long": 0.99836,
-    "short": 1.00494,
-    "mean": 1.00165,
-    "aniso": 0.00655
+   "crop_check": {
+    "coverage_long": 1.00164,
+    "coverage_short": 0.99508,
+    "aniso": 0.00659
    },
    "qa": {
     "level": "pass",
@@ -809,9 +753,9 @@
     "gradient_mean": 40.63,
     "gradient_variance": 2475.0,
     "texture_w": 0.2412,
-    "texture_w_ca_w": 0.1102,
-    "texture_w_cpa_w": 114.5,
-    "texture_w_dynamic_range": 248.38,
+    "texture_w_ca_w": 0.1129,
+    "texture_w_cpa_w": 114.0,
+    "texture_w_dynamic_range": 249.02,
     "texture_w_degenerate": false,
     "position_score": 42.4,
     "center_concentration": 0.0375,
@@ -831,10 +775,6 @@
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.2412,
-    "texture_w_dynamic_range": 249.02
    },
    "dynamic_range_inset5": 246.7
   },
@@ -861,11 +801,10 @@
     605,
     613
    ],
-   "mm_per_px": {
-    "long": 0.99511,
-    "short": 1.00826,
-    "mean": 1.00169,
-    "aniso": 0.01305
+   "crop_check": {
+    "coverage_long": 1.00492,
+    "coverage_short": 0.9918,
+    "aniso": 0.01322
    },
    "qa": {
     "level": "pass",
@@ -877,10 +816,10 @@
     "gray_variance": 120.7,
     "gradient_mean": 11.15,
     "gradient_variance": 328.9,
-    "texture_w": 0.1267,
-    "texture_w_ca_w": 0.0367,
+    "texture_w": 0.1291,
+    "texture_w_ca_w": 0.05,
     "texture_w_cpa_w": 8.4,
-    "texture_w_dynamic_range": 242.01,
+    "texture_w_dynamic_range": 242.58,
     "texture_w_degenerate": false,
     "position_score": 88.5,
     "center_concentration": 0.0379,
@@ -891,19 +830,15 @@
      "gray_variance": 98.2,
      "gradient_mean": 77.2,
      "gradient_variance": 72.1,
-     "texture_w": 95.9,
+     "texture_w": 94.7,
      "position_score": 88.5
     },
-    "total_score": 87.38,
+    "total_score": 87.18,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.1291,
-    "texture_w_dynamic_range": 242.58
    },
    "dynamic_range_inset5": 49.32
   },
@@ -930,11 +865,10 @@
     601,
     603
    ],
-   "mm_per_px": {
-    "long": 1.01161,
-    "short": 1.01498,
-    "mean": 1.01329,
-    "aniso": 0.00332
+   "crop_check": {
+    "coverage_long": 0.98852,
+    "coverage_short": 0.98525,
+    "aniso": 0.00333
    },
    "qa": {
     "level": "pass",
@@ -946,10 +880,10 @@
     "gray_variance": 5615.0,
     "gradient_mean": 34.53,
     "gradient_variance": 1996.7,
-    "texture_w": 0.3494,
-    "texture_w_ca_w": 0.076,
-    "texture_w_cpa_w": 605.0,
-    "texture_w_dynamic_range": 248.84,
+    "texture_w": 0.3495,
+    "texture_w_ca_w": 0.0794,
+    "texture_w_cpa_w": 602.6,
+    "texture_w_dynamic_range": 249.17,
     "texture_w_degenerate": false,
     "position_score": 26.7,
     "center_concentration": 0.0041,
@@ -969,10 +903,6 @@
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.3495,
-    "texture_w_dynamic_range": 249.17
    },
    "dynamic_range_inset5": 249.17
   },
@@ -999,11 +929,10 @@
     605,
     583
    ],
-   "mm_per_px": {
-    "long": 1.00826,
-    "short": 1.04631,
-    "mean": 1.02729,
-    "aniso": 0.03636
+   "crop_check": {
+    "coverage_long": 0.9918,
+    "coverage_short": 0.95574,
+    "aniso": 0.03774
    },
    "qa": {
     "level": "pass",
@@ -1015,10 +944,10 @@
     "gray_variance": 3777.5,
     "gradient_mean": 49.16,
     "gradient_variance": 4067.8,
-    "texture_w": 0.3047,
-    "texture_w_ca_w": 0.0973,
-    "texture_w_cpa_w": 326.0,
-    "texture_w_dynamic_range": 245.12,
+    "texture_w": 0.3054,
+    "texture_w_ca_w": 0.1045,
+    "texture_w_cpa_w": 325.2,
+    "texture_w_dynamic_range": 245.59,
     "texture_w_degenerate": false,
     "position_score": 9.2,
     "center_concentration": 0.0,
@@ -1029,19 +958,15 @@
      "gray_variance": 5.6,
      "gradient_mean": 0.0,
      "gradient_variance": 0.0,
-     "texture_w": 5.9,
+     "texture_w": 5.6,
      "position_score": 9.2
     },
-    "total_score": 3.47,
+    "total_score": 3.42,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.3054,
-    "texture_w_dynamic_range": 245.59
    },
    "dynamic_range_inset5": 227.97
   },
@@ -1068,11 +993,10 @@
     480,
     327
    ],
-   "mm_per_px": {
-    "long": 1.0625,
-    "short": 1.10092,
-    "mean": 1.08171,
-    "aniso": 0.0349
+   "crop_check": {
+    "coverage_long": 0.94118,
+    "coverage_short": 0.90833,
+    "aniso": 0.03616
    },
    "qa": {
     "level": "pass",
@@ -1084,10 +1008,10 @@
     "gray_variance": 755.7,
     "gradient_mean": 20.84,
     "gradient_variance": 2328.6,
-    "texture_w": 0.1697,
-    "texture_w_ca_w": 0.0343,
-    "texture_w_cpa_w": 30.7,
-    "texture_w_dynamic_range": 242.45,
+    "texture_w": 0.1716,
+    "texture_w_ca_w": 0.0404,
+    "texture_w_cpa_w": 31.3,
+    "texture_w_dynamic_range": 243.53,
     "texture_w_degenerate": false,
     "position_score": 77.5,
     "center_concentration": 0.0741,
@@ -1098,19 +1022,15 @@
      "gray_variance": 82.1,
      "gradient_mean": 41.3,
      "gradient_variance": 0.0,
-     "texture_w": 74.2,
+     "texture_w": 73.2,
      "position_score": 77.5
     },
-    "total_score": 57.73,
+    "total_score": 57.57,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.1716,
-    "texture_w_dynamic_range": 243.53
    },
    "dynamic_range_inset5": 137.03
   },
@@ -1137,11 +1057,10 @@
     477,
     328
    ],
-   "mm_per_px": {
-    "long": 1.06918,
-    "short": 1.09756,
-    "mean": 1.08337,
-    "aniso": 0.02586
+   "crop_check": {
+    "coverage_long": 0.93529,
+    "coverage_short": 0.91111,
+    "aniso": 0.02654
    },
    "qa": {
     "level": "pass",
@@ -1153,9 +1072,9 @@
     "gray_variance": 1135.5,
     "gradient_mean": 24.16,
     "gradient_variance": 3876.2,
-    "texture_w": 0.2072,
-    "texture_w_ca_w": 0.0488,
-    "texture_w_cpa_w": 68.8,
+    "texture_w": 0.21,
+    "texture_w_ca_w": 0.0568,
+    "texture_w_cpa_w": 71.1,
     "texture_w_dynamic_range": 252.0,
     "texture_w_degenerate": false,
     "position_score": 73.7,
@@ -1167,19 +1086,15 @@
      "gray_variance": 72.5,
      "gradient_mean": 29.0,
      "gradient_variance": 0.0,
-     "texture_w": 55.2,
+     "texture_w": 53.8,
      "position_score": 73.7
     },
-    "total_score": 48.58,
+    "total_score": 48.35,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.21,
-    "texture_w_dynamic_range": 252.0
    },
    "dynamic_range_inset5": 179.24
   },
@@ -1206,11 +1121,10 @@
     502,
     359
    ],
-   "mm_per_px": {
-    "long": 1.01594,
-    "short": 1.00279,
-    "mean": 1.00936,
-    "aniso": 0.01311
+   "crop_check": {
+    "coverage_long": 0.98431,
+    "coverage_short": 0.99722,
+    "aniso": 0.01294
    },
    "qa": {
     "level": "pass",
@@ -1222,10 +1136,10 @@
     "gray_variance": 3587.5,
     "gradient_mean": 56.79,
     "gradient_variance": 9810.4,
-    "texture_w": 0.2902,
-    "texture_w_ca_w": 0.11,
-    "texture_w_cpa_w": 258.5,
-    "texture_w_dynamic_range": 248.78,
+    "texture_w": 0.2915,
+    "texture_w_ca_w": 0.117,
+    "texture_w_cpa_w": 260.6,
+    "texture_w_dynamic_range": 249.0,
     "texture_w_degenerate": false,
     "position_score": 24.0,
     "center_concentration": 0.0458,
@@ -1236,19 +1150,15 @@
      "gray_variance": 10.4,
      "gradient_mean": 0.0,
      "gradient_variance": 0.0,
-     "texture_w": 13.3,
+     "texture_w": 12.6,
      "position_score": 24.0
     },
-    "total_score": 7.95,
+    "total_score": 7.85,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.2915,
-    "texture_w_dynamic_range": 249.0
    },
    "dynamic_range_inset5": 249.0
   },
@@ -1275,11 +1185,10 @@
     490,
     338
    ],
-   "mm_per_px": {
-    "long": 1.04082,
-    "short": 1.06509,
-    "mean": 1.05295,
-    "aniso": 0.02279
+   "crop_check": {
+    "coverage_long": 0.96078,
+    "coverage_short": 0.93889,
+    "aniso": 0.02332
    },
    "qa": {
     "level": "pass",
@@ -1291,10 +1200,10 @@
     "gray_variance": 964.3,
     "gradient_mean": 24.27,
     "gradient_variance": 4362.0,
-    "texture_w": 0.1873,
-    "texture_w_ca_w": 0.0421,
-    "texture_w_cpa_w": 45.5,
-    "texture_w_dynamic_range": 238.84,
+    "texture_w": 0.189,
+    "texture_w_ca_w": 0.0481,
+    "texture_w_cpa_w": 46.2,
+    "texture_w_dynamic_range": 239.69,
     "texture_w_degenerate": false,
     "position_score": 78.5,
     "center_concentration": 0.0711,
@@ -1305,19 +1214,15 @@
      "gray_variance": 76.9,
      "gradient_mean": 28.6,
      "gradient_variance": 0.0,
-     "texture_w": 65.3,
+     "texture_w": 64.4,
      "position_score": 78.5
     },
-    "total_score": 52.25,
+    "total_score": 52.1,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.189,
-    "texture_w_dynamic_range": 239.69
    },
    "dynamic_range_inset5": 229.79
   },
@@ -1344,11 +1249,10 @@
     504,
     358
    ],
-   "mm_per_px": {
-    "long": 1.0119,
-    "short": 1.00559,
-    "mean": 1.00875,
-    "aniso": 0.00628
+   "crop_check": {
+    "coverage_long": 0.98824,
+    "coverage_short": 0.99444,
+    "aniso": 0.00624
    },
    "qa": {
     "level": "pass",
@@ -1360,10 +1264,10 @@
     "gray_variance": 2335.8,
     "gradient_mean": 39.41,
     "gradient_variance": 5444.7,
-    "texture_w": 0.2739,
-    "texture_w_ca_w": 0.1015,
-    "texture_w_cpa_w": 203.6,
-    "texture_w_dynamic_range": 248.91,
+    "texture_w": 0.2763,
+    "texture_w_ca_w": 0.1115,
+    "texture_w_cpa_w": 208.0,
+    "texture_w_dynamic_range": 248.93,
     "texture_w_degenerate": false,
     "position_score": 58.8,
     "center_concentration": 0.0597,
@@ -1374,19 +1278,15 @@
      "gray_variance": 42.1,
      "gradient_mean": 0.0,
      "gradient_variance": 0.0,
-     "texture_w": 21.5,
+     "texture_w": 20.3,
      "position_score": 58.8
     },
-    "total_score": 23.45,
+    "total_score": 23.25,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.2763,
-    "texture_w_dynamic_range": 248.93
    },
    "dynamic_range_inset5": 245.93
   },
@@ -1413,10 +1313,9 @@
     606,
     607
    ],
-   "mm_per_px": {
-    "long": 1.00494,
-    "short": 1.0066,
-    "mean": 1.00577,
+   "crop_check": {
+    "coverage_long": 0.99508,
+    "coverage_short": 0.99344,
     "aniso": 0.00165
    },
    "qa": {
@@ -1429,10 +1328,10 @@
     "gray_variance": 807.7,
     "gradient_mean": 28.02,
     "gradient_variance": 1288.8,
-    "texture_w": 0.2295,
-    "texture_w_ca_w": 0.0853,
-    "texture_w_cpa_w": 97.1,
-    "texture_w_dynamic_range": 250.04,
+    "texture_w": 0.23,
+    "texture_w_ca_w": 0.0887,
+    "texture_w_cpa_w": 97.2,
+    "texture_w_dynamic_range": 250.5,
     "texture_w_degenerate": false,
     "position_score": 60.5,
     "center_concentration": 0.0357,
@@ -1443,19 +1342,15 @@
      "gray_variance": 80.8,
      "gradient_mean": 14.7,
      "gradient_variance": 0.0,
-     "texture_w": 43.9,
+     "texture_w": 43.7,
      "position_score": 60.5
     },
-    "total_score": 43.64,
+    "total_score": 43.6,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.23,
-    "texture_w_dynamic_range": 250.5
    },
    "dynamic_range_inset5": 244.99
   },
@@ -1482,10 +1377,9 @@
     606,
     605
    ],
-   "mm_per_px": {
-    "long": 1.0066,
-    "short": 1.00826,
-    "mean": 1.00743,
+   "crop_check": {
+    "coverage_long": 0.99344,
+    "coverage_short": 0.9918,
     "aniso": 0.00165
    },
    "qa": {
@@ -1498,10 +1392,10 @@
     "gray_variance": 1777.3,
     "gradient_mean": 45.73,
     "gradient_variance": 2024.7,
-    "texture_w": 0.2493,
-    "texture_w_ca_w": 0.1347,
-    "texture_w_cpa_w": 126.9,
-    "texture_w_dynamic_range": 248.29,
+    "texture_w": 0.2501,
+    "texture_w_ca_w": 0.1385,
+    "texture_w_cpa_w": 127.8,
+    "texture_w_dynamic_range": 248.86,
     "texture_w_degenerate": false,
     "position_score": 47.8,
     "center_concentration": 0.04,
@@ -1512,19 +1406,15 @@
      "gray_variance": 56.3,
      "gradient_mean": 0.0,
      "gradient_variance": 0.0,
-     "texture_w": 33.9,
+     "texture_w": 33.6,
      "position_score": 47.8
     },
-    "total_score": 29.37,
+    "total_score": 29.31,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.2501,
-    "texture_w_dynamic_range": 248.86
    },
    "dynamic_range_inset5": 244.91
   },
@@ -1551,10 +1441,9 @@
     611,
     611
    ],
-   "mm_per_px": {
-    "long": 0.99836,
-    "short": 0.99836,
-    "mean": 0.99836,
+   "crop_check": {
+    "coverage_long": 1.00164,
+    "coverage_short": 1.00164,
     "aniso": 0.0
    },
    "qa": {
@@ -1567,10 +1456,10 @@
     "gray_variance": 389.2,
     "gradient_mean": 17.18,
     "gradient_variance": 661.7,
-    "texture_w": 0.1485,
-    "texture_w_ca_w": 0.0485,
-    "texture_w_cpa_w": 15.9,
-    "texture_w_dynamic_range": 249.73,
+    "texture_w": 0.1491,
+    "texture_w_ca_w": 0.0518,
+    "texture_w_cpa_w": 16.0,
+    "texture_w_dynamic_range": 249.94,
     "texture_w_degenerate": false,
     "position_score": 94.2,
     "center_concentration": 0.0141,
@@ -1581,19 +1470,15 @@
      "gray_variance": 91.4,
      "gradient_mean": 54.9,
      "gradient_variance": 41.0,
-     "texture_w": 84.9,
+     "texture_w": 84.6,
      "position_score": 94.2
     },
-    "total_score": 74.44,
+    "total_score": 74.38,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.1491,
-    "texture_w_dynamic_range": 249.94
    },
    "dynamic_range_inset5": 234.68
   },
@@ -1620,10 +1505,9 @@
     607,
     606
    ],
-   "mm_per_px": {
-    "long": 1.00494,
-    "short": 1.0066,
-    "mean": 1.00577,
+   "crop_check": {
+    "coverage_long": 0.99508,
+    "coverage_short": 0.99344,
     "aniso": 0.00165
    },
    "qa": {
@@ -1636,10 +1520,10 @@
     "gray_variance": 2355.0,
     "gradient_mean": 24.6,
     "gradient_variance": 1274.7,
-    "texture_w": 0.2668,
-    "texture_w_ca_w": 0.061,
-    "texture_w_cpa_w": 197.5,
-    "texture_w_dynamic_range": 249.56,
+    "texture_w": 0.2673,
+    "texture_w_ca_w": 0.0644,
+    "texture_w_cpa_w": 197.4,
+    "texture_w_dynamic_range": 249.75,
     "texture_w_degenerate": false,
     "position_score": 18.6,
     "center_concentration": 0.0195,
@@ -1650,19 +1534,15 @@
      "gray_variance": 41.6,
      "gradient_mean": 27.4,
      "gradient_variance": 0.0,
-     "texture_w": 25.1,
+     "texture_w": 24.9,
      "position_score": 18.6
     },
-    "total_score": 22.73,
+    "total_score": 22.69,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.2673,
-    "texture_w_dynamic_range": 249.75
    },
    "dynamic_range_inset5": 238.7
   },
@@ -1689,11 +1569,10 @@
     611,
     609
    ],
-   "mm_per_px": {
-    "long": 0.99836,
-    "short": 1.00164,
-    "mean": 1.0,
-    "aniso": 0.00327
+   "crop_check": {
+    "coverage_long": 1.00164,
+    "coverage_short": 0.99836,
+    "aniso": 0.00328
    },
    "qa": {
     "level": "pass",
@@ -1729,10 +1608,6 @@
      "reasons": []
     }
    },
-   "indicators_native": {
-    "texture_w": 0.2035,
-    "texture_w_dynamic_range": 250.87
-   },
    "dynamic_range_inset5": 242.37
   },
   {
@@ -1758,11 +1633,10 @@
     610,
     608
    ],
-   "mm_per_px": {
-    "long": 1.0,
-    "short": 1.00329,
-    "mean": 1.00164,
-    "aniso": 0.00328
+   "crop_check": {
+    "coverage_long": 1.0,
+    "coverage_short": 0.99672,
+    "aniso": 0.00329
    },
    "qa": {
     "level": "pass",
@@ -1774,10 +1648,10 @@
     "gray_variance": 793.1,
     "gradient_mean": 19.14,
     "gradient_variance": 664.4,
-    "texture_w": 0.2279,
-    "texture_w_ca_w": 0.0588,
-    "texture_w_cpa_w": 100.7,
-    "texture_w_dynamic_range": 247.66,
+    "texture_w": 0.2278,
+    "texture_w_ca_w": 0.0615,
+    "texture_w_cpa_w": 99.7,
+    "texture_w_dynamic_range": 248.52,
     "texture_w_degenerate": false,
     "position_score": 59.2,
     "center_concentration": 0.039,
@@ -1791,16 +1665,12 @@
      "texture_w": 44.8,
      "position_score": 59.2
     },
-    "total_score": 55.67,
+    "total_score": 55.68,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.2278,
-    "texture_w_dynamic_range": 248.52
    },
    "dynamic_range_inset5": 234.2
   },
@@ -1827,11 +1697,10 @@
     603,
     605
    ],
-   "mm_per_px": {
-    "long": 1.00826,
-    "short": 1.01161,
-    "mean": 1.00994,
-    "aniso": 0.00331
+   "crop_check": {
+    "coverage_long": 0.9918,
+    "coverage_short": 0.98852,
+    "aniso": 0.00332
    },
    "qa": {
     "level": "pass",
@@ -1843,10 +1712,10 @@
     "gray_variance": 390.6,
     "gradient_mean": 12.36,
     "gradient_variance": 880.4,
-    "texture_w": 0.1786,
-    "texture_w_ca_w": 0.0457,
-    "texture_w_cpa_w": 36.4,
-    "texture_w_dynamic_range": 249.25,
+    "texture_w": 0.1802,
+    "texture_w_ca_w": 0.0493,
+    "texture_w_cpa_w": 37.4,
+    "texture_w_dynamic_range": 249.46,
     "texture_w_degenerate": false,
     "position_score": 93.1,
     "center_concentration": 0.0228,
@@ -1857,19 +1726,15 @@
      "gray_variance": 91.4,
      "gradient_mean": 72.7,
      "gradient_variance": 20.5,
-     "texture_w": 69.7,
+     "texture_w": 68.9,
      "position_score": 93.1
     },
-    "total_score": 72.35,
+    "total_score": 72.22,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.1802,
-    "texture_w_dynamic_range": 249.46
    },
    "dynamic_range_inset5": 239.35
   },
@@ -1896,11 +1761,10 @@
     605,
     607
    ],
-   "mm_per_px": {
-    "long": 1.00494,
-    "short": 1.00826,
-    "mean": 1.0066,
-    "aniso": 0.00329
+   "crop_check": {
+    "coverage_long": 0.99508,
+    "coverage_short": 0.9918,
+    "aniso": 0.00331
    },
    "qa": {
     "level": "pass",
@@ -1912,10 +1776,10 @@
     "gray_variance": 1727.4,
     "gradient_mean": 38.23,
     "gradient_variance": 1883.4,
-    "texture_w": 0.2532,
-    "texture_w_ca_w": 0.1115,
-    "texture_w_cpa_w": 141.8,
-    "texture_w_dynamic_range": 250.91,
+    "texture_w": 0.2538,
+    "texture_w_ca_w": 0.1143,
+    "texture_w_cpa_w": 142.6,
+    "texture_w_dynamic_range": 251.0,
     "texture_w_degenerate": false,
     "position_score": 35.1,
     "center_concentration": 0.0393,
@@ -1926,19 +1790,15 @@
      "gray_variance": 57.5,
      "gradient_mean": 0.0,
      "gradient_variance": 0.0,
-     "texture_w": 32.0,
+     "texture_w": 31.7,
      "position_score": 35.1
     },
-    "total_score": 26.99,
+    "total_score": 26.94,
     "verification": {
      "triggered": false,
      "passed": true,
      "reasons": []
     }
-   },
-   "indicators_native": {
-    "texture_w": 0.2538,
-    "texture_w_dynamic_range": 251.0
    },
    "dynamic_range_inset5": 236.22
   }
@@ -1972,9 +1832,9 @@
     "max": 880.4
    },
    "texture_w": {
-    "mean": 0.1738,
-    "min": 0.1689,
-    "max": 0.1786
+    "mean": 0.1749,
+    "min": 0.1696,
+    "max": 0.1802
    },
    "position_score": {
     "mean": 84.25,
@@ -1982,9 +1842,9 @@
     "max": 93.1
    },
    "total_score": {
-    "mean": 73.17,
-    "min": 72.35,
-    "max": 73.99
+    "mean": 73.075,
+    "min": 72.22,
+    "max": 73.93
    }
   },
   {
@@ -2016,8 +1876,8 @@
     "max": 2046.0
    },
    "texture_w": {
-    "mean": 0.1827,
-    "min": 0.1485,
+    "mean": 0.1831,
+    "min": 0.1491,
     "max": 0.2035
    },
    "position_score": {
@@ -2026,9 +1886,9 @@
     "max": 94.2
    },
    "total_score": {
-    "mean": 66.6967,
+    "mean": 66.6633,
     "min": 57.07,
-    "max": 74.44
+    "max": 74.38
    }
   },
   {
@@ -2062,9 +1922,9 @@
     "max": 5444.7
    },
    "texture_w": {
-    "mean": 0.2499,
+    "mean": 0.2507,
     "min": 0.2262,
-    "max": 0.2739
+    "max": 0.2763
    },
    "position_score": {
     "mean": 49.46,
@@ -2072,8 +1932,8 @@
     "max": 74.3
    },
    "total_score": {
-    "mean": 32.896,
-    "min": 22.73,
+    "mean": 32.83,
+    "min": 22.69,
     "max": 47.67
    }
   },
@@ -2107,9 +1967,9 @@
     "max": 2475.0
    },
    "texture_w": {
-    "mean": 0.238,
-    "min": 0.2279,
-    "max": 0.2493
+    "mean": 0.2382,
+    "min": 0.2278,
+    "max": 0.2501
    },
    "position_score": {
     "mean": 46.825,
@@ -2117,9 +1977,9 @@
     "max": 59.2
    },
    "total_score": {
-    "mean": 36.8275,
-    "min": 29.37,
-    "max": 55.67
+    "mean": 36.8075,
+    "min": 29.31,
+    "max": 55.68
    }
   },
   {
@@ -2149,9 +2009,9 @@
     "max": 4067.8
    },
    "texture_w": {
-    "mean": 0.3047,
-    "min": 0.3047,
-    "max": 0.3047
+    "mean": 0.3054,
+    "min": 0.3054,
+    "max": 0.3054
    },
    "position_score": {
     "mean": 9.2,
@@ -2159,9 +2019,9 @@
     "max": 9.2
    },
    "total_score": {
-    "mean": 3.47,
-    "min": 3.47,
-    "max": 3.47
+    "mean": 3.42,
+    "min": 3.42,
+    "max": 3.42
    }
   }
  ],
@@ -2261,20 +2121,20 @@
  ],
  "spearman_w_vs_thickness": 0.734,
  "epsilon": {
-  "note": "官方判据（整片 max−min）实测无区分力——片上标签纸/边缘辉光把对照片 DR 拉到与钢化片同域；内缩 5% 口径才分离。ε 落地须 (a) 无标签样本重测或 (b) 判据改内缩域（工程决策），且本批为导出缩图非产线原生分辨率——ε 定值仍 TODO(plant)",
+  "note": "官方判据（整片 max−min）实测无区分力——片上标签纸/边缘辉光把对照片 DR 拉到与钢化片同域；内缩 5% 口径才分离。ε 落地须 (a) 无标签样本重测或 (b) 判据改内缩域（工程决策），并在产线批复核——ε 定值仍 TODO(plant)",
   "controls_dr": [
-   239.96,
-   240.17
+   240.62,
+   240.84
   ],
   "controls_dr_inset5": [
    19.88,
    20.2
   ],
-  "tempered_dr_min": 238.84,
+  "tempered_dr_min": 239.69,
   "tempered_dr_inset5_min": 49.32,
   "window_official": [
-   240.17,
-   238.84
+   240.84,
+   239.69
   ],
   "window_inset5": [
    20.2,
@@ -2284,13 +2144,13 @@
  "repeatability": {
   "1#": {
    "d_texture_w": 0.0232,
-   "d_mm_per_px": 0.01677,
+   "d_coverage": 0.01446,
    "d_total": 9.59
   },
   "16#": {
-   "d_texture_w": 0.0375,
-   "d_mm_per_px": 0.00166,
-   "d_total": 9.15
+   "d_texture_w": 0.0384,
+   "d_coverage": 0.00155,
+   "d_total": 9.22
   }
  },
  "l2_cross": {
@@ -2301,7 +2161,7 @@
     "q95_nm": 47,
     "q98_nm": 51,
     "x095_gray": 125.1,
-    "texture_w": 0.2249
+    "texture_w": 0.2262
    },
    {
     "sample_id": "2#",
@@ -2309,7 +2169,7 @@
     "q95_nm": 116,
     "q98_nm": 131,
     "x095_gray": 207.5,
-    "texture_w": 0.3063
+    "texture_w": 0.3061
    },
    {
     "sample_id": "3#",
@@ -2317,7 +2177,7 @@
     "q95_nm": 45,
     "q98_nm": 49,
     "x095_gray": 71.4,
-    "texture_w": 0.2103
+    "texture_w": 0.211
    },
    {
     "sample_id": "4#",
@@ -2325,7 +2185,7 @@
     "q95_nm": 47,
     "q98_nm": 53,
     "x095_gray": 102.9,
-    "texture_w": 0.1961
+    "texture_w": 0.1966
    },
    {
     "sample_id": "6#",
@@ -2333,7 +2193,7 @@
     "q95_nm": 45,
     "q98_nm": 48,
     "x095_gray": 68.2,
-    "texture_w": 0.1689
+    "texture_w": 0.1696
    },
    {
     "sample_id": "7#",
@@ -2341,7 +2201,7 @@
     "q95_nm": 78,
     "q98_nm": 84,
     "x095_gray": 182.7,
-    "texture_w": 0.2521
+    "texture_w": 0.2527
    },
    {
     "sample_id": "8#-1",
@@ -2349,7 +2209,7 @@
     "q95_nm": 35,
     "q98_nm": 37,
     "x095_gray": 20.8,
-    "texture_w": 0.1315
+    "texture_w": 0.1338
    },
    {
     "sample_id": "11#",
@@ -2357,7 +2217,7 @@
     "q95_nm": 75,
     "q98_nm": 84,
     "x095_gray": 121.3,
-    "texture_w": 0.2336
+    "texture_w": 0.2339
    },
    {
     "sample_id": "12#",
@@ -2373,7 +2233,7 @@
     "q95_nm": 56,
     "q98_nm": 70,
     "x095_gray": 84.4,
-    "texture_w": 0.1885
+    "texture_w": 0.1908
    },
    {
     "sample_id": "18#",
@@ -2381,7 +2241,7 @@
     "q95_nm": 84,
     "q98_nm": 307,
     "x095_gray": 225.5,
-    "texture_w": 0.2902
+    "texture_w": 0.2915
    }
   ],
   "spearman_x095_vs_q95": 0.9178,
@@ -2412,8 +2272,8 @@
       "worst": 880.4
      },
      "texture_w": {
-      "best": 0.1689,
-      "worst": 0.1786
+      "best": 0.1696,
+      "worst": 0.1802
      }
     }
    },
@@ -2438,7 +2298,7 @@
       "worst": 2046.0
      },
      "texture_w": {
-      "best": 0.1485,
+      "best": 0.1491,
       "worst": 0.2035
      }
     }
@@ -2465,7 +2325,7 @@
      },
      "texture_w": {
       "best": 0.2262,
-      "worst": 0.2739
+      "worst": 0.2763
      }
     }
    },
@@ -2490,8 +2350,8 @@
       "worst": 2475.0
      },
      "texture_w": {
-      "best": 0.2279,
-      "worst": 0.2493
+      "best": 0.2278,
+      "worst": 0.2501
      }
     }
    }

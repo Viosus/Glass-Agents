@@ -1,7 +1,7 @@
 """sample26 资产生成器纯函数单测（不依赖照片与 GlassApp 包，缺图环境可跑）。
 
 被测函数全部在模块顶层且不触发 GlassApp 载入（_glassapp_api 是运行期惰性载入，
-见该模块 docstring）；本文件覆盖：mm/px 方向配准与 aniso（含 13# 错检回归）、
+见该模块 docstring）；本文件覆盖：裁切覆盖度与 aniso（含 13# 错检回归）、
 QA 分级边界、分档统计防污染、refs 草案对 n=1 档拒绝出值。
 """
 
@@ -11,36 +11,36 @@ import yaml
 from fringe_scoring.make_sample26_assets import (
     BAND_REF_KEYS,
     _band_stats,
-    _mm_per_px,
+    _crop_check,
     _qa_check,
     _refs_draft,
     _spearman,
     _stats_eligible,
 )
 
-QA = {"aniso_warn": 0.05, "aniso_fail": 0.10, "mm_per_px_lo": 0.5, "mm_per_px_hi": 2.0}
+QA = {"aniso_warn": 0.05, "aniso_fail": 0.10, "coverage_lo": 0.85, "coverage_hi": 1.02}
 
 
-# ---------------------------------------------------------------- mm/px 反解
-def test_mm_per_px_square_spec():
-    """610×610 规格、605×605 矫正 → 两轴同值，aniso=0。"""
-    m = _mm_per_px([610, 610], 605, 605)
-    assert m["long"] == m["short"] == pytest.approx(610 / 605, abs=1e-4)
+# ---------------------------------------------------------------- 裁切覆盖度
+def test_crop_check_square_spec():
+    """610×610 规格、605×605 矫正 → 覆盖度 605/610（内咬 ~0.8%），aniso=0。"""
+    m = _crop_check([610, 610], 605, 605)
+    assert m["coverage_long"] == m["coverage_short"] == pytest.approx(605 / 610, abs=1e-4)
     assert m["aniso"] == 0.0
 
 
-def test_mm_per_px_orientation_free():
+def test_crop_check_orientation_free():
     """长边配长边：矫正图横放/竖放（504×358 vs 358×504）结果必须相同。"""
-    a = _mm_per_px([510, 360], 504, 358)
-    b = _mm_per_px([510, 360], 358, 504)
+    a = _crop_check([510, 360], 504, 358)
+    b = _crop_check([510, 360], 358, 504)
     assert a == b
-    assert a["mean"] == pytest.approx((510 / 504 + 360 / 358) / 2, abs=1e-4)
+    assert a["coverage_long"] == pytest.approx(504 / 510, abs=1e-4)
 
 
-def test_mm_per_px_13_regression():
+def test_crop_check_13_regression():
     """13# 错检回归：610×610 方片检成 643×350 → aniso 巨大，QA 必 fail。"""
-    m = _mm_per_px([610, 610], 643, 350)
-    assert m["aniso"] == pytest.approx(0.4557, abs=1e-3)  # 远超 fail 阈 0.10
+    m = _crop_check([610, 610], 643, 350)
+    assert m["aniso"] == pytest.approx(0.8371, abs=1e-3)  # 远超 fail 阈 0.10
     qa = _qa_check(1, 1, m, "auto", QA)
     assert qa["level"] == "fail"
 
@@ -48,7 +48,7 @@ def test_mm_per_px_13_regression():
 # ---------------------------------------------------------------- QA 分级
 def test_qa_levels():
     """pass/warn/fail 三级边界：容差取自 manifest（阈值处不含等号）。"""
-    ok = {"long": 1.0, "short": 1.0, "mean": 1.0, "aniso": 0.0}
+    ok = {"coverage_long": 0.99, "coverage_short": 0.99, "aniso": 0.0}
     assert _qa_check(1, 1, ok, "auto", QA)["level"] == "pass"
     warn = dict(ok, aniso=0.06)
     assert _qa_check(1, 1, warn, "auto", QA)["level"] == "warn"
@@ -59,12 +59,12 @@ def test_qa_levels():
 
 
 def test_qa_special_paths():
-    """检测失败=fail；片数不符=fail；整图口径=warn；mm/px 出域=fail。"""
+    """检测失败=fail；片数不符=fail；整图口径=warn；覆盖度出域=fail。"""
     assert _qa_check(0, 1, None, "detection_failed", QA)["level"] == "fail"
     assert _qa_check(2, 1, None, "auto", QA)["level"] == "fail"
-    ok = {"long": 1.0, "short": 1.0, "mean": 1.0, "aniso": 0.0}
+    ok = {"coverage_long": 0.99, "coverage_short": 0.99, "aniso": 0.0}
     assert _qa_check(1, 1, ok, "fullframe", QA)["level"] == "warn"
-    far = {"long": 3.0, "short": 3.0, "mean": 3.0, "aniso": 0.0}
+    far = {"coverage_long": 0.5, "coverage_short": 0.5, "aniso": 0.0}
     assert _qa_check(1, 1, far, "auto", QA)["level"] == "fail"
 
 

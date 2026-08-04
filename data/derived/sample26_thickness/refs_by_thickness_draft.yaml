@@ -24,8 +24,8 @@ refs_by_thickness:
       best: 486.6
       worst: 880.4
     texture_w:
-      best: 0.1689
-      worst: 0.1786
+      best: 0.1696
+      worst: 0.1802
 - max_thickness_mm: 5.0
   fail_line: null
   refs:
@@ -42,7 +42,7 @@ refs_by_thickness:
       best: 434.1
       worst: 2046.0
     texture_w:
-      best: 0.1485
+      best: 0.1491
       worst: 0.2035
 - max_thickness_mm: 6.0
   fail_line: null
@@ -61,7 +61,7 @@ refs_by_thickness:
       worst: 5444.7
     texture_w:
       best: 0.2262
-      worst: 0.2739
+      worst: 0.2763
 - max_thickness_mm: 8.0
   fail_line: null
   refs:
@@ -78,5 +78,5 @@ refs_by_thickness:
       best: 664.4
       worst: 2475.0
     texture_w:
-      best: 0.2279
-      worst: 0.2493
+      best: 0.2278
+      worst: 0.2501

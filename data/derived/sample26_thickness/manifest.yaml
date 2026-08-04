@@ -8,10 +8,12 @@
 photo_dir: data/images/明之言检测结果
 
 qa:
-  aniso_warn: 0.05        # 两轴 mm/px 相对差 >5% 记 warn（探针实测正常片 0.6%~3%）
-  aniso_fail: 0.10        # >10% 记 fail（13# 错检实测 84%，差一个数量级）
-  mm_per_px_lo: 0.5       # 合理域（本批导出缩图实测应在 0.95~1.10）
-  mm_per_px_hi: 2.0
+  # 尺度先验 = 1 px/mm（线扫原生，2026-08-04 用户确认；全帧高恒 630px=幅宽佐证）。
+  # 规格对照只作裁切覆盖度 QA，不反推缩放系数。
+  aniso_warn: 0.05        # 长宽比偏差 >5% 记 warn（实测正常片 0.6%~3.5%）
+  aniso_fail: 0.10        # >10% 记 fail（13# 错检实测 46%，差一个数量级）
+  coverage_lo: 0.85       # 裁切覆盖度合理域：自动检出 0.988~1.002（内咬 ~1%）、
+  coverage_hi: 1.02       # 框装中空可见口径 0.91~0.94（压边遮挡，属实情非错误）
 
 photos:
   - {file: 1-1.png, sample_id: "1#",   category: special, type: "5+10A+5 钢化中空",        thickness_mm: null, spec_mm: [510, 360], expected_sheets: 1, manual_quad: null, notes: "两片 5mm；同一样片两张照片之一"}
