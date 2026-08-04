@@ -72,8 +72,15 @@ def _is_cloud_exempt(path: Path | None, rules: dict) -> bool:
         return False
     norm = str(path.resolve()).replace("\\", "/").lower()
     for raw in rules.get("cloud_exempt_paths", []) or []:
-        prefix = str(raw).replace("\\", "/").lower()
-        if prefix and norm.startswith(prefix):
+        entry = str(raw).replace("\\", "/").lower()
+        if not entry:
+            continue
+        # 目录条目（/ 结尾）按前缀匹配；文件条目须精确相等——避免
+        # "uploader.py" 顺带豁免 "uploader.py.bak" 一类同前缀文件
+        if entry.endswith("/"):
+            if norm.startswith(entry):
+                return True
+        elif norm == entry:
             return True
     return False
 
