@@ -78,8 +78,23 @@ def _set_font(run, size_pt: float, bold: bool = False, gray: bool = False) -> No
         run.font.color.rgb = RGBColor(0x60, 0x60, 0x60)
 
 
+_BOLD_RE = re.compile(r"\*\*(.+?)\*\*")
+
+
+def _add_runs(p, line: str, size: float, bold: bool, gray: bool) -> None:
+    """一行文本 → 若干 run：`**…**` 段转真加粗（标记不落纸面，与 PDF 渲染层同语义）。"""
+    pos = 0
+    for m in _BOLD_RE.finditer(line):
+        if m.start() > pos:
+            _set_font(p.add_run(line[pos:m.start()]), size, bold=bold, gray=gray)
+        _set_font(p.add_run(m.group(1)), size, bold=True, gray=gray)
+        pos = m.end()
+    if pos < len(line):
+        _set_font(p.add_run(line[pos:]), size, bold=bold, gray=gray)
+
+
 def _para(doc, text: str, size: float, bold=False, gray=False, center=False, indent=0.0):
-    """加一段（多行文本按行拆 run + 手工换行），返回段落。"""
+    """加一段（多行文本按行拆 run + 手工换行；行内 `**…**` 转真加粗），返回段落。"""
     p = doc.add_paragraph()
     if center:
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -89,7 +104,7 @@ def _para(doc, text: str, size: float, bold=False, gray=False, center=False, ind
     for i, line in enumerate(text.split("\n")):
         if i:
             p.add_run().add_break()
-        _set_font(p.add_run(line), size, bold=bold, gray=gray)
+        _add_runs(p, line, size, bold, gray)
     return p
 
 

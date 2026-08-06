@@ -32,6 +32,14 @@ V1.4（2026-08-04 五条审计修正）：
    与定义层的 M 域表述不一致（量化刻度取输入域 min/max，换域即换数）；
 ⑨ 「0.16~1.0」出处更正为 Dix(2023) p.120，草案表 3 分级切点实为 0.43~0.96；
 ⑩ 数值资产出处补全第三份 texture_w_diag（第七部分与报数精度全部数字的来源）。
+V1.5（2026-08-05，用户要求扩写 CCP 关系）：
+⑪ 第八部分「与现行 CCP 的关系」由一页对照表扩为完整两页章：血统与保留清单 /
+   改动一（分母）的动机与实测代价——新增批内锚不稳定性对半实验（第四份资产
+   texture_w_ccp，115 片、B=2000 种子固定：Cmax 漂移中位 11.2%、同片读数差中位
+   0.0249、跨锚秩相关 ≥0.9992——不可比伤在读数与判级，不在排序）/ 改动二
+   （位置权重）的逐步判别力对照（CCP 批内锚 −0.76 → 上界分母无位置 −0.65 →
+   W_w −0.89，如实披露"换分母本身小幅损失判别力，判别力靠位置项找回"）/
+   数值不可平移与 v1.12 配置迁移规则 / 何时仍需报现行 CCP。
 渲染管线复用 make_uniformity_gb_doc.render_pages（PDF）与 make_docx_versions.build_docx（Word）。
 用法：venv python fringe_scoring/make_texture_w_tech_doc.py
 """
@@ -50,8 +58,8 @@ from fringe_scoring.make_uniformity_gb_doc import render_pages
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "docs" / "应力斑国标文档"
-DATE = "2026-08-04"
-VERSION = "V1.4"
+DATE = "2026-08-05"
+VERSION = "V1.5"
 
 try:  # Windows 控制台默认 GBK，强制 UTF-8
     sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
@@ -71,6 +79,8 @@ def tech_pages() -> list[list[tuple[str, str]]]:
     L = _vals("texture_w_doc")      # 115 片人工标注集
     F = _vals("texture_w_field")    # 产线大样本（原生口径）
     G = _vals("texture_w_diag")     # 口径敏感性与可分辨性诊断
+    C = _vals("texture_w_ccp")      # 与现行 CCP 的关系（批内锚实验，V1.5 新增）
+    cb, du, ai = C["ccp_batch_anchor"], C["dual_bound_unweighted"], C["anchor_instability"]
     ss, strat = G["step_sweep"], G["stratified_by_saturation"]
     br, sb = G["branch_resolvability"], G["selection_bias"]
     q = F["w_quantiles"]
@@ -472,10 +482,19 @@ def tech_pages() -> list[list[tuple[str, str]]]:
              f"判级层面的影响：分级线按三分位划时 {br['grade_flip']['tertile']['frac']:.1%} 的样片会因支路 1 翻档，\n"
              f"按 20/80 分位划时 {br['grade_flip']['p20_p80']['frac']:.1%}。"),
         ],
-        # ── P8 与 CCP 的关系 + 参数状态 + 边界 ──
+        # ── P8 与 CCP 的关系（V1.5 扩为完整两页章；数值资产 texture_w_ccp） ──
         [
             ("space", "0.04"),
             ("h2", "八、与现行 CCP 的关系"),
+            ("h3", "① 血统与保留清单：W_w 是 CCP 的可复现化改造，不是新指标族"),
+            ("body",
+             "CCP（组合纹理特征）源自 Dix(2023) 博士论文的应力斑纹理评估工作，被现行草案\n"
+             "第 4 章采纳为三种评估方法之一；两个分量为灰度共生矩阵（GLCM）的对比度 Ca\n"
+             "与聚类突出 CP。W_w 完整保留其处理骨架：1 px/mm 标准化 → 逐片 min/max 量化\n"
+             "（Ng=8）→ d=1、四方向、对称+归一 GLCM → 两分量 → ½(√ + ⁴√) 结合。\n"
+             "实质改动恰好两处：\n"
+             "　改动一（分母）：两个归一化分母由\"参考最差样品\"标定值换成纯数学理论上界；\n"
+             "　改动二（计票）：共生对由\"每对 1 票\"换成按位置权重 w(r)=1−r 计票。"),
             ("tbl",
              "环节　　　　　　　　　现行 CCP　　　　　　W_w\n"
              "图像标准化(1px/mm)　　同　　　　　　　　　同\n"
@@ -487,10 +506,75 @@ def tech_pages() -> list[list[tuple[str, str]]]:
              "公式形状　　　　　　　½(√ + ⁴√)　　　　　 同\n"
              "两个分母　　　　　　　参考样 Cmax/CPmax　 理论上界 49 与 3201.33\n"
              "跨实验室可比性　　　　需统一标定参考样　　定义即可比"),
+            ("space", "0.006"),
+            ("h3", "② 改动一的动机：读数可比性——批内锚不稳定性实测"),
             ("body",
-             "改造是最小侵入的：处理骨架、特征定义与结合形式全部保留，实质改变只有两处\n"
-             "——共生对的计票规则（引入位置权重）与两个归一化分母（换成理论上界）。"),
-            ("space", "0.010"),
+             "现行 CCP 的 Cmax/CPmax 草案未给数值，各方须各自标定\"参考最差样品\"。\n"
+             f"用本批 {C['n']} 片模拟两个实验室（随机对半、各自以本方最差样片为锚，"
+             f"B={ai['B']} 次、种子固定）：\n"
+             f"· 锚值漂移：Cmax 两方相差中位 {ai['cmax_drift_median']:.1%}"
+             f"（p90 {ai['cmax_drift_p90']:.1%}）；CPmax 中位 {ai['cpmax_drift_median']:.1%}"
+             f"（p90 {ai['cpmax_drift_p90']:.1%}）；\n"
+             f"· 同一片玻璃两方读数差中位 {ai['reading_shift_median']}（本批 CCP 读数域\n"
+             f"　 [{cb['w_min']}, {cb['w_max']}]、中位 {ai['ccp_median_full_anchor']}；"
+             "草案表 3 分级切点分布在 0.43~0.96，\n"
+             "　 切点附近该差值足以翻档）；\n"
+             f"· 但两方**排序**几乎一致：跨锚秩相关中位 {ai['rank_rho_median']}、"
+             f"最小 {ai['rank_rho_min']}——批内锚只\n"
+             "　 改变两支路的相对权重，伤害集中在\"读数与判级不可比\"，不在排序。\n"
+             "分母换理论上界后，读数由定义唯一确定，任何实验室对同一输入必然同数。"),
+            ("space", "0.006"),
+        ],
+        # ── P8b 与 CCP 的关系（续）：改动的代价与贡献 / 不可平移 / 并行报出 ──
+        [
+            ("space", "0.04"),
+            ("h3", "③ 改动一的代价：支路失衡与刻度压缩（如实列示）"),
+            ("body",
+             f"理论上界远高于实测值域（本批 Ca ≤ {cb['cmax']}，上界 49；CP ≤ {cb['cpmax']}，"
+             "上界 3201.33），\n"
+             "两支路被压进量纲悬殊的低段。后果有二：其一，W 挤在低段 → 报数精度必须\n"
+             "≥3 位小数（第七部分③），且分级切点须按 W 重划——草案表 3 的 0.43~0.96\n"
+             "（Dix(2023) Table 8.2 同值）不可沿用，Dix 报告的 0.16~1.0 系其批的读数值域\n"
+             "（非切点）同样不可平移；其二，对比度支路占比骤降，单独换分母（不加位置\n"
+             f"权重）的判别力实测 ρ = {du['vs_man']:+.4f}，低于批内锚 CCP 的 {cb['vs_man']:+.4f}\n"
+             "——**换分母本身买的是可比性，不是判别力**；判别力由改动二找回。"),
+            ("space", "0.006"),
+            ("h3", "④ 改动二的动机与贡献：位置盲 → 位置加权"),
+            ("body",
+             "GLCM 对平移不变：斑纹压在板面正中与贴着边缘，CCP 读数相同（位置盲）。\n"
+             "两处改动逐步叠加的判别力（同批、同预处理、并列平均秩）："),
+            ("tbl",
+             f"形式（n={C['n']}）　　　　　　　　　　ρ vs 人工分　　ρ vs 系统分\n"
+             f"现行 CCP（批内锚，无位置）　　　{cb['vs_man']:+.4f}　　　{cb['vs_sys']:+.4f}\n"
+             f"上界分母（无位置）　　　　　　　{du['vs_man']:+.4f}　　　{du['vs_sys']:+.4f}\n"
+             f"W_w ＝ 上界分母 + 位置权重　　　{fc['dual_bound_combined']['vs_man']:+.4f}"
+             f"　　　{fc['dual_bound_combined']['vs_sys']:+.4f}"),
+            ("body",
+             f"位置权重把 |ρ| 由 {abs(du['vs_man']):.4f} 拉到 "
+             f"{abs(fc['dual_bound_combined']['vs_man']):.4f}"
+             f"（Δ{abs(fc['dual_bound_combined']['vs_man']) - abs(du['vs_man']):+.4f}），"
+             f"并反超批内锚 CCP（{cb['vs_man']:+.4f}）。\n"
+             "注意：本批受 8-bit 饱和裁剪纠缠（第五部分），三行数字均为临时结论；但\"位置项\n"
+             "承担判别力、分母替换承担可比性\"的分工方向与该混杂无关，预期是稳定的。"),
+            ("space", "0.006"),
+            ("h3", "⑤ 数值不可平移：迁移与配置规则"),
+            ("body",
+             "W 与 CCP 读数不同源（一个分母批依赖、一个是数学常数），不存在普适换算式：\n"
+             f"本批实测 CCP 读数域 [{cb['w_min']}, {cb['w_max']}]，而 W 域 "
+             f"[{L['w_min']}, {L['w_max']}]——位置与形状都不同。\n"
+             "由此的工程规则（GlassApp v1.12，2026-08-03 起）：指标集中 ccp 移除、texture_w\n"
+             "接任；配置/调参载荷遇旧 ccp 键一律丢弃（REMOVED_INDICATOR_KEYS），好/差参考值\n"
+             "与分级线**不得按旧刻度平移**，须按 W_w 重新标定。"),
+            ("space", "0.006"),
+            ("h3", "⑥ 何时仍需报现行 CCP"),
+            ("body",
+             "与草案条文对表、第三方仲裁或送检要求按草案执行时，仍须按草案标定参考样并\n"
+             "报 CCP——本篇 W_w 为提案指标（非现行条文）。两者可并行报出，不得互替或换算。"),
+            ("space", "0.008"),
+            ("note",
+             "本章实测数字出自两份资产：texture_w_ccp/values.json（批内锚实验与前两行判别力，\n"
+             "由已入库 115 片逐片特征确定性复算、种子固定）；texture_w_doc/values.json\n"
+             "（W_w 行 ρ 与 W 域，含位置加权，需原图复算）。"),
         ],
         # ── P9 参数状态 + 边界与局限 ──
         [
@@ -509,6 +593,10 @@ def tech_pages() -> list[list[tuple[str, str]]]:
              "ε 属\"仪器噪声底\"性质（由无应力样品重复扫描测定，非参考样统计量），且未定值时\n"
              "条款不激活、指标照常输出——不存在\"缺常数就无法计算\"的阻塞。"),
             ("space", "0.010"),
+        ],
+        # ── P10 边界与局限（2026-08-05 拆页：与九同页时页底尾注被裁，V1.4 即有此隐患） ──
+        [
+            ("space", "0.04"),
             ("h2", "十、适用边界与局限"),
             ("body",
              "· 适用于矩形单片钢化玻璃的评估区域 M；异形板面暂不适用；\n"
@@ -542,9 +630,8 @@ def tech_pages() -> list[list[tuple[str, str]]]:
              "　 泛函 ＋ 全链条常数固定\"，而非自身携带物理单位。"),
             ("space", "0.008"),
             ("note",
-             f"文档版本 {VERSION}（{DATE}）。参考实现 tools/metrics.py::texture_w；单元测试\n"
-             "tests/test_metrics.py；数值资产 data/derived/{texture_w_doc, texture_w_field,\n"
-             "texture_w_diag}/values.json 三份（由对应 make_*_assets.py 复算，图文同源）。"),
+             f"文档版本 {VERSION}（{DATE}）。参考实现 tools/metrics.py::texture_w；单测\n"
+             "tests/test_metrics.py；资产 data/derived/texture_w_{doc,field,diag,ccp} 四份（图文同源）。"),
         ],
     ]
 
