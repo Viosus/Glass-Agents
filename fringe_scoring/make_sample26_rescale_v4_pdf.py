@@ -91,7 +91,9 @@ def page_cover(values, recs, field, sp) -> "v1.plt.Figure":
     """封面：机制与终值 / 定标依据 / 0 分数对照 / 影响统计。"""
     zeros_old = {k: sum(1 for r in recs if r["old_subs"][k] == 0.0) for k in FOUR}
     zeros_new = {k: sum(1 for r in recs if r["new_subs"][k] == 0.0) for k in FOUR}
-    moved = sorted(recs, key=lambda r: -abs(r["old_rank"] - r["new_rank"]))[:3]
+    # 只列并列最大 |Δ名次| 的片（避免在同 |Δ| 并列组里任取造成误导）
+    max_d = max(abs(r["old_rank"] - r["new_rank"]) for r in recs)
+    moved = [r for r in recs if abs(r["old_rank"] - r["new_rank"]) == max_d]
     q = field["quantiles"]
 
     fig = v1._new_page(v1.PORTRAIT)
@@ -127,8 +129,9 @@ def page_cover(values, recs, field, sp) -> "v1.plt.Figure":
     y = v1._text_block(fig, 0.08, y - 0.004, [
         f"0 分片数：{zline}（张）",
         f"Spearman(旧总分, 新总分) = {sp:+.4f}（并列平均秩，n={len(recs)}）",
-        "名次变动最大：" + "；".join(
-            f"{r['sample_id']}（{r['old_rank']}→{r['new_rank']}）" for r in moved),
+        f"名次变动最大（|Δ|={max(abs(r['old_rank'] - r['new_rank']) for r in recs)}）："
+        + "；".join(f"{r['sample_id']}（{r['old_rank']}→{r['new_rank']}）" for r in moved)
+        + "；其余 |Δ|≤1",
     ], size=9.2, dy=0.0158)
 
     v1._text_block(fig, 0.08, y - 0.016, [
