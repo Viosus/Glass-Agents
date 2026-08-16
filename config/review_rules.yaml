@@ -42,6 +42,10 @@ cloud_exempt_paths:
   - "D:/GlassApp/app/uploader.py"
   - "D:/GlassApp/app/config_store.py"
   - "D:/GlassApp/app/settings_page.py"
+  # AnnotationApp 同为联网产品（标注服务/推送工具/拉取通道），口径同上
+  - "D:/AnnotationApp/server/"
+  - "D:/AnnotationApp/capture_push/"
+  - "D:/AnnotationApp/host_sync/"
 
 # 3) 命名铁律——受批准的大写记号（CONVENTIONS.md §2/§3），命名检查时豁免。
 #    末尾两项为 Qt 框架强制的虚函数覆写名（GlassApp 界面层）：重命名即失效，非风格违规。
