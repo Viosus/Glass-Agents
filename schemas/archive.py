@@ -14,7 +14,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from schemas.furnace import UNKNOWN_FURNACE_ID, FurnaceConfig
-from schemas.process_params import ProcessParams
+from schemas.process_params import GlassType, ProcessParams
 
 Grade = Literal["A", "B", "C"]
 
@@ -79,7 +79,7 @@ class ArchiveSample(BaseModel):
 
     # ---- 分桶键 ----
     thickness_mm: float = Field(gt=0)
-    glass_type: Literal["ultra_clear", "clear"]
+    glass_type: GlassType
     quality_mode: Literal["high_quality", "high_efficiency"]
     is_ground_truth: bool = False                            # 专家复核后 True
 

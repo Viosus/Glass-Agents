@@ -43,6 +43,15 @@ FEATURE_NAMES: tuple[str, ...] = (
     "furnace_age_present",
     "days_since_overhaul",     # 距上次大修天数
     "overhaul_present",
+    # ---- v3 追加（2026-08-23）：品类 one-hot 补齐 ----
+    # 原先只有 glass_ultra_clear/glass_clear 两位，品类扩到 7 值后其余五类全部编码成 (0,0)，
+    # 模型无法区分 Low-E / 彩釉 / 压花 / 镀膜 / 其他 —— 比 ingest 拒收更隐蔽的信息损失。
+    # 按本文件既定纪律「往后追加、勿插队」补在末尾（前两位保持原位，不动已有列对应）。
+    "glass_low_e",
+    "glass_coated",
+    "glass_enameled",
+    "glass_patterned",
+    "glass_other",
 )
 
 
@@ -104,6 +113,12 @@ def featurize(sample: ArchiveSample) -> torch.Tensor:
         ccp, ccp_present,
         age_years, age_present,
         overhaul, overhaul_present,
+        # v3 品类补位：顺序须与 FEATURE_NAMES 末尾五项逐一对应
+        1.0 if p.glass_type == "low_e" else 0.0,
+        1.0 if p.glass_type == "coated" else 0.0,
+        1.0 if p.glass_type == "enameled" else 0.0,
+        1.0 if p.glass_type == "patterned" else 0.0,
+        1.0 if p.glass_type == "other" else 0.0,
     ]
     return torch.tensor(vec, dtype=torch.float32)
 

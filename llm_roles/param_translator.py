@@ -17,6 +17,8 @@ from typing import TYPE_CHECKING, Any
 
 from llm_roles._llm import chat, load_llm
 
+from schemas.process_params import GLASS_TYPE_ZH
+
 if TYPE_CHECKING:
     from schemas.process_params import ProcessParams
     from tools.constraints import CheckResult
@@ -25,7 +27,7 @@ _ROOT = Path(__file__).resolve().parents[1]
 _PROMPT_PATH = _ROOT / "config" / "prompt_param_translator.md"
 
 _RE_NUMBER = re.compile(r"-?\d+(?:\.\d+)?")
-_GLASS_ZH = {"ultra_clear": "超白", "clear": "普白"}
+_GLASS_ZH = GLASS_TYPE_ZH  # 单一真值源：schemas/process_params.py（新增品类只改那一处）
 _MODE_ZH = {"high_quality": "高质量", "high_efficiency": "高效率"}
 
 

@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # 支持直接 `python tools/param_sheet.py`
 
-from schemas.process_params import ProcessParams  # noqa: E402
+from schemas.process_params import GLASS_TYPE_ZH, ProcessParams  # noqa: E402
 
 if TYPE_CHECKING:
     from tools.constraints import CheckResult
@@ -37,7 +37,7 @@ _SCALAR_FIELDS: tuple[tuple[str, str, str], ...] = (
     ("oscillation_amplitude", "摆动幅度", "-"),
     ("heating_duration_s", "加热时长", "s"),
 )
-_GLASS_ZH = {"ultra_clear": "超白", "clear": "普白"}
+_GLASS_ZH = GLASS_TYPE_ZH  # 单一真值源：schemas/process_params.py（新增品类只改那一处）
 _MODE_ZH = {"high_quality": "高质量", "high_efficiency": "高效率"}
 
 
