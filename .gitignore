@@ -38,3 +38,6 @@ models/
 
 # ---- fringe_scoring 本地调参库（真实裁切图+逐片分数，仅本机完善模块用，不入库）----
 fringe_scoring/local_store/
+
+# ---- sample26 裁切核对导出（人工核对产物，export_sample26_* 可重生成，不入库）----
+data/derived/sample26_thickness/warped_crops/
