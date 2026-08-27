@@ -32,6 +32,22 @@ data/annotation/*
 !data/annotation/标注表模板.csv
 !data/annotation/标注表模板.xlsx
 
+# ---- 凭据（2026-08-27 补：docs/ 下发现明文 apikey 文件，未被任何规则覆盖）----
+# 只匹配数据类扩展名，不会误伤同名 .py 源码。密钥一律不入库（对齐 C3「密钥绝不进代码/git」）。
+*apikey*.txt
+*apikey*.csv
+*apiKey*.txt
+*apiKey*.csv
+*api_key*.txt
+*api_key*.csv
+*.pem
+.env
+.env.*
+
+# ---- 问师傅清单回收的原始答案（现场/厂家材料，同「填好的表不入库」口径）----
+# 结论与逐题登记见 docs/问师傅清单_答案登记.md；确需入库则删掉下面这行。
+问师傅清单答案合集/
+
 # ---- 本地大模型权重（不入版本库，元数据见 VERSION.md）----
 models/
 *.gguf
