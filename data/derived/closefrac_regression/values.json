@@ -1,0 +1,933 @@
+{
+ "meta": {
+  "date": "2026-08-05",
+  "script": "fringe_scoring/make_closefrac_regression_assets.py",
+  "close_a": 0.005,
+  "close_b": 0.01,
+  "drift_tol_px": 2.0,
+  "确定性说明": "角点相同 ⇒ 矫正图相同 ⇒ 下游指标逐位相同（管线无随机性），故 B 不重打分，只对拍片数与角点",
+  "fallback_不做的原因": "碎段凸包并集重拟合须动三端 cv2 精确移植面四文件；0.01 已救回同签名失败且距假片阈值 0.02 有 2 倍裕量"
+ },
+ "A_failures": {
+  "rows": [
+   {
+    "date": "2025-11-18",
+    "dir": "20251118_071824_未知_未知_0mm_400us_f4_255",
+    "old_error": "ValueError: detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 min_area_frac），确认为暗背景整床照片，或调低",
+    "close_a": "err:detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 min_area_frac），确认为暗背景",
+    "close_b": 2,
+    "signature": "no_foreground",
+    "rescued": true,
+    "diag_png": "diag_A_2025-11-18_20251118_071824.png"
+   },
+   {
+    "date": "2025-11-27",
+    "dir": "20251127_235814_未知_未知_0mm_400us_f4_255",
+    "old_error": "ValueError: detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 min_area_frac），确认为暗背景整床照片，或调低",
+    "close_a": "err:detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 min_area_frac），确认为暗背景",
+    "close_b": 1,
+    "signature": "no_foreground",
+    "rescued": true,
+    "diag_png": "diag_A_2025-11-27_20251127_235814.png"
+   },
+   {
+    "date": "2026-02-26",
+    "dir": "20260226_124319_未知_未知_0mm_400us_f4_255",
+    "old_error": "ValueError: detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 min_area_frac），确认为暗背景整床照片，或调低",
+    "close_a": "err:detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 min_area_frac），确认为暗背景",
+    "close_b": 1,
+    "signature": "no_foreground",
+    "rescued": true,
+    "diag_png": "diag_A_2026-02-26_20260226_124319.png"
+   },
+   {
+    "date": "2026-03-01",
+    "dir": "20260301_234523_未知_未知_0mm_400us_f4_255",
+    "old_error": "ValueError: quad_from_hull: 轮廓无法拟合为四边形（最终 3 点），确认玻璃为凸四边形或调大 poly_epsilon_frac",
+    "close_a": "err:quad_from_hull: 轮廓无法拟合为四边形（最终 3 点），确认玻璃为凸四边形或调大 poly_epsilon",
+    "close_b": "err:quad_from_hull: 轮廓无法拟合为四边形（最终 3 点），确认玻璃为凸四边形或调大 poly_epsilon",
+    "signature": "quad_from_hull",
+    "rescued": false,
+    "diag_png": "diag_A_2026-03-01_20260301_234523.png"
+   },
+   {
+    "date": "2026-03-02",
+    "dir": "20260302_050058_未知_未知_0mm_400us_f4_255",
+    "old_error": "ValueError: quad_from_hull: 轮廓无法拟合为四边形（最终 3 点），确认玻璃为凸四边形或调大 poly_epsilon_frac",
+    "close_a": "err:quad_from_hull: 轮廓无法拟合为四边形（最终 3 点），确认玻璃为凸四边形或调大 poly_epsilon",
+    "close_b": "err:quad_from_hull: 轮廓无法拟合为四边形（最终 3 点），确认玻璃为凸四边形或调大 poly_epsilon",
+    "signature": "quad_from_hull",
+    "rescued": false,
+    "diag_png": "diag_A_2026-03-02_20260302_050058.png"
+   },
+   {
+    "date": "2026-03-04",
+    "dir": "20260304_005735_未知_未知_0mm_400us_f4_255",
+    "old_error": "ValueError: quad_from_hull: 轮廓无法拟合为四边形（最终 2 点），确认玻璃为凸四边形或调大 poly_epsilon_frac",
+    "close_a": "err:quad_from_hull: 轮廓无法拟合为四边形（最终 2 点），确认玻璃为凸四边形或调大 poly_epsilon",
+    "close_b": 4,
+    "signature": "quad_from_hull",
+    "rescued": true,
+    "diag_png": "diag_A_2026-03-04_20260304_005735.png"
+   },
+   {
+    "date": "2026-04-02",
+    "dir": "20260402_235907_未知_未知_0mm_400us_f4_255",
+    "old_error": "ValueError: quad_from_hull: 轮廓无法拟合为四边形（最终 2 点），确认玻璃为凸四边形或调大 poly_epsilon_frac",
+    "close_a": "err:quad_from_hull: 轮廓无法拟合为四边形（最终 2 点），确认玻璃为凸四边形或调大 poly_epsilon",
+    "close_b": "err:quad_from_hull: 轮廓无法拟合为四边形（最终 2 点），确认玻璃为凸四边形或调大 poly_epsilon",
+    "signature": "quad_from_hull",
+    "rescued": false,
+    "diag_png": "diag_A_2026-04-02_20260402_235907.png"
+   },
+   {
+    "date": "2026-04-03",
+    "dir": "20260403_000508_未知_未知_0mm_400us_f4_255",
+    "old_error": "ValueError: quad_from_hull: 轮廓无法拟合为四边形（最终 2 点），确认玻璃为凸四边形或调大 poly_epsilon_frac",
+    "close_a": "err:quad_from_hull: 轮廓无法拟合为四边形（最终 2 点），确认玻璃为凸四边形或调大 poly_epsilon",
+    "close_b": "err:quad_from_hull: 轮廓无法拟合为四边形（最终 2 点），确认玻璃为凸四边形或调大 poly_epsilon",
+    "signature": "quad_from_hull",
+    "rescued": false,
+    "diag_png": "diag_A_2026-04-03_20260403_000508.png"
+   },
+   {
+    "date": "2026-04-03",
+    "dir": "20260403_235731_未知_未知_0mm_400us_f4_255",
+    "old_error": "ValueError: quad_from_hull: 轮廓无法拟合为四边形（最终 2 点），确认玻璃为凸四边形或调大 poly_epsilon_frac",
+    "close_a": "err:quad_from_hull: 轮廓无法拟合为四边形（最终 2 点），确认玻璃为凸四边形或调大 poly_epsilon",
+    "close_b": "err:quad_from_hull: 轮廓无法拟合为四边形（最终 2 点），确认玻璃为凸四边形或调大 poly_epsilon",
+    "signature": "quad_from_hull",
+    "rescued": false,
+    "diag_png": "diag_A_2026-04-03_20260403_235731.png"
+   },
+   {
+    "date": "2026-04-04",
+    "dir": "20260404_000543_未知_未知_0mm_400us_f4_255",
+    "old_error": "ValueError: quad_from_hull: 轮廓无法拟合为四边形（最终 2 点），确认玻璃为凸四边形或调大 poly_epsilon_frac",
+    "close_a": "err:quad_from_hull: 轮廓无法拟合为四边形（最终 2 点），确认玻璃为凸四边形或调大 poly_epsilon",
+    "close_b": "err:quad_from_hull: 轮廓无法拟合为四边形（最终 2 点），确认玻璃为凸四边形或调大 poly_epsilon",
+    "signature": "quad_from_hull",
+    "rescued": false,
+    "diag_png": "diag_A_2026-04-04_20260404_000543.png"
+   },
+   {
+    "date": "2026-04-11",
+    "dir": "20260411_212826_未知_未知_0mm_400us_f4_255",
+    "old_error": "ValueError: detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 min_area_frac），确认为暗背景整床照片，或调低",
+    "close_a": "err:detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 min_area_frac），确认为暗背景",
+    "close_b": 4,
+    "signature": "no_foreground",
+    "rescued": true,
+    "diag_png": "diag_A_2026-04-11_20260411_212826.png"
+   },
+   {
+    "date": "2026-04-23",
+    "dir": "20260423_150539_未知_未知_0mm_400us_f4_255",
+    "old_error": "ValueError: detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 min_area_frac），确认为暗背景整床照片，或调低",
+    "close_a": "err:detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 min_area_frac），确认为暗背景",
+    "close_b": "err:detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 min_area_frac），确认为暗背景",
+    "signature": "no_foreground",
+    "rescued": false,
+    "diag_png": "diag_A_2026-04-23_20260423_150539.png"
+   },
+   {
+    "date": "2026-05-05",
+    "dir": "20260505_235716_未知_未知_0mm_400us_f4_255",
+    "old_error": "ValueError: detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 min_area_frac），确认为暗背景整床照片，或调低",
+    "close_a": "err:detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 min_area_frac），确认为暗背景",
+    "close_b": 1,
+    "signature": "no_foreground",
+    "rescued": true,
+    "diag_png": "diag_A_2026-05-05_20260505_235716.png"
+   },
+   {
+    "date": "2026-05-10",
+    "dir": "20260510_235440_未知_未知_0mm_400us_f4_255",
+    "old_error": "ValueError: detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 min_area_frac），确认为暗背景整床照片，或调低",
+    "close_a": "err:detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 min_area_frac），确认为暗背景",
+    "close_b": "err:detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 min_area_frac），确认为暗背景",
+    "signature": "no_foreground",
+    "rescued": false,
+    "diag_png": "diag_A_2026-05-10_20260510_235440.png"
+   }
+  ],
+  "n_rescued_quad_from_hull": 1,
+  "n_new_failures": 0
+ },
+ "B_samples": {
+  "n_listed": 480,
+  "n_checked": 480,
+  "n_missing": 0,
+  "n_multi_checked": 366,
+  "n_count_diff": 41,
+  "n_drift_gt_tol": 33,
+  "worst_drift_px": 2820.0,
+  "drift_tol_px": 2.0,
+  "bad_rows": [
+   {
+    "date": "2025-10-30",
+    "dir": "20251030_195306_未知_未知_0mm_400us_f4_255",
+    "a": 22,
+    "b": 21,
+    "diag_png": "diag_B_2025-10-30_20251030_195306.png"
+   },
+   {
+    "date": "2025-10-30",
+    "dir": "20251030_215238_未知_未知_0mm_400us_f4_255",
+    "a": 10,
+    "b": 10,
+    "drift_px": 13.0,
+    "diag_png": "diag_B_2025-10-30_20251030_215238.png"
+   },
+   {
+    "date": "2025-10-30",
+    "dir": "20251030_235705_未知_未知_0mm_400us_f4_255",
+    "a": 1,
+    "b": 1,
+    "drift_px": 13.0,
+    "diag_png": "diag_B_2025-10-30_20251030_235705.png"
+   },
+   {
+    "date": "2025-10-31",
+    "dir": "20251031_001123_未知_未知_0mm_400us_f4_255",
+    "a": 10,
+    "b": 10,
+    "drift_px": 10.0,
+    "diag_png": "diag_B_2025-10-31_20251031_001123.png"
+   },
+   {
+    "date": "2025-10-31",
+    "dir": "20251031_120930_未知_未知_0mm_400us_f4_255",
+    "a": 26,
+    "b": 24,
+    "diag_png": "diag_B_2025-10-31_20251031_120930.png"
+   },
+   {
+    "date": "2025-10-31",
+    "dir": "20251031_225813_未知_未知_0mm_400us_f4_255",
+    "a": 12,
+    "b": 12,
+    "drift_px": 17.0,
+    "diag_png": "diag_B_2025-10-31_20251031_225813.png"
+   },
+   {
+    "date": "2025-11-01",
+    "dir": "20251101_200426_未知_未知_0mm_400us_f4_255",
+    "a": 1,
+    "b": 1,
+    "drift_px": 12.0,
+    "diag_png": "diag_B_2025-11-01_20251101_200426.png"
+   },
+   {
+    "date": "2025-11-01",
+    "dir": "20251101_210301_未知_未知_0mm_400us_f4_255",
+    "a": 2,
+    "b": 2,
+    "drift_px": 14.0,
+    "diag_png": "diag_B_2025-11-01_20251101_210301.png"
+   },
+   {
+    "date": "2025-11-01",
+    "dir": "20251101_235648_未知_未知_0mm_400us_f4_255",
+    "a": 2,
+    "b": 2,
+    "drift_px": 10.0,
+    "diag_png": "diag_B_2025-11-01_20251101_235648.png"
+   },
+   {
+    "date": "2025-11-02",
+    "dir": "20251102_052916_未知_未知_0mm_400us_f4_255",
+    "a": 3,
+    "b": 3,
+    "drift_px": 12.0,
+    "diag_png": "diag_B_2025-11-02_20251102_052916.png"
+   },
+   {
+    "date": "2025-11-02",
+    "dir": "20251102_235554_未知_未知_0mm_400us_f4_255",
+    "a": 2,
+    "b": 2,
+    "drift_px": 12.0,
+    "diag_png": "diag_B_2025-11-02_20251102_235554.png"
+   },
+   {
+    "date": "2025-11-03",
+    "dir": "20251103_000123_未知_未知_0mm_400us_f4_255",
+    "a": 2,
+    "b": 2,
+    "drift_px": 15.0,
+    "diag_png": "diag_B_2025-11-03_20251103_000123.png"
+   },
+   {
+    "date": "2025-11-03",
+    "dir": "20251103_052309_未知_未知_0mm_400us_f4_255",
+    "a": 2,
+    "b": 2,
+    "drift_px": 13.0,
+    "diag_png": "diag_B_2025-11-03_20251103_052309.png"
+   },
+   {
+    "date": "2025-11-03",
+    "dir": "20251103_235423_未知_未知_0mm_400us_f4_255",
+    "a": 1,
+    "b": 1,
+    "drift_px": 10.0,
+    "diag_png": "diag_B_2025-11-03_20251103_235423.png"
+   },
+   {
+    "date": "2025-11-04",
+    "dir": "20251104_000700_未知_未知_0mm_400us_f4_255",
+    "a": 2,
+    "b": 2,
+    "drift_px": 13.0,
+    "diag_png": "diag_B_2025-11-04_20251104_000700.png"
+   },
+   {
+    "date": "2025-11-04",
+    "dir": "20251104_053844_未知_未知_0mm_400us_f4_255",
+    "a": 2,
+    "b": 2,
+    "drift_px": 11.0,
+    "diag_png": "diag_B_2025-11-04_20251104_053844.png"
+   },
+   {
+    "date": "2025-11-04",
+    "dir": "20251104_235820_未知_未知_0mm_400us_f4_255",
+    "a": 6,
+    "b": 6,
+    "drift_px": 14.0,
+    "diag_png": "diag_B_2025-11-04_20251104_235820.png"
+   },
+   {
+    "date": "2025-11-05",
+    "dir": "20251105_000254_未知_未知_0mm_400us_f4_255",
+    "a": 6,
+    "b": 6,
+    "drift_px": 15.0,
+    "diag_png": "diag_B_2025-11-05_20251105_000254.png"
+   },
+   {
+    "date": "2025-11-05",
+    "dir": "20251105_053704_未知_未知_0mm_400us_f4_255",
+    "a": 6,
+    "b": 6,
+    "drift_px": 15.0,
+    "diag_png": "diag_B_2025-11-05_20251105_053704.png"
+   },
+   {
+    "date": "2025-11-05",
+    "dir": "20251105_235950_未知_未知_0mm_400us_f4_255",
+    "a": 6,
+    "b": 6,
+    "drift_px": 15.0,
+    "diag_png": "diag_B_2025-11-05_20251105_235950.png"
+   },
+   {
+    "date": "2025-11-06",
+    "dir": "20251106_000611_未知_未知_0mm_400us_f4_255",
+    "a": 6,
+    "b": 6,
+    "drift_px": 8.0,
+    "diag_png": "diag_B_2025-11-06_20251106_000611.png"
+   },
+   {
+    "date": "2025-11-06",
+    "dir": "20251106_050828_未知_未知_0mm_400us_f4_255",
+    "a": 2,
+    "b": 2,
+    "drift_px": 14.0,
+    "diag_png": "diag_B_2025-11-06_20251106_050828.png"
+   },
+   {
+    "date": "2025-11-12",
+    "dir": "20251112_000019_未知_未知_0mm_400us_f4_255",
+    "a": 2,
+    "b": 2,
+    "drift_px": 16.0,
+    "diag_png": "diag_B_2025-11-12_20251112_000019.png"
+   },
+   {
+    "date": "2025-11-13",
+    "dir": "20251113_000023_未知_未知_0mm_400us_f4_255",
+    "a": 6,
+    "b": 7,
+    "diag_png": "diag_B_2025-11-13_20251113_000023.png"
+   },
+   {
+    "date": "2025-11-13",
+    "dir": "20251113_235723_未知_未知_0mm_400us_f4_255",
+    "a": 6,
+    "b": 7,
+    "diag_png": "diag_B_2025-11-13_20251113_235723.png"
+   },
+   {
+    "date": "2025-11-15",
+    "dir": "20251115_000303_未知_未知_0mm_400us_f4_255",
+    "a": 8,
+    "b": 8,
+    "drift_px": 11.0,
+    "diag_png": "diag_B_2025-11-15_20251115_000303.png"
+   },
+   {
+    "date": "2025-11-15",
+    "dir": "20251115_094312_未知_未知_0mm_400us_f4_255",
+    "a": 1,
+    "b": 1,
+    "drift_px": 9.0,
+    "diag_png": "diag_B_2025-11-15_20251115_094312.png"
+   },
+   {
+    "date": "2025-11-25",
+    "dir": "20251125_000707_未知_未知_0mm_400us_f4_255",
+    "a": 9,
+    "b": 9,
+    "drift_px": 13.0,
+    "diag_png": "diag_B_2025-11-25_20251125_000707.png"
+   },
+   {
+    "date": "2025-11-26",
+    "dir": "20251126_235920_未知_未知_0mm_400us_f4_255",
+    "a": 3,
+    "b": 3,
+    "drift_px": 1511.0,
+    "diag_png": "diag_B_2025-11-26_20251126_235920.png"
+   },
+   {
+    "date": "2025-11-27",
+    "dir": "20251127_000513_未知_未知_0mm_400us_f4_255",
+    "a": 3,
+    "b": 3,
+    "drift_px": 2820.0,
+    "diag_png": "diag_B_2025-11-27_20251127_000513.png"
+   },
+   {
+    "date": "2025-11-28",
+    "dir": "20251128_000424_未知_未知_0mm_400us_f4_255",
+    "a": 1,
+    "b": 2,
+    "diag_png": "diag_B_2025-11-28_20251128_000424.png"
+   },
+   {
+    "date": "2025-11-30",
+    "dir": "20251130_235428_未知_未知_0mm_400us_f4_255",
+    "a": 7,
+    "b": 7,
+    "drift_px": 13.0,
+    "diag_png": "diag_B_2025-11-30_20251130_235428.png"
+   },
+   {
+    "date": "2025-12-26",
+    "dir": "20251226_000248_未知_未知_0mm_400us_f4_255",
+    "a": 21,
+    "b": 22,
+    "diag_png": "diag_B_2025-12-26_20251226_000248.png"
+   },
+   {
+    "date": "2025-12-26",
+    "dir": "20251226_235543_未知_未知_0mm_400us_f4_255",
+    "a": 2,
+    "b": 3,
+    "diag_png": "diag_B_2025-12-26_20251226_235543.png"
+   },
+   {
+    "date": "2025-12-29",
+    "dir": "20251229_235855_未知_未知_0mm_400us_f4_255",
+    "a": 2,
+    "b": 3,
+    "diag_png": "diag_B_2025-12-29_20251229_235855.png"
+   },
+   {
+    "date": "2026-01-04",
+    "dir": "20260104_071640_未知_未知_0mm_400us_f4_255",
+    "a": 6,
+    "b": 7,
+    "diag_png": "diag_B_2026-01-04_20260104_071640.png"
+   },
+   {
+    "date": "2026-01-07",
+    "dir": "20260107_214641_未知_未知_0mm_400us_f4_255",
+    "a": 4,
+    "b": 4,
+    "drift_px": 39.0,
+    "diag_png": "diag_B_2026-01-07_20260107_214641.png"
+   },
+   {
+    "date": "2026-01-18",
+    "dir": "20260118_052941_未知_未知_0mm_400us_f4_255",
+    "a": 5,
+    "b": 7,
+    "diag_png": "diag_B_2026-01-18_20260118_052941.png"
+   },
+   {
+    "date": "2026-01-22",
+    "dir": "20260122_000051_未知_未知_0mm_400us_f4_255",
+    "a": 5,
+    "b": 6,
+    "diag_png": "diag_B_2026-01-22_20260122_000051.png"
+   },
+   {
+    "date": "2026-01-23",
+    "dir": "20260123_235829_未知_未知_0mm_400us_f4_255",
+    "a": 1,
+    "b": 1,
+    "drift_px": 45.0,
+    "diag_png": "diag_B_2026-01-23_20260123_235829.png"
+   },
+   {
+    "date": "2026-01-29",
+    "dir": "20260129_201401_未知_未知_0mm_400us_f4_255",
+    "a": 2,
+    "b": 3,
+    "diag_png": "diag_B_2026-01-29_20260129_201401.png"
+   },
+   {
+    "date": "2026-01-31",
+    "dir": "20260131_235410_未知_未知_0mm_400us_f4_255",
+    "a": 2,
+    "b": 2,
+    "drift_px": 10.0,
+    "diag_png": "diag_B_2026-01-31_20260131_235410.png"
+   },
+   {
+    "date": "2026-02-01",
+    "dir": "20260201_000010_未知_未知_0mm_400us_f4_255",
+    "a": 2,
+    "b": 3,
+    "diag_png": "diag_B_2026-02-01_20260201_000010.png"
+   },
+   {
+    "date": "2026-02-01",
+    "dir": "20260201_084116_未知_未知_0mm_400us_f4_255",
+    "a": 1,
+    "b": 1,
+    "drift_px": 9.0,
+    "diag_png": "diag_B_2026-02-01_20260201_084116.png"
+   },
+   {
+    "date": "2026-02-25",
+    "dir": "20260225_180331_未知_未知_0mm_400us_f4_255",
+    "a": 1,
+    "b": 1,
+    "drift_px": 7.0,
+    "diag_png": "diag_B_2026-02-25_20260225_180331.png"
+   },
+   {
+    "date": "2026-02-28",
+    "dir": "20260228_021534_未知_未知_0mm_400us_f4_255",
+    "a": 5,
+    "b": 6,
+    "diag_png": "diag_B_2026-02-28_20260228_021534.png"
+   },
+   {
+    "date": "2026-03-02",
+    "dir": "20260302_091917_未知_未知_0mm_400us_f4_255",
+    "a": 7,
+    "b": 8,
+    "diag_png": "diag_B_2026-03-02_20260302_091917.png"
+   },
+   {
+    "date": "2026-03-07",
+    "dir": "20260307_062021_未知_未知_0mm_400us_f4_255",
+    "a": 16,
+    "b": 16,
+    "drift_px": 15.0,
+    "diag_png": "diag_B_2026-03-07_20260307_062021.png"
+   },
+   {
+    "date": "2026-03-30",
+    "dir": "20260330_235701_未知_未知_0mm_400us_f4_255",
+    "a": 3,
+    "b": 4,
+    "diag_png": "diag_B_2026-03-30_20260330_235701.png"
+   },
+   {
+    "date": "2026-04-04",
+    "dir": "20260404_235630_未知_未知_0mm_400us_f4_255",
+    "a": 4,
+    "b": 7,
+    "diag_png": "diag_B_2026-04-04_20260404_235630.png"
+   },
+   {
+    "date": "2026-04-05",
+    "dir": "20260405_000049_未知_未知_0mm_400us_f4_255",
+    "a": 5,
+    "b": 7,
+    "diag_png": "diag_B_2026-04-05_20260405_000049.png"
+   },
+   {
+    "date": "2026-04-05",
+    "dir": "20260405_040815_未知_未知_0mm_400us_f4_255",
+    "a": 1,
+    "b": 3,
+    "diag_png": "diag_B_2026-04-05_20260405_040815.png"
+   },
+   {
+    "date": "2026-04-05",
+    "dir": "20260405_075347_未知_未知_0mm_400us_f4_255",
+    "a": 4,
+    "b": 6,
+    "diag_png": "diag_B_2026-04-05_20260405_075347.png"
+   },
+   {
+    "date": "2026-04-12",
+    "dir": "20260412_235850_未知_未知_0mm_400us_f4_255",
+    "a": 2,
+    "b": 3,
+    "diag_png": "diag_B_2026-04-12_20260412_235850.png"
+   },
+   {
+    "date": "2026-04-13",
+    "dir": "20260413_000428_未知_未知_0mm_400us_f4_255",
+    "a": 3,
+    "b": 5,
+    "diag_png": "diag_B_2026-04-13_20260413_000428.png"
+   },
+   {
+    "date": "2026-04-15",
+    "dir": "20260415_235903_未知_未知_0mm_400us_f4_255",
+    "a": 4,
+    "b": 7,
+    "diag_png": "diag_B_2026-04-15_20260415_235903.png"
+   },
+   {
+    "date": "2026-04-16",
+    "dir": "20260416_000442_未知_未知_0mm_400us_f4_255",
+    "a": 4,
+    "b": 8,
+    "diag_png": "diag_B_2026-04-16_20260416_000442.png"
+   },
+   {
+    "date": "2026-04-16",
+    "dir": "20260416_235552_未知_未知_0mm_400us_f4_255",
+    "a": 3,
+    "b": 4,
+    "diag_png": "diag_B_2026-04-16_20260416_235552.png"
+   },
+   {
+    "date": "2026-04-17",
+    "dir": "20260417_000231_未知_未知_0mm_400us_f4_255",
+    "a": 3,
+    "b": 4,
+    "diag_png": "diag_B_2026-04-17_20260417_000231.png"
+   },
+   {
+    "date": "2026-04-17",
+    "dir": "20260417_054135_未知_未知_0mm_400us_f4_255",
+    "a": 2,
+    "b": 4,
+    "diag_png": "diag_B_2026-04-17_20260417_054135.png"
+   },
+   {
+    "date": "2026-04-17",
+    "dir": "20260417_235513_未知_未知_0mm_400us_f4_255",
+    "a": 2,
+    "b": 5,
+    "diag_png": "diag_B_2026-04-17_20260417_235513.png"
+   },
+   {
+    "date": "2026-04-18",
+    "dir": "20260418_000028_未知_未知_0mm_400us_f4_255",
+    "a": 2,
+    "b": 7,
+    "diag_png": "diag_B_2026-04-18_20260418_000028.png"
+   },
+   {
+    "date": "2026-04-18",
+    "dir": "20260418_235827_未知_未知_0mm_400us_f4_255",
+    "a": 1,
+    "b": 7,
+    "diag_png": "diag_B_2026-04-18_20260418_235827.png"
+   },
+   {
+    "date": "2026-04-19",
+    "dir": "20260419_000502_未知_未知_0mm_400us_f4_255",
+    "a": 3,
+    "b": 7,
+    "diag_png": "diag_B_2026-04-19_20260419_000502.png"
+   },
+   {
+    "date": "2026-04-20",
+    "dir": "20260420_060348_未知_未知_0mm_400us_f4_255",
+    "a": 3,
+    "b": 5,
+    "diag_png": "diag_B_2026-04-20_20260420_060348.png"
+   },
+   {
+    "date": "2026-04-21",
+    "dir": "20260421_000421_未知_未知_0mm_400us_f4_255",
+    "a": 11,
+    "b": 13,
+    "diag_png": "diag_B_2026-04-21_20260421_000421.png"
+   },
+   {
+    "date": "2026-04-21",
+    "dir": "20260421_235827_未知_未知_0mm_400us_f4_255",
+    "a": 1,
+    "b": 2,
+    "diag_png": "diag_B_2026-04-21_20260421_235827.png"
+   },
+   {
+    "date": "2026-04-22",
+    "dir": "20260422_000748_未知_未知_0mm_400us_f4_255",
+    "a": 6,
+    "b": 9,
+    "diag_png": "diag_B_2026-04-22_20260422_000748.png"
+   },
+   {
+    "date": "2026-04-22",
+    "dir": "20260422_041945_未知_未知_0mm_400us_f4_255",
+    "a": 7,
+    "b": 8,
+    "diag_png": "diag_B_2026-04-22_20260422_041945.png"
+   },
+   {
+    "date": "2026-04-22",
+    "dir": "20260422_235547_未知_未知_0mm_400us_f4_255",
+    "a": 2,
+    "b": 4,
+    "diag_png": "diag_B_2026-04-22_20260422_235547.png"
+   },
+   {
+    "date": "2026-04-24",
+    "dir": "20260424_124443_未知_未知_0mm_400us_f4_255",
+    "a": 3,
+    "b": 2,
+    "diag_png": "diag_B_2026-04-24_20260424_124443.png"
+   },
+   {
+    "date": "2026-04-25",
+    "dir": "20260425_232951_未知_未知_0mm_400us_f4_255",
+    "a": 14,
+    "b": 13,
+    "diag_png": "diag_B_2026-04-25_20260425_232951.png"
+   },
+   {
+    "date": "2026-05-05",
+    "dir": "20260505_051626_未知_未知_0mm_400us_f4_255",
+    "a": 9,
+    "b": 10,
+    "diag_png": "diag_B_2026-05-05_20260505_051626.png"
+   },
+   {
+    "date": "2026-05-11",
+    "dir": "20260511_000101_未知_未知_0mm_400us_f4_255",
+    "a": 1,
+    "b": 2,
+    "diag_png": "diag_B_2026-05-11_20260511_000101.png"
+   }
+  ]
+ },
+ "C_sample26": {
+  "rows": [
+   {
+    "file": "1-1.png",
+    "sample_id": "1#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 3.0
+   },
+   {
+    "file": "1-2.png",
+    "sample_id": "1#",
+    "a": 3,
+    "b": 3,
+    "drift_px": 0.0
+   },
+   {
+    "file": "2.png",
+    "sample_id": "2#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 1.0
+   },
+   {
+    "file": "3.png",
+    "sample_id": "3#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 0.0
+   },
+   {
+    "file": "4.png",
+    "sample_id": "4#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 0.0
+   },
+   {
+    "file": "6.png",
+    "sample_id": "6#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 2.0
+   },
+   {
+    "file": "7.png",
+    "sample_id": "7#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 0.0
+   },
+   {
+    "file": "8-1.png",
+    "sample_id": "8#-1",
+    "a": "err:detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 m",
+    "b": "err:detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 m"
+   },
+   {
+    "file": "8-2.png",
+    "sample_id": "8#-2",
+    "a": "err:detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 m",
+    "b": "err:detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 m"
+   },
+   {
+    "file": "10.png",
+    "sample_id": "10#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 0.0
+   },
+   {
+    "file": "11.png",
+    "sample_id": "11#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 0.0
+   },
+   {
+    "file": "12.png",
+    "sample_id": "12#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 3.0
+   },
+   {
+    "file": "13.png",
+    "sample_id": "13#",
+    "a": 2,
+    "b": 2,
+    "drift_px": 7.0
+   },
+   {
+    "file": "14.png",
+    "sample_id": "14#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 5.0
+   },
+   {
+    "file": "15.png",
+    "sample_id": "15#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 32.0
+   },
+   {
+    "file": "16-1.png",
+    "sample_id": "16#",
+    "a": "err:quad_from_hull: 轮廓无法拟合为四边形（最终 3 点），确认玻璃为",
+    "b": 1,
+    "iou_vs_manual": 0.9653,
+    "diag_png": "diag_C_16-1.png"
+   },
+   {
+    "file": "16-2.png",
+    "sample_id": "16#",
+    "a": "err:quad_from_hull: 轮廓无法拟合为四边形（最终 2 点），确认玻璃为",
+    "b": 1,
+    "iou_vs_manual": 0.9657,
+    "diag_png": "diag_C_16-2.png"
+   },
+   {
+    "file": "18.png",
+    "sample_id": "18#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 0.0
+   },
+   {
+    "file": "19.png",
+    "sample_id": "19#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 9.0
+   },
+   {
+    "file": "20.png",
+    "sample_id": "20#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 0.0
+   },
+   {
+    "file": "21.png",
+    "sample_id": "21#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 0.0
+   },
+   {
+    "file": "22.png",
+    "sample_id": "22#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 6.0
+   },
+   {
+    "file": "23.png",
+    "sample_id": "23#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 3.0
+   },
+   {
+    "file": "24.png",
+    "sample_id": "24#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 2.0
+   },
+   {
+    "file": "25.png",
+    "sample_id": "25#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 2.0
+   },
+   {
+    "file": "26.png",
+    "sample_id": "26#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 3.0
+   },
+   {
+    "file": "27.png",
+    "sample_id": "27#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 0.0
+   },
+   {
+    "file": "28.png",
+    "sample_id": "28#",
+    "a": 1,
+    "b": 1,
+    "drift_px": 3.0
+   }
+  ]
+ },
+ "verdict": {
+  "checks": {
+   "A_rescued_quad_ge5": false,
+   "A_no_new_failures": true,
+   "B_zero_count_change": false,
+   "B_zero_drift_over_tol": false,
+   "C_16_rescued_iou": false,
+   "C_8_still_rejected": true,
+   "C_others_zero_drift": false
+  },
+  "pass": false,
+  "caveats": []
+ }
+}

@@ -32,7 +32,23 @@ cloud_string_patterns:
   - "api_key"
   - "base_url"
 
-# 3) 命名铁律——受批准的大写记号（CONVENTIONS.md §2/§3），命名检查时豁免
+# 2b) 云端调用豁免路径（仅豁免「云端调用」类规则；中文注释/命名铁律照查）。
+#     GlassApp 是联网客户端/服务器产品（打分服务器、账号服务、桌面上传器），其联网层
+#     出现 base_url / http / requests 属产品本职，非数据外泄面。Glass Agents 仓库
+#     任何文件都不在豁免内——机密数据层禁联网护栏不变。2026-08-04 经用户拍板加入。
+#     条目为路径前缀（正/反斜杠均可，大小写不敏感）；目录以 / 结尾。
+cloud_exempt_paths:
+  - "D:/GlassApp/server/"
+  - "D:/GlassApp/app/uploader.py"
+  - "D:/GlassApp/app/config_store.py"
+  - "D:/GlassApp/app/settings_page.py"
+  # AnnotationApp 同为联网产品（标注服务/推送工具/拉取通道），口径同上
+  - "D:/AnnotationApp/server/"
+  - "D:/AnnotationApp/capture_push/"
+  - "D:/AnnotationApp/host_sync/"
+
+# 3) 命名铁律——受批准的大写记号（CONVENTIONS.md §2/§3），命名检查时豁免。
+#    末尾两项为 Qt 框架强制的虚函数覆写名（GlassApp 界面层）：重命名即失效，非风格违规。
 approved_uppercase_names:
   - L
   - W
@@ -48,3 +64,13 @@ approved_uppercase_names:
   - Cmax
   - CPmax
   - A_max
+  # Qt 框架强制的虚函数覆写名（GlassApp 界面层；重命名即失效，非本仓命名铁律适用对象）
+  - dragEnterEvent
+  - dropEvent
+  - closeEvent
+  - wheelEvent
+  - mousePressEvent
+  - mouseDoubleClickEvent
+  - resizeEvent
+  - showEvent
+  - paintEvent

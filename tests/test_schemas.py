@@ -1,6 +1,7 @@
 """schemas 数据层单测：脏数据被拒、合法样本可写读、分桶计数正确。"""
 
 from datetime import datetime
+from typing import get_args
 
 import pytest
 from pydantic import ValidationError
@@ -14,12 +15,13 @@ from schemas.archive import (
     write_sample,
 )
 from schemas.bucketing import bucket_table, count_ground_truth_by_bucket
-from schemas.process_params import ProcessParams
+from schemas.process_params import GLASS_TYPE_ZH, GLASS_TYPES, GlassType, ProcessParams
 
 SHA = "a" * 64  # 合法 64 位十六进制
 
 
 def make_params(**kw) -> ProcessParams:
+    """构造一组合法工艺参数；kw 覆盖任意字段用于造脏数据。"""
     base = dict(
         zone_temps=[102.0, 100.0],
         zone_roles=["center", "edge"],
@@ -41,6 +43,7 @@ def make_params(**kw) -> ProcessParams:
 def make_sample(
     sample_id, thickness_mm=6.0, glass_type="clear", quality_mode="high_quality", is_ground_truth=False
 ) -> ArchiveSample:
+    """构造一条合法归档样本（分桶键可覆盖）。"""
     return ArchiveSample(
         sample_id=sample_id,
         created_at=datetime(2026, 6, 24, 10, 0, 0),
@@ -75,16 +78,48 @@ def test_dirty_length_mismatch_rejected():
 
 
 def test_dirty_bad_glass_type_rejected():
+    """脏数据：品类不在枚举内 → 写入即拒。"""
     with pytest.raises(ValidationError):
         make_params(glass_type="green")
 
 
+# ------------------- 品类枚举三处一致（2026-08-23 扩为 7 值） ------------------- #
+def test_glass_type_sources_agree():
+    """GLASS_TYPES / GLASS_TYPE_ZH / GlassType 必须逐值一致。
+
+    Literal 无法由元组动态构造（类型检查器要求字面量），只能三处并列 + 本测试锁定；
+    漏改任一处即测试红，避免枚举再次悄悄漂移（正是本次要修的历史问题）。
+    """
+    assert set(get_args(GlassType)) == set(GLASS_TYPES), "GlassType 与 GLASS_TYPES 不一致"
+    assert set(GLASS_TYPE_ZH) == set(GLASS_TYPES), "GLASS_TYPE_ZH 与 GLASS_TYPES 不一致"
+    assert len(GLASS_TYPES) == len(set(GLASS_TYPES)), "GLASS_TYPES 有重复值"
+
+
+def test_all_glass_types_accepted_by_params_and_archive():
+    """7 品类都必须能进 ProcessParams 与 ArchiveSample。
+
+    这是本次修复的核心回归：Low-E/彩釉/压花/镀膜 曾因枚举只认两值被 ingest 整行拒收。
+    """
+    for gt in GLASS_TYPES:
+        assert make_params(glass_type=gt).glass_type == gt
+        assert make_sample(f"s-{gt}", glass_type=gt).glass_type == gt
+
+
+def test_glass_type_matches_annotation_template_enum():
+    """39 列标注表的下拉允许值必须与权威枚举同源（表头不变，只扩允许值）。"""
+    from tools.make_annotation_template import ENUMS
+
+    assert list(ENUMS["glass_type"]) == list(GLASS_TYPES)
+
+
 def test_dirty_negative_thickness_rejected():
+    """脏数据：厚度为负 → 写入即拒（gt=0）。"""
     with pytest.raises(ValidationError):
         make_params(thickness_mm=-1.0)
 
 
 def test_dirty_extra_field_rejected():
+    """脏数据：多出未定义字段 → 写入即拒（extra=forbid）。"""
     with pytest.raises(ValidationError):
         ProcessParams(
             zone_temps=[100.0],
@@ -104,6 +139,7 @@ def test_dirty_extra_field_rejected():
 
 
 def test_dirty_bad_sha256_rejected():
+    """脏数据：图像哈希格式非法 → 写入即拒。"""
     with pytest.raises(ValidationError):
         ImageRef(path="x", sha256="tooshort", width_px=10, height_px=10, mm_per_px=1.0)
 
@@ -171,6 +207,7 @@ def test_v1_json_without_new_fields_reads_back(tmp_path):
 
 
 def test_dirty_archive_json_rejected(tmp_path):
+    """脏数据：归档 JSON 结构非法 → 读回时拒。"""
     bad = tmp_path / "bad.json"
     bad.write_text(
         '{"sample_id":"x","created_at":"2026-06-24T10:00:00","source":"s",'

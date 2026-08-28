@@ -1,0 +1,41 @@
+{
+ "meta": {
+  "date": "2026-08-05",
+  "script": "fringe_scoring/make_texture_w_ccp_assets.py",
+  "source": "data/derived/texture_w_doc/values.json（all[].ca_unw/cpa_unw，native 1px/mm，n=115）",
+  "rank_method": "average(ties)",
+  "ca_sup": 49.0,
+  "cp_sup": 3201.33
+ },
+ "n": 115,
+ "ccp_batch_anchor": {
+  "cmax": 0.1159,
+  "cpmax": 1520.1,
+  "anchor_sheet_cmax": 45,
+  "anchor_sheet_cpmax": 49,
+  "vs_man": -0.7623,
+  "vs_sys": -0.7473,
+  "w_min": 0.6486,
+  "w_max": 0.9626
+ },
+ "dual_bound_unweighted": {
+  "vs_man": -0.6544,
+  "vs_sys": -0.6123,
+  "note": "分母换理论上界、仍无位置权重——与①之差=换分母的排序效应；与 form_comparison.dual_bound_combined 之差=位置加权的贡献"
+ },
+ "anchor_instability": {
+  "B": 2000,
+  "seed": 20260805,
+  "split": "57/58",
+  "cmax_drift_median": 0.1123,
+  "cmax_drift_p90": 0.1263,
+  "cpmax_drift_median": 0.0034,
+  "cpmax_drift_p90": 0.0473,
+  "reading_shift_median": 0.0249,
+  "reading_shift_p90": 0.0298,
+  "ccp_median_full_anchor": 0.9178,
+  "rank_rho_median": 0.9997,
+  "rank_rho_min": 0.9992,
+  "note": "对半划分模拟两实验室各按本方样片标定 Cmax/CPmax；reading_shift = 同一片在两套锚下读数差的批中位（CCP 值域 (0,1] 内的绝对差）"
+ }
+}

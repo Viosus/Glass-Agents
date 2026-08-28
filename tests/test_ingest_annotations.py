@@ -113,6 +113,23 @@ def test_template_label_row_marks_who_fills(tmp_path):
     assert len(rows[1]) == len(HEADER)                      # 说明行与列一一对应（_ZH 全覆盖）
 
 
+def test_template_xlsx_outline_declared(tmp_path):
+    """xlsx 结构回归：列分组必须带 sheet 级 outlineLevelCol 声明，颜色须 FF 不透明。
+
+    缺 outlineLevelCol 时 Excel/WPS 按"文件损坏"拒载（2026-07-03 现场踩坑）；
+    00-alpha 颜色 WPS 渲染成透明。openpyxl 都不会自动写对，靠本测试锚住。
+    """
+    openpyxl = pytest.importorskip("openpyxl")
+    from tools.make_annotation_template import write_xlsx
+
+    path = tmp_path / "t.xlsx"
+    assert write_xlsx(path)
+    ws = openpyxl.load_workbook(path)["标注表"]
+    assert ws.sheet_format.outlineLevelCol == 1
+    master_col = HEADER.index("final_zone_temps_c") + 1
+    assert ws.cell(1, master_col).fill.start_color.rgb == "FFFFF2CC"
+
+
 # --------------------------- 模板往返 + 身份注入 --------------------------- #
 def test_roundtrip_injects_furnace_identity(tmp_path, furnaces_yaml):
     csv_path = tmp_path / "filled.csv"
@@ -132,6 +149,25 @@ def test_roundtrip_injects_furnace_identity(tmp_path, furnaces_yaml):
     assert s.params.temp_upper - s.baseline_params.temp_upper == pytest.approx(2.0)  # Δ 可算
     assert s.constraint is not None                 # 闸门结果已归档（只记录不拒收）
     assert s.operator_id == "S01" and s.is_ground_truth is True
+
+
+def test_all_glass_types_ingest_end_to_end(tmp_path, furnaces_yaml):
+    """7 品类的填好表都必须整行进得来（2026-08-23 修复的核心回归）。
+
+    修复前 glass_type 只认 ultra_clear/clear，Low-E/彩釉/压花/镀膜/其他 的行会被
+    ProcessParams 的 Literal 拒掉 → 整行 rejected → 这几类炉次事实上无法回流。
+    """
+    from schemas.process_params import GLASS_TYPES
+
+    rows = [make_row(sample_id=f"g{i:03d}", glass_type=gt) for i, gt in enumerate(GLASS_TYPES)]
+    csv_path = tmp_path / "filled.csv"
+    write_filled_csv(csv_path, rows)
+
+    report = ingest(csv_path, "F1", tmp_path / "archive", furnaces_yaml)
+    assert report.accepted == len(GLASS_TYPES), f"应全数接受，实际拒收：{report.rejected}"
+    assert not report.rejected
+    got = {s.glass_type for s in report.samples}
+    assert got == set(GLASS_TYPES)
 
 
 def test_unregistered_furnace_warns_but_ingests(tmp_path, furnaces_yaml):

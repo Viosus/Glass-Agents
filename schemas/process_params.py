@@ -13,6 +13,27 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 if TYPE_CHECKING:
     from tools.constraints import ParamSet
 
+# ---- 品类枚举：全仓唯一真值源（2026-08-23 由 2 值扩为 7 值）----
+# 扩充理由：标注应用（AnnotationApp shared/contract.md §品类清单）自 2026-07-26 起支持 7 品类且现场在用，
+# 而本处只认 ultra_clear/clear —— Low-E/彩釉/压花/镀膜的 39 列 CSV 被 ingest_annotations 整行拒收，
+# 这几类炉次事实上回流不了。品类只是**分桶键**，不参与任何安全判定
+# （tools/constraints.validate 的四条规则一条都不读它），故放宽枚举不触及安全闸门。
+# ⚠ 新增品类必须同时改三处：GLASS_TYPES / GLASS_TYPE_ZH / GlassType（Literal 无法由元组动态构造，
+#   类型检查器要求字面量）。三者一致性由 tests/test_schemas.py 锁定，漏改即测试红。
+GLASS_TYPES: tuple[str, ...] = (
+    "ultra_clear", "clear", "low_e", "coated", "enameled", "patterned", "other",
+)
+GLASS_TYPE_ZH: dict[str, str] = {
+    "ultra_clear": "超白",
+    "clear": "普白",
+    "low_e": "Low-E",
+    "coated": "镀膜(其他)",
+    "enameled": "彩釉",
+    "patterned": "压花",
+    "other": "其他",  # 手输名在标注应用侧的 glass_type_note，39 列表暂无该列（见 CONVENTIONS.md）
+}
+GlassType = Literal["ultra_clear", "clear", "low_e", "coated", "enameled", "patterned", "other"]
+
 
 class ProcessParams(BaseModel):
     """一组钢化炉工艺参数（校验版）。"""
@@ -28,7 +49,7 @@ class ProcessParams(BaseModel):
     oscillation_speed: float = Field(ge=0)
     oscillation_amplitude: float = Field(ge=0)
     heating_duration_s: float = Field(gt=0)                  # s
-    glass_type: Literal["ultra_clear", "clear"]
+    glass_type: GlassType
     thickness_mm: float = Field(gt=0)                        # mm
     quality_mode: Literal["high_quality", "high_efficiency"]
     # ---- 架构讨论稿 §4.2-2 补充字段（可选；约束规则待 docs/03，None 不拦）----

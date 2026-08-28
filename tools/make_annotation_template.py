@@ -18,11 +18,14 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))  # 支持直接 `python tools/make_annotation_template.py`
+
+from schemas.process_params import GLASS_TYPES  # noqa: E402
 OUT_DIR = ROOT / "data" / "annotation"
 
 # 枚举列的允许值（xlsx 下拉 + 字典）
 ENUMS: dict[str, list[str]] = {
-    "glass_type": ["ultra_clear", "clear"],
+    "glass_type": list(GLASS_TYPES),  # 单一真值源：schemas/process_params.py（2026-08-23 扩为 7 值）
     "quality_mode": ["high_quality", "high_efficiency"],
     "expert_quality_grade": ["A", "B", "C"],
     "measured_quality_grade": ["A", "B", "C"],
@@ -37,7 +40,7 @@ COLUMNS: list[tuple[str, str, str, str, list[str]]] = [
     ("operator_id", "A 标识", "老师傅工号（测标签一致性）", "记录员", ["S01", "S01"]),
     ("source", "A 标识", "产线/班次", "记录员", ["line1/早班", "line1/早班"]),
     ("thickness_mm", "B 规格·分桶键", "厚度 mm", "记录员", ["8", "8"]),
-    ("glass_type", "B 规格·分桶键", "品类 {ultra_clear,clear}", "记录员", ["clear", "ultra_clear"]),
+    ("glass_type", "B 规格·分桶键", "品类 {普白clear,超白ultra_clear,Low-E low_e,镀膜coated,彩釉enameled,压花patterned,其他other}", "记录员", ["clear", "low_e"]),  # noqa: E501
     ("quality_mode", "B 规格·分桶键", "模式 {high_quality,high_efficiency}", "记录员", ["high_quality", "high_efficiency"]),  # noqa: E501
     ("x0_95_nm", "C 输入·状况X", "应力斑 X0.95，nm（可得则填）", "系统", ["82", "70"]),
     ("iso_t_pct", "C 输入·状况X", "IsoT %（暂无→留空/TODO(plant)）", "系统", ["", ""]),
@@ -175,16 +178,17 @@ def write_xlsx(path: Path) -> bool:
     ws.freeze_panes = "B3"  # 冻结表头两行 + 首列 sample_id
 
     # 按"谁填"上色：老师傅=黄底加粗、出炉后补=浅蓝、其余=灰底灰字（勿动）
-    fill_master = PatternFill("solid", start_color="FFF2CC")
-    fill_later = PatternFill("solid", start_color="DDEBF7")
-    fill_other = PatternFill("solid", start_color="E7E6E6")
+    # 颜色必须写全 8 位 ARGB（FF 不透明）：openpyxl 对 6 位值补 "00" alpha，WPS 会渲染成透明
+    fill_master = PatternFill("solid", start_color="FFFFF2CC")
+    fill_later = PatternFill("solid", start_color="FFDDEBF7")
+    fill_other = PatternFill("solid", start_color="FFE7E6E6")
     for idx, (name, group, _desc, who, _ex) in enumerate(COLUMNS, start=1):
         if who == "老师傅":
             fill, font = fill_master, Font(bold=True)
         elif group.startswith("I"):
             fill, font = fill_later, Font(bold=False)
         else:
-            fill, font = fill_other, Font(color="808080")
+            fill, font = fill_other, Font(color="FF808080")
         for r in (1, 2):
             cell = ws.cell(row=r, column=idx)
             cell.fill = fill
@@ -195,7 +199,7 @@ def write_xlsx(path: Path) -> bool:
     # 示例行（3–4）灰斜体，一眼区分于真数据
     for r in (3, 4):
         for idx in range(1, len(COLUMNS) + 1):
-            ws.cell(row=r, column=idx).font = Font(italic=True, color="808080")
+            ws.cell(row=r, column=idx).font = Font(italic=True, color="FF808080")
 
     # 老师傅不碰的组默认折叠（记录员点列上方"+"展开）：A 余项 / C 输入 / D 基准 / H 复核
     header = _header()
@@ -214,6 +218,10 @@ def write_xlsx(path: Path) -> bool:
     ):
         a, b = _span(first, last)
         ws.column_dimensions.group(a, b, hidden=True)
+    # OOXML 规范：列带 outlineLevel 时 sheet 级必须声明 outlineLevelCol，缺了 Excel/WPS
+    # 按"文件损坏"拒载（2026-07-03 现场踩坑）。openpyxl 从零建簿不自动算；保存器只认
+    # column_dimensions.max_outline（并会用它覆盖 sheet_format 上的手动值），故设在这里
+    ws.column_dimensions.max_outline = 1
 
     # 枚举列加下拉校验（数据从第 3 行起；第 2 行是说明行）
     for name, allowed in ENUMS.items():

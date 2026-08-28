@@ -1,0 +1,1205 @@
+{
+ "meta": {
+  "date": "2026-08-05",
+  "config_sha256_16": "212d8ce563aa047e",
+  "script": "fringe_scoring/make_sample26_census_assets.py",
+  "口径": "GlassApp 桌面端同款纯自动路径（score_sheets 检测段，无 manual_quad）；worker.py 对 ValueError 弹窗拒绝打分"
+ },
+ "n_photos": 28,
+ "n_auto_ok": 22,
+ "n_error": 4,
+ "n_miscount": 2,
+ "photos": [
+  {
+   "file": "1-1.png",
+   "sample_id": "1#",
+   "type": "5+10A+5 钢化中空",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      34.0,
+      120.0
+     ],
+     [
+      513.0,
+      126.0
+     ],
+     [
+      510.0,
+      455.0
+     ],
+     [
+      30.0,
+      449.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "1-2.png",
+   "sample_id": "1#",
+   "type": "5+10A+5 钢化中空",
+   "had_manual_quad": true,
+   "outcome": "detected",
+   "n_sheets": 3,
+   "quads": [
+    [
+     [
+      32.0,
+      134.0
+     ],
+     [
+      509.0,
+      124.0
+     ],
+     [
+      509.0,
+      307.0
+     ],
+     [
+      34.0,
+      224.0
+     ]
+    ],
+    [
+     [
+      308.0,
+      234.0
+     ],
+     [
+      404.0,
+      234.0
+     ],
+     [
+      404.0,
+      316.0
+     ],
+     [
+      313.0,
+      319.0
+     ]
+    ],
+    [
+     [
+      37.0,
+      387.0
+     ],
+     [
+      511.0,
+      353.0
+     ],
+     [
+      514.0,
+      454.0
+     ],
+     [
+      37.0,
+      462.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false,
+    false,
+    false
+   ],
+   "auto_ok": false,
+   "diag_png": "diag_1-2.png",
+   "stages": {
+    "trim": 1,
+    "bg_level": 6.0,
+    "bg_scale": 1.483,
+    "p_bright": 227.0,
+    "thr_z_term": 8.9,
+    "thr_rel_term": 55.25,
+    "threshold": 61.25,
+    "fg_frac": 0.147,
+    "min_area": 3422.6,
+    "min_side": 27.2,
+    "n_contours": 29,
+    "components_top8": [
+     {
+      "area": 20821.0,
+      "min_side": 104.1,
+      "pass_area": true,
+      "pass_side": true
+     },
+     {
+      "area": 17786.5,
+      "min_side": 183.0,
+      "pass_area": true,
+      "pass_side": true
+     },
+     {
+      "area": 7781.5,
+      "min_side": 97.2,
+      "pass_area": true,
+      "pass_side": true
+     },
+     {
+      "area": 1102.0,
+      "min_side": 28.0,
+      "pass_area": false,
+      "pass_side": true
+     },
+     {
+      "area": 994.5,
+      "min_side": 17.0,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 314.0,
+      "min_side": 18.9,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 188.5,
+      "min_side": 16.0,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 187.0,
+      "min_side": 13.0,
+      "pass_area": false,
+      "pass_side": false
+     }
+    ]
+   }
+  },
+  {
+   "file": "2.png",
+   "sample_id": "2#",
+   "type": "5+1.14PVB+5 钢化夹层",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      21.0,
+      22.0
+     ],
+     [
+      629.0,
+      7.0
+     ],
+     [
+      645.0,
+      611.0
+     ],
+     [
+      44.0,
+      628.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "3.png",
+   "sample_id": "3#",
+   "type": "6mm 超白钢化 防火",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      24.0,
+      14.0
+     ],
+     [
+      626.0,
+      14.0
+     ],
+     [
+      626.0,
+      616.0
+     ],
+     [
+      24.0,
+      618.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "4.png",
+   "sample_id": "4#",
+   "type": "5mm 普白钢化",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      22.0,
+      8.0
+     ],
+     [
+      627.0,
+      10.0
+     ],
+     [
+      624.0,
+      618.0
+     ],
+     [
+      21.0,
+      617.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "6.png",
+   "sample_id": "6#",
+   "type": "4mm 普白钢化",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      22.0,
+      22.0
+     ],
+     [
+      628.0,
+      19.0
+     ],
+     [
+      629.0,
+      626.0
+     ],
+     [
+      22.0,
+      626.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "7.png",
+   "sample_id": "7#",
+   "type": "10mm 均质钢化",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      44.0,
+      11.0
+     ],
+     [
+      651.0,
+      28.0
+     ],
+     [
+      632.0,
+      628.0
+     ],
+     [
+      21.0,
+      612.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "8-1.png",
+   "sample_id": "8#-1",
+   "type": "4mm 普白 未钢化",
+   "had_manual_quad": true,
+   "outcome": "error",
+   "error": "detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 min_area_frac），确认为暗背景整床照片，或调低 fg_min_z / min_area_frac",
+   "auto_ok": false,
+   "diag_png": "diag_8-1.png",
+   "stages": {
+    "trim": 1,
+    "bg_level": 14.0,
+    "bg_scale": 1.483,
+    "p_bright": 24.0,
+    "thr_z_term": 8.9,
+    "thr_rel_term": 2.5,
+    "threshold": 22.9,
+    "fg_frac": 0.0138,
+    "min_area": 4075.7,
+    "min_side": 31.4,
+    "n_contours": 176,
+    "components_top8": [
+     {
+      "area": 2368.0,
+      "min_side": 23.0,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 2366.0,
+      "min_side": 49.0,
+      "pass_area": false,
+      "pass_side": true
+     },
+     {
+      "area": 1197.0,
+      "min_side": 23.2,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 89.5,
+      "min_side": 14.3,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 65.5,
+      "min_side": 7.4,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 46.5,
+      "min_side": 6.0,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 24.5,
+      "min_side": 5.5,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 20.0,
+      "min_side": 6.1,
+      "pass_area": false,
+      "pass_side": false
+     }
+    ]
+   }
+  },
+  {
+   "file": "8-2.png",
+   "sample_id": "8#-2",
+   "type": "4mm 普白 未钢化",
+   "had_manual_quad": true,
+   "outcome": "error",
+   "error": "detect_sheet_quads: 未检出任何玻璃片（前景为空或全部小于 min_area_frac），确认为暗背景整床照片，或调低 fg_min_z / min_area_frac",
+   "auto_ok": false,
+   "diag_png": "diag_8-2.png",
+   "stages": {
+    "trim": 1,
+    "bg_level": 14.0,
+    "bg_scale": 2.965,
+    "p_bright": 24.0,
+    "thr_z_term": 17.79,
+    "thr_rel_term": 2.5,
+    "threshold": 31.79,
+    "fg_frac": 0.0033,
+    "min_area": 4082.0,
+    "min_side": 31.4,
+    "n_contours": 1,
+    "components_top8": [
+     {
+      "area": 1273.5,
+      "min_side": 25.3,
+      "pass_area": false,
+      "pass_side": false
+     }
+    ]
+   }
+  },
+  {
+   "file": "10.png",
+   "sample_id": "10#",
+   "type": "6mm 普白钢化",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      26.0,
+      11.0
+     ],
+     [
+      635.0,
+      13.0
+     ],
+     [
+      630.0,
+      623.0
+     ],
+     [
+      22.0,
+      621.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "11.png",
+   "sample_id": "11#",
+   "type": "8mm 普白钢化",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      38.0,
+      7.0
+     ],
+     [
+      646.0,
+      16.0
+     ],
+     [
+      632.0,
+      622.0
+     ],
+     [
+      21.0,
+      612.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "12.png",
+   "sample_id": "12#",
+   "type": "8mm 普白钢化",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      37.0,
+      12.0
+     ],
+     [
+      647.0,
+      17.0
+     ],
+     [
+      634.0,
+      625.0
+     ],
+     [
+      22.0,
+      617.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "13.png",
+   "sample_id": "13#",
+   "type": "3.2mm 太阳能光伏 压花",
+   "had_manual_quad": true,
+   "outcome": "detected",
+   "n_sheets": 2,
+   "quads": [
+    [
+     [
+      20.0,
+      23.0
+     ],
+     [
+      623.0,
+      16.0
+     ],
+     [
+      623.0,
+      535.0
+     ],
+     [
+      26.0,
+      204.0
+     ]
+    ],
+    [
+     [
+      23.0,
+      209.0
+     ],
+     [
+      623.0,
+      551.0
+     ],
+     [
+      625.0,
+      622.0
+     ],
+     [
+      25.0,
+      628.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false,
+    false
+   ],
+   "auto_ok": false,
+   "diag_png": "diag_13.png",
+   "stages": {
+    "trim": 1,
+    "bg_level": 20.0,
+    "bg_scale": 2.965,
+    "p_bright": 81.0,
+    "thr_z_term": 17.79,
+    "thr_rel_term": 15.25,
+    "threshold": 37.79,
+    "fg_frac": 0.0677,
+    "min_area": 4050.6,
+    "min_side": 31.4,
+    "n_contours": 335,
+    "components_top8": [
+     {
+      "area": 10852.0,
+      "min_side": 523.4,
+      "pass_area": true,
+      "pass_side": true
+     },
+     {
+      "area": 7414.0,
+      "min_side": 419.0,
+      "pass_area": true,
+      "pass_side": true
+     },
+     {
+      "area": 2458.0,
+      "min_side": 21.1,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 1213.0,
+      "min_side": 19.7,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 789.5,
+      "min_side": 13.6,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 305.0,
+      "min_side": 11.1,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 194.0,
+      "min_side": 6.6,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 176.0,
+      "min_side": 6.8,
+      "pass_area": false,
+      "pass_side": false
+     }
+    ]
+   }
+  },
+  {
+   "file": "14.png",
+   "sample_id": "14#",
+   "type": "12mm 普白钢化 高应力防火",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      26.0,
+      20.0
+     ],
+     [
+      629.0,
+      23.0
+     ],
+     [
+      625.0,
+      625.0
+     ],
+     [
+      27.0,
+      623.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "15.png",
+   "sample_id": "15#",
+   "type": "15mm 普白钢化",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      33.0,
+      22.0
+     ],
+     [
+      640.0,
+      32.0
+     ],
+     [
+      624.0,
+      596.0
+     ],
+     [
+      22.0,
+      624.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "16-1.png",
+   "sample_id": "16#",
+   "type": "6Low-E+12A+6 钢化中空",
+   "had_manual_quad": true,
+   "outcome": "error",
+   "error": "quad_from_hull: 轮廓无法拟合为四边形（最终 3 点），确认玻璃为凸四边形或调大 poly_epsilon_frac",
+   "auto_ok": false,
+   "diag_png": "diag_16-1.png",
+   "stages": {
+    "trim": 1,
+    "bg_level": 6.0,
+    "bg_scale": 1.483,
+    "p_bright": 162.0,
+    "thr_z_term": 8.9,
+    "thr_rel_term": 39.0,
+    "threshold": 45.0,
+    "fg_frac": 0.0644,
+    "min_area": 3403.8,
+    "min_side": 27.1,
+    "n_contours": 15,
+    "components_top8": [
+     {
+      "area": 9584.0,
+      "min_side": 259.7,
+      "pass_area": true,
+      "pass_side": true
+     },
+     {
+      "area": 7218.0,
+      "min_side": 43.0,
+      "pass_area": true,
+      "pass_side": true
+     },
+     {
+      "area": 1468.5,
+      "min_side": 15.4,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 968.0,
+      "min_side": 22.1,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 418.5,
+      "min_side": 12.4,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 319.5,
+      "min_side": 9.7,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 140.5,
+      "min_side": 7.0,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 105.5,
+      "min_side": 6.3,
+      "pass_area": false,
+      "pass_side": false
+     }
+    ]
+   }
+  },
+  {
+   "file": "16-2.png",
+   "sample_id": "16#",
+   "type": "6Low-E+12A+6 钢化中空",
+   "had_manual_quad": true,
+   "outcome": "error",
+   "error": "quad_from_hull: 轮廓无法拟合为四边形（最终 2 点），确认玻璃为凸四边形或调大 poly_epsilon_frac",
+   "auto_ok": false,
+   "diag_png": "diag_16-2.png",
+   "stages": {
+    "trim": 1,
+    "bg_level": 6.0,
+    "bg_scale": 1.483,
+    "p_bright": 217.0,
+    "thr_z_term": 8.9,
+    "thr_rel_term": 52.75,
+    "threshold": 58.75,
+    "fg_frac": 0.0643,
+    "min_area": 3253.0,
+    "min_side": 25.9,
+    "n_contours": 6,
+    "components_top8": [
+     {
+      "area": 7857.0,
+      "min_side": 28.7,
+      "pass_area": true,
+      "pass_side": true
+     },
+     {
+      "area": 7190.5,
+      "min_side": 30.2,
+      "pass_area": true,
+      "pass_side": true
+     },
+     {
+      "area": 2236.5,
+      "min_side": 13.4,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 1967.5,
+      "min_side": 13.2,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 55.0,
+      "min_side": 4.1,
+      "pass_area": false,
+      "pass_side": false
+     },
+     {
+      "area": 40.5,
+      "min_side": 3.2,
+      "pass_area": false,
+      "pass_side": false
+     }
+    ]
+   }
+  },
+  {
+   "file": "18.png",
+   "sample_id": "18#",
+   "type": "6mm Low-E 钢化单片",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      30.0,
+      131.0
+     ],
+     [
+      530.0,
+      122.0
+     ],
+     [
+      532.0,
+      483.0
+     ],
+     [
+      28.0,
+      488.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "19.png",
+   "sample_id": "19#",
+   "type": "6mm Low-E 钢化单片",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      29.0,
+      148.0
+     ],
+     [
+      522.0,
+      144.0
+     ],
+     [
+      516.0,
+      484.0
+     ],
+     [
+      29.0,
+      484.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "20.png",
+   "sample_id": "20#",
+   "type": "6mm 普白钢化",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      26.0,
+      118.0
+     ],
+     [
+      527.0,
+      126.0
+     ],
+     [
+      527.0,
+      483.0
+     ],
+     [
+      21.0,
+      476.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "21.png",
+   "sample_id": "21#",
+   "type": "6mm 普白钢化",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      34.0,
+      10.0
+     ],
+     [
+      639.0,
+      16.0
+     ],
+     [
+      629.0,
+      624.0
+     ],
+     [
+      22.0,
+      616.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "22.png",
+   "sample_id": "22#",
+   "type": "8mm 普白钢化",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      23.0,
+      19.0
+     ],
+     [
+      631.0,
+      21.0
+     ],
+     [
+      624.0,
+      628.0
+     ],
+     [
+      20.0,
+      622.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "23.png",
+   "sample_id": "23#",
+   "type": "5mm 普白钢化",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      29.0,
+      10.0
+     ],
+     [
+      639.0,
+      15.0
+     ],
+     [
+      631.0,
+      625.0
+     ],
+     [
+      20.0,
+      621.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "24.png",
+   "sample_id": "24#",
+   "type": "6mm 普白钢化",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      26.0,
+      20.0
+     ],
+     [
+      632.0,
+      22.0
+     ],
+     [
+      631.0,
+      626.0
+     ],
+     [
+      23.0,
+      628.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "25.png",
+   "sample_id": "25#",
+   "type": "5mm 普白钢化",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      31.0,
+      16.0
+     ],
+     [
+      640.0,
+      20.0
+     ],
+     [
+      632.0,
+      628.0
+     ],
+     [
+      20.0,
+      626.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "26.png",
+   "sample_id": "26#",
+   "type": "8mm 普白钢化",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      28.0,
+      14.0
+     ],
+     [
+      638.0,
+      16.0
+     ],
+     [
+      631.0,
+      625.0
+     ],
+     [
+      21.0,
+      621.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "27.png",
+   "sample_id": "27#",
+   "type": "4mm 普白钢化",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      21.0,
+      25.0
+     ],
+     [
+      625.0,
+      11.0
+     ],
+     [
+      637.0,
+      617.0
+     ],
+     [
+      35.0,
+      628.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  },
+  {
+   "file": "28.png",
+   "sample_id": "28#",
+   "type": "6mm 普白钢化",
+   "had_manual_quad": false,
+   "outcome": "detected",
+   "n_sheets": 1,
+   "quads": [
+    [
+     [
+      21.0,
+      19.0
+     ],
+     [
+      627.0,
+      10.0
+     ],
+     [
+      634.0,
+      617.0
+     ],
+     [
+      31.0,
+      625.0
+     ]
+    ]
+   ],
+   "edge_completed": [
+    false
+   ],
+   "auto_ok": true
+  }
+ ]
+}

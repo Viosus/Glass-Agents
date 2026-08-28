@@ -437,3 +437,31 @@ def test_quad_low_glass_frac_rejected():
     canvas[100:180, 100:180] = make_glass_image(rows=80, cols=80, seed=29)
     with pytest.raises(ValueError):
         score_fringe_distribution(canvas, config=base_config())
+
+
+# ---------------- 块分位向量化 == 朴素参考实现（无损提速回归） ----------------
+def test_block_quantiles_matches_naive_reference():
+    from fringe_scoring.segment import _block_quantiles
+
+    def naive(image, block_px, block_quantile):
+        rows, cols = image.shape
+        nr, nc = max(1, rows // block_px), max(1, cols // block_px)
+        r_centers, c_centers, values = [], [], []
+        for i in range(nr):
+            r0 = i * block_px
+            r1 = rows if i == nr - 1 else r0 + block_px  # 末块吃掉余数（旧口径）
+            for j in range(nc):
+                c0 = j * block_px
+                c1 = cols if j == nc - 1 else c0 + block_px
+                values.append(float(np.quantile(image[r0:r1, c0:c1], block_quantile)))
+                r_centers.append((r0 + r1 - 1) / 2.0)
+                c_centers.append((c0 + c1 - 1) / 2.0)
+        return np.asarray(r_centers), np.asarray(c_centers), np.asarray(values)
+
+    rng = np.random.default_rng(7)
+    # 覆盖：双向余数 / 整除 / 单块行(rows<block) / 全图单块 / 竖长条
+    for rows, cols, bp in [(17, 23, 5), (40, 40, 8), (9, 30, 10), (6, 6, 7), (50, 12, 5)]:
+        img = rng.normal(size=(rows, cols)) * 50.0 + 100.0
+        for q in (0.15, 0.5):
+            for a, b in zip(naive(img, bp, q), _block_quantiles(img, bp, q)):
+                np.testing.assert_array_equal(a, b)

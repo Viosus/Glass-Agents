@@ -1,0 +1,87 @@
+# refs_by_thickness 初标草案（26 片带厚度批，2026-08-04）
+# ⚠️ 批内极值初值（best=档内最好、worst=档内最差），非好/差样片人工标定；
+#    每档 n=2~5；发档使用前须同厚度好/废片人工复标。
+# 粘贴位置：GlassApp config app_config.yaml 的 app.plans.<方案名>.refs_by_thickness
+#（顶层 indicators.refs_by_thickness 会被 apply_active_plan 覆盖，别粘那里）。
+# 选档口径：max_thickness_mm ≥ 实测厚度 中取最小档；厚度超出全部档（如本批
+# 10/12/15mm）会静默回退默认 refs——不是回退最大档。
+# n=1 厚度不出档（单点无区间）：10mm(7# 均质)、12mm(14# 高应力防火)、
+# 15mm(15#)——TODO(plant) 待补样后定。
+# ⚠️ 映射口径变化（2026-08-05）：gray_variance/gradient_variance 的子分映射已改为
+# 对数内插（indicators._LOG_SCALE_KEYS，三端同步）。厚度档 refs 仍是原始值域锚点
+#（v=best→100、v=worst→0 不变），映射函数按键分域、与 refs 来源无关——本草案数值
+# 无需换算；但对数域下「档内 worst=批内极值」不再意味着档内必有 0 分片。
+# 对数键的 best/worst 必须为正（select_refs 选中后走同一 _sub_score，填 0 会报错）。
+refs_by_thickness:
+- max_thickness_mm: 4.0
+  fail_line: null
+  refs:
+    x095:
+      best: 45.3
+      worst: 68.2
+    gray_variance:
+      best: 390.6
+      worst: 433.8
+    gradient_mean:
+      best: 12.36
+      worst: 12.66
+    gradient_variance:
+      best: 486.6
+      worst: 880.4
+    texture_w:
+      best: 0.1696
+      worst: 0.1802
+- max_thickness_mm: 5.0
+  fail_line: null
+  refs:
+    x095:
+      best: 57.6
+      worst: 102.9
+    gray_variance:
+      best: 389.2
+      worst: 853.4
+    gradient_mean:
+      best: 13.79
+      worst: 19.18
+    gradient_variance:
+      best: 434.1
+      worst: 2046.0
+    texture_w:
+      best: 0.1491
+      worst: 0.2035
+- max_thickness_mm: 6.0
+  fail_line: null
+  refs:
+    x095:
+      best: 90.8
+      worst: 175.3
+    gray_variance:
+      best: 807.7
+      worst: 2355.0
+    gradient_mean:
+      best: 24.6
+      worst: 39.41
+    gradient_variance:
+      best: 1121.4
+      worst: 5444.7
+    texture_w:
+      best: 0.2262
+      worst: 0.2763
+- max_thickness_mm: 8.0
+  fail_line: null
+  refs:
+    x095:
+      best: 95.0
+      worst: 137.5
+    gray_variance:
+      best: 793.1
+      worst: 1777.3
+    gradient_mean:
+      best: 19.14
+      worst: 45.73
+    gradient_variance:
+      best: 664.4
+      worst: 2475.0
+    texture_w:
+      best: 0.2278
+      worst: 0.2501

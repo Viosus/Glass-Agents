@@ -19,10 +19,12 @@ from fringe_scoring.border import BorderBands, band_widths_px, border_mask
 from fringe_scoring.quad import detect_glass_quad, order_corners, warp_to_rect
 from fringe_scoring.segment import (
     background_with_bands,
+    baseline_flip_z,
     deviation_map,
     fringe_mask_and_intensity,
+    fringe_mask_intensity_info,
     robust_scale,
-    robust_z_map,
+    robust_z_stats,
 )
 
 _CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "fringe_scoring.yaml"
@@ -47,11 +49,14 @@ def load_config(config_path: Path | str | None = None) -> dict:
 
 
 def normalized_coords(shape: tuple[int, int]) -> tuple[np.ndarray, np.ndarray]:
-    """图像 shape → 归一化坐标网格 (u, v)，各维像素中心落在 (-1,1) 内。"""
+    """图像 shape → 归一化坐标网格 (u, v)，各维像素中心落在 (-1,1) 内。
+
+    返回只读广播视图（零拷贝；下游 center_distance 只读不写——需可写时自行 copy）。
+    """
     rows, cols = shape
     u = (2.0 * (np.arange(cols) + 0.5) / cols - 1.0).reshape(1, -1)  # 沿列（长）
     v = (2.0 * (np.arange(rows) + 0.5) / rows - 1.0).reshape(-1, 1)  # 沿行（宽）
-    return np.broadcast_to(u, shape).copy(), np.broadcast_to(v, shape).copy()
+    return np.broadcast_to(u, shape), np.broadcast_to(v, shape)
 
 
 def center_distance(u: np.ndarray, v: np.ndarray, distance_norm: str) -> np.ndarray:
@@ -104,10 +109,29 @@ class FringeScoreResult:
     warped_image: np.ndarray | None = field(repr=False, default=None)     # 实际被打分的（矫正后）图
 
 
-def score_fringe_distribution(
+@dataclass
+class FringePipeline:
+    """步骤⓪–③的共享中间结果：绝对口径与位置指标口径只在掩膜/刻度（④⑤）分叉，
+    矫正/边框带/背景/残差/z 完全同参 → 算一次两处复用（数值与各自重算逐位相同）。"""
+
+    arr: np.ndarray                      # 矫正后被打分图
+    corners: np.ndarray | None           # 原图角点；None=整图即玻璃
+    bands: BorderBands                   # 实测边框带宽
+    border: np.ndarray                   # 免罚边框掩膜（True=剔除）
+    interior: np.ndarray                 # 惩罚域内部
+    residual: np.ndarray                 # 图 − 背景曲面
+    z: np.ndarray                        # 稳健 z 图
+    residual_floor: float                # quantile(residual[interior], block_q)——dev_gray 暗地板锚
+    weight_map: np.ndarray               # 位置权重 w(r)
+    reference_scale: float               # σref = robust_scale(灰度[interior])（无斑退化门参照）
+    z_med: float                         # m_R = med(残差[interior])（z 的基准，诊断量）
+    z_scale: float                       # σR = robust_scale(残差[interior])（z 的尺度，诊断量）
+
+
+def compute_pipeline(
     image: np.ndarray, config: dict | None = None, quad_corners: np.ndarray | None = None
-) -> FringeScoreResult:
-    """一张玻璃图 → 应力斑分布打分（流水线见模块 docstring 与 docs §2）。
+) -> FringePipeline:
+    """一张玻璃图 → 共享流水线（步骤⓪–③ + 位置权重）。
 
     config=None 时读 config/fringe_scoring.yaml；测试/调参可直接注入同构 dict。
     第 0 步·四边形矫正：quad_corners 显式给角点则直接矫正；否则 config 的
@@ -175,21 +199,46 @@ def score_fringe_distribution(
 
     # ③ 稳健 z（median/MAD 只在内部估计；对比度门槛防噪声放大）
     reference_scale = robust_scale(arr[interior])
-    z = robust_z_map(residual, interior, float(seg_cfg["min_contrast_frac"]), reference_scale)
+    z, z_med, z_scale = robust_z_stats(
+        residual, interior, float(seg_cfg["min_contrast_frac"]), reference_scale
+    )
 
-    # ④ 斑分割 + 深浅强度。dev_gray 的中心与背景块统计取同一分位（block_q）：
-    #    暗地板锚（低分位）下，整片亮斑的残差中位数会落在斑的水平上，
-    #    用中位数居中会把斑重新归零——必须同样锚到暗侧（0.5 时即旧口径中位数）。
-    polarity = str(seg_cfg["polarity"])
-    dev = deviation_map(z, polarity)
-    dev_gray = deviation_map(residual - float(np.quantile(residual[interior], block_q)), polarity)
-    fringe, intensity_s = fringe_mask_and_intensity(dev, interior, seg_cfg, dev_gray=dev_gray)
+    # dev_gray 的中心与背景块统计取同一分位（block_q）：暗地板锚（低分位）下，
+    # 整片亮斑的残差中位数会落在斑的水平上，用中位数居中会把斑重新归零——
+    # 必须同样锚到暗侧（0.5 时即旧口径中位数）。极性无关 → 缓存进流水线。
+    residual_floor = float(np.quantile(residual[interior], block_q))
 
-    # ⑤ 位置加权惩罚 → 0–100 分
+    # 位置权重 w(r)：只依赖形状与 weight 段（两口径共享）
     u, v = normalized_coords(arr.shape)
     r = center_distance(u, v, str(weight_cfg["distance_norm"]))
     w = position_weight(r, weight_cfg)
 
+    return FringePipeline(
+        arr=arr, corners=corners, bands=bands, border=border, interior=interior,
+        residual=residual, z=z, residual_floor=residual_floor, weight_map=w,
+        reference_scale=reference_scale, z_med=z_med, z_scale=z_scale,
+    )
+
+
+def score_from_pipeline(pipe: FringePipeline, config: dict) -> FringeScoreResult:
+    """共享流水线 → 打分（步骤④⑤）。config 只取掩膜级 segment 参数与 scoring 刻度锚。
+
+    前提：config 的背景估计/边框带/weight 参数与生成 pipe 时一致（掩膜级参数
+    method/s_scale_mode/polarity/top_fraction/min_z/min_dev_gray/饱和值可不同）——
+    这正是绝对口径与位置指标口径的分叉面。
+    """
+    cfg = config
+    seg_cfg = cfg["segment"]
+    arr, interior = pipe.arr, pipe.interior
+
+    # ④ 斑分割 + 深浅强度
+    polarity = str(seg_cfg["polarity"])
+    dev = deviation_map(pipe.z, polarity)
+    dev_gray = deviation_map(pipe.residual - pipe.residual_floor, polarity)
+    fringe, intensity_s = fringe_mask_and_intensity(dev, interior, seg_cfg, dev_gray=dev_gray)
+
+    # ⑤ 位置加权惩罚 → 0–100 分
+    w = pipe.weight_map
     penalty_raw = float((intensity_s * w).sum())           # s 在掩膜外恒为 0
     penalty_max = float(w[interior].sum())                 # 理论最差：有效区全是最深斑
     # 输出刻度锚（人工校准）：罚分比 ρ 达 penalty_ratio_at_zero → 0 分。
@@ -210,11 +259,115 @@ def score_fringe_distribution(
         penalty_max=penalty_max,
         fringe_area_frac=fringe_area_frac,
         centrality=centrality,
-        border_bands=bands,
+        border_bands=pipe.bands,
         fringe_mask=fringe,
         intensity_s=intensity_s,
-        border_mask_arr=border,
+        border_mask_arr=pipe.border,
         weight_map=w,
-        quad_corners_px=corners,
+        quad_corners_px=pipe.corners,
         warped_image=arr,
     )
+
+
+# 覆盖支路的覆盖判斑灰度阈 G0 默认值（2026-07-22，位置口径专属固定工程口径）：
+# 独立于工厂判斑灵敏度 segment.min_dev_gray——判斑灵敏度解耦要求（2026-07-08）对
+# 覆盖支路同样成立；config indicators.scoring.position_coverage.min_dev_gray 可覆写。
+POSITION_COVERAGE_MIN_DEV_GRAY = 30.0
+
+
+@dataclass
+class CenterConcentrationResult:
+    """位置指标（应力斑中心集中度）逐片测量结果：主量 ρu + 诊断量（任务3 全项）。
+
+    指标层产物——不含 0–100 评分、不读刻度锚 ρ0；位置评分由评分层
+    （indicators.compute_sheet_indicators 的评分段）按原表达式另行换算。
+    weighted_coverage 为评分层覆盖度支路的测量输入（2026-07-22）：固定灰度阈
+    G0 下的位置加权判斑覆盖度——逐片自标准化的 ρu 对"整片皆斑"自吞（尺度
+    等变必然除掉整体纹理强度），该量在绝对灰度域补上这一维（同批曝光一致前提，
+    与主口径绝对评分同前提；对逐片仿射变换**不**具备 ρu 的不变性）。
+    """
+
+    center_concentration: float   # ρu = penalty_raw / penalty_max ∈ [0,1]，越大越差
+    penalty_raw: float            # Σ_{Ωu} s·w（评分层按原表达式换算位置评分用）
+    penalty_max: float            # Σ_M w（理论最差总罚）
+    spot_area_ratio: float        # |Ωu| / |M|——区分"斑少且靠边"与"斑多顶翻基准"
+    weighted_coverage: float      # A_w = Σ_{devgray≥G0} w / Σ_M w（覆盖支路测量输入）
+    threshold_t: float            # 判斑阈值 T（复算核对；序列化键仍为 threshold_T）
+    quantile_bound: str           # T 由谁决定："quantile" | "min_z"
+    p_dark: float                 # 暗向尾部占比（翻转判据本身）
+    baseline_flipped: bool        # 基准翻转门闩是否触发且成功
+    baseline_flip_aborted: bool   # 门闩触发但回退（暗侧样本不足/尺度退化）
+    m_r: float                    # 实际用于 z 的稳健基准（序列化键 m_R；翻转成功时 = med(R_D)）
+    sigma_r: float                # 实际用于 z 的稳健尺度（序列化键 sigma_R；退化门时为原始 σR）
+    sigma_ref: float              # σref = 1.4826·MAD(I_M)（退化门参照）
+
+
+def measure_center_concentration(
+    pipe: FringePipeline, config: dict
+) -> CenterConcentrationResult:
+    """共享流水线 → 位置指标测量（④⑤ 的位置口径分叉，含基准翻转门闩）。
+
+    config 须为 _position_indicator_config 构造的位置口径配置（per_sheet +
+    quantile）。门闩由 config["baseline_flip"] 段控制（缺省=启用）；未触发时
+    对 pipe.z 零操作，praw/pmax 与 score_from_pipeline 同一输入逐算子同序
+    ——无翻转片与旧实现位级相同。
+    """
+    cfg = config
+    seg_cfg = cfg["segment"]
+    interior = pipe.interior
+
+    # 基准翻转门闩（Pass1 = pipe.z 现行逻辑；触发才用暗侧子总体重算 z）
+    flip = baseline_flip_z(
+        pipe.residual, interior, pipe.z, float(seg_cfg["min_z"]),
+        float(seg_cfg["min_contrast_frac"]), pipe.reference_scale,
+        pipe.z_med, pipe.z_scale, cfg.get("baseline_flip"),
+    )
+
+    # ④ 斑分割 + 强度（与 score_from_pipeline 同式；T 在翻转后的 dev 上重新求分位）
+    polarity = str(seg_cfg["polarity"])
+    dev = deviation_map(flip.z, polarity)
+    dev_gray = deviation_map(pipe.residual - pipe.residual_floor, polarity)
+    mask, intensity_s, info = fringe_mask_intensity_info(
+        dev, interior, seg_cfg, dev_gray=dev_gray
+    )
+
+    # ⑤ 位置加权罚分比（不换算分数——ρ0 属评分层）
+    w = pipe.weight_map
+    penalty_raw = float((intensity_s * w).sum())           # s 在掩膜外恒为 0
+    penalty_max = float(w[interior].sum())                 # 理论最差：有效区全是最深斑
+
+    # 位置加权覆盖度（评分层覆盖支路的测量输入）：固定灰度阈 G0 判"绝对域斑"，
+    # 位置权重加权求占比——斑压中心计得重；G0 独立于工厂判斑灵敏度（见常数注释）
+    cov_cfg = cfg.get("position_coverage") or {}
+    g0 = float(cov_cfg.get("min_dev_gray", POSITION_COVERAGE_MIN_DEV_GRAY))
+    cov_mask = interior & (dev_gray >= g0)
+    weighted_coverage = float(w[cov_mask].sum()) / penalty_max
+
+    return CenterConcentrationResult(
+        center_concentration=penalty_raw / penalty_max,
+        penalty_raw=penalty_raw,
+        penalty_max=penalty_max,
+        spot_area_ratio=float(mask.sum()) / float(interior.sum()),
+        weighted_coverage=weighted_coverage,
+        threshold_t=float(info["threshold"]),
+        quantile_bound=str(info["bound"]),
+        p_dark=flip.p_dark,
+        baseline_flipped=flip.flipped,
+        baseline_flip_aborted=flip.aborted,
+        m_r=flip.m_r,
+        sigma_r=flip.sigma_r,
+        sigma_ref=pipe.reference_scale,
+    )
+
+
+def score_fringe_distribution(
+    image: np.ndarray, config: dict | None = None, quad_corners: np.ndarray | None = None
+) -> FringeScoreResult:
+    """一张玻璃图 → 应力斑分布打分（流水线见模块 docstring 与 docs §2）。
+
+    = compute_pipeline（⓪–③）+ score_from_pipeline（④⑤）；对外签名与行为不变。
+    需要在同一片上叠加第二套掩膜口径（如六指标的位置指标）时，持有 pipeline
+    分别打分即可，免整条流水线重跑。
+    """
+    cfg = config if config is not None else load_config()
+    return score_from_pipeline(compute_pipeline(image, cfg, quad_corners), cfg)

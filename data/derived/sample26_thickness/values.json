@@ -1,0 +1,2361 @@
+{
+ "meta": {
+  "date": "2026-08-04",
+  "config_sha256_16": "212d8ce563aa047e",
+  "script": "fringe_scoring/make_sample26_assets.py",
+  "评估域": "整片矫正图（W_w）/ 扣免罚边框带内部（其余五项）",
+  "口径": "尺度先验 1px/mm（线扫原生，用户确认）；规格对照=裁切覆盖度 QA"
+ },
+ "n_photos": 28,
+ "n_scored": 28,
+ "n_no_indicators": 0,
+ "photos": [
+  {
+   "file": "1-1.png",
+   "sample_id": "1#",
+   "category": "special",
+   "type": "5+10A+5 钢化中空",
+   "thickness_mm": null,
+   "spec_mm": [
+    510,
+    360
+   ],
+   "notes": "两片 5mm；同一样片两张照片之一",
+   "image_px": [
+    536,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    480,
+    329
+   ],
+   "crop_check": {
+    "coverage_long": 0.94118,
+    "coverage_short": 0.91389,
+    "aniso": 0.02986
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 121.2,
+    "x095_unit": "gray",
+    "gray_variance": 1378.6,
+    "gradient_mean": 22.45,
+    "gradient_variance": 803.9,
+    "texture_w": 0.2378,
+    "texture_w_ca_w": 0.0632,
+    "texture_w_cpa_w": 119.7,
+    "texture_w_dynamic_range": 248.26,
+    "texture_w_degenerate": false,
+    "position_score": 63.8,
+    "center_concentration": 0.0471,
+    "weighted_coverage": 0.299,
+    "binding_branch": "coverage",
+    "sub_scores": {
+     "x095": 46.7,
+     "gray_variance": 66.4,
+     "gradient_mean": 35.4,
+     "gradient_variance": 27.7,
+     "texture_w": 39.8,
+     "position_score": 63.8
+    },
+    "total_score": 46.61,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 244.71
+  },
+  {
+   "file": "1-2.png",
+   "sample_id": "1#",
+   "category": "special",
+   "type": "5+10A+5 钢化中空",
+   "thickness_mm": null,
+   "spec_mm": [
+    510,
+    360
+   ],
+   "notes": "同一样片两张照片之二（重复性估计对）",
+   "image_px": [
+    547,
+    630
+   ],
+   "detection": {
+    "provenance": "manual",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    482,
+    338
+   ],
+   "crop_check": {
+    "coverage_long": 0.9451,
+    "coverage_short": 0.93889,
+    "aniso": 0.00661
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 129.0,
+    "x095_unit": "gray",
+    "gray_variance": 1543.8,
+    "gradient_mean": 28.76,
+    "gradient_variance": 2599.9,
+    "texture_w": 0.2146,
+    "texture_w_ca_w": 0.0762,
+    "texture_w_cpa_w": 73.9,
+    "texture_w_dynamic_range": 253.0,
+    "texture_w_degenerate": false,
+    "position_score": 53.8,
+    "center_concentration": 0.0417,
+    "weighted_coverage": 0.354,
+    "binding_branch": "coverage",
+    "sub_scores": {
+     "x095": 42.6,
+     "gray_variance": 62.2,
+     "gradient_mean": 12.0,
+     "gradient_variance": 0.0,
+     "texture_w": 51.5,
+     "position_score": 53.8
+    },
+    "total_score": 37.02,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 234.39
+  },
+  {
+   "file": "2.png",
+   "sample_id": "2#",
+   "category": "special",
+   "type": "5+1.14PVB+5 钢化夹层",
+   "thickness_mm": null,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "两片 5mm 夹 PVB",
+   "image_px": [
+    666,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    605,
+    605
+   ],
+   "crop_check": {
+    "coverage_long": 0.9918,
+    "coverage_short": 0.9918,
+    "aniso": 0.0
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 207.5,
+    "x095_unit": "gray",
+    "gray_variance": 3421.4,
+    "gradient_mean": 56.32,
+    "gradient_variance": 3864.5,
+    "texture_w": 0.3061,
+    "texture_w_ca_w": 0.1342,
+    "texture_w_cpa_w": 314.6,
+    "texture_w_dynamic_range": 249.47,
+    "texture_w_degenerate": false,
+    "position_score": 2.5,
+    "center_concentration": 0.0213,
+    "weighted_coverage": 0.636,
+    "binding_branch": "coverage",
+    "sub_scores": {
+     "x095": 1.3,
+     "gray_variance": 14.6,
+     "gradient_mean": 0.0,
+     "gradient_variance": 0.0,
+     "texture_w": 5.3,
+     "position_score": 2.5
+    },
+    "total_score": 3.96,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 245.91
+  },
+  {
+   "file": "3.png",
+   "sample_id": "3#",
+   "category": "special",
+   "type": "6mm 超白钢化 防火",
+   "thickness_mm": 6,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "超白基片，与 6mm 普白档并排定性对照",
+   "image_px": [
+    651,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    602,
+    603
+   ],
+   "crop_check": {
+    "coverage_long": 0.98852,
+    "coverage_short": 0.98689,
+    "aniso": 0.00166
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 71.4,
+    "x095_unit": "gray",
+    "gray_variance": 424.0,
+    "gradient_mean": 15.26,
+    "gradient_variance": 410.1,
+    "texture_w": 0.211,
+    "texture_w_ca_w": 0.0544,
+    "texture_w_cpa_w": 73.0,
+    "texture_w_dynamic_range": 250.44,
+    "texture_w_degenerate": false,
+    "position_score": 90.0,
+    "center_concentration": 0.0329,
+    "weighted_coverage": 0.123,
+    "binding_branch": "concentration",
+    "sub_scores": {
+     "x095": 73.0,
+     "gray_variance": 90.5,
+     "gradient_mean": 62.0,
+     "gradient_variance": 64.5,
+     "texture_w": 53.3,
+     "position_score": 90.0
+    },
+    "total_score": 72.22,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 197.14
+  },
+  {
+   "file": "4.png",
+   "sample_id": "4#",
+   "category": "core",
+   "type": "5mm 普白钢化",
+   "thickness_mm": 5,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "",
+   "image_px": [
+    649,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    604,
+    609
+   ],
+   "crop_check": {
+    "coverage_long": 0.99836,
+    "coverage_short": 0.99016,
+    "aniso": 0.00828
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 102.9,
+    "x095_unit": "gray",
+    "gray_variance": 802.5,
+    "gradient_mean": 13.79,
+    "gradient_variance": 434.1,
+    "texture_w": 0.1966,
+    "texture_w_ca_w": 0.0501,
+    "texture_w_cpa_w": 54.6,
+    "texture_w_dynamic_range": 248.96,
+    "texture_w_degenerate": false,
+    "position_score": 83.7,
+    "center_concentration": 0.0539,
+    "weighted_coverage": 0.182,
+    "binding_branch": "concentration",
+    "sub_scores": {
+     "x095": 56.3,
+     "gray_variance": 80.9,
+     "gradient_mean": 67.4,
+     "gradient_variance": 62.2,
+     "texture_w": 60.6,
+     "position_score": 83.7
+    },
+    "total_score": 68.54,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 236.89
+  },
+  {
+   "file": "6.png",
+   "sample_id": "6#",
+   "category": "core",
+   "type": "4mm 普白钢化",
+   "thickness_mm": 4,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "",
+   "image_px": [
+    653,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    607,
+    606
+   ],
+   "crop_check": {
+    "coverage_long": 0.99508,
+    "coverage_short": 0.99344,
+    "aniso": 0.00165
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 68.2,
+    "x095_unit": "gray",
+    "gray_variance": 433.8,
+    "gradient_mean": 12.66,
+    "gradient_variance": 486.6,
+    "texture_w": 0.1696,
+    "texture_w_ca_w": 0.0426,
+    "texture_w_cpa_w": 29.4,
+    "texture_w_dynamic_range": 247.74,
+    "texture_w_degenerate": false,
+    "position_score": 75.4,
+    "center_concentration": 0.05,
+    "weighted_coverage": 0.235,
+    "binding_branch": "coverage",
+    "sub_scores": {
+     "x095": 74.6,
+     "gray_variance": 90.3,
+     "gradient_mean": 71.6,
+     "gradient_variance": 57.3,
+     "texture_w": 74.3,
+     "position_score": 75.4
+    },
+    "total_score": 73.93,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 232.66
+  },
+  {
+   "file": "7.png",
+   "sample_id": "7#",
+   "category": "special",
+   "type": "10mm 均质钢化",
+   "thickness_mm": 10,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "均质（热浸）工艺；10mm 档唯一样片，n=1 不入 refs 草案",
+   "image_px": [
+    674,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    609,
+    601
+   ],
+   "crop_check": {
+    "coverage_long": 0.99836,
+    "coverage_short": 0.98525,
+    "aniso": 0.01331
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 182.7,
+    "x095_unit": "gray",
+    "gray_variance": 2611.6,
+    "gradient_mean": 42.97,
+    "gradient_variance": 2890.4,
+    "texture_w": 0.2527,
+    "texture_w_ca_w": 0.1066,
+    "texture_w_cpa_w": 141.8,
+    "texture_w_dynamic_range": 249.0,
+    "texture_w_degenerate": false,
+    "position_score": 1.5,
+    "center_concentration": 0.0056,
+    "weighted_coverage": 0.642,
+    "binding_branch": "coverage",
+    "sub_scores": {
+     "x095": 14.4,
+     "gray_variance": 35.1,
+     "gradient_mean": 0.0,
+     "gradient_variance": 0.0,
+     "texture_w": 32.2,
+     "position_score": 1.5
+    },
+    "total_score": 13.87,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 248.0
+  },
+  {
+   "file": "8-1.png",
+   "sample_id": "8#-1",
+   "category": "control",
+   "type": "4mm 普白 未钢化",
+   "thickness_mm": 4,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "零点对照；暗场下预期不发亮、自动检测预期失败",
+   "image_px": [
+    651,
+    630
+   ],
+   "detection": {
+    "provenance": "manual",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    600,
+    612
+   ],
+   "crop_check": {
+    "coverage_long": 1.00328,
+    "coverage_short": 0.98361,
+    "aniso": 0.02
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 20.8,
+    "x095_unit": "gray",
+    "gray_variance": 7.6,
+    "gradient_mean": 3.3,
+    "gradient_variance": 38.5,
+    "texture_w": 0.1338,
+    "texture_w_ca_w": 0.0282,
+    "texture_w_cpa_w": 11.3,
+    "texture_w_dynamic_range": 240.62,
+    "texture_w_degenerate": false,
+    "position_score": 92.7,
+    "center_concentration": 0.0241,
+    "weighted_coverage": 0.0,
+    "binding_branch": "concentration",
+    "sub_scores": {
+     "x095": 99.6,
+     "gray_variance": 100.0,
+     "gradient_mean": 100.0,
+     "gradient_variance": 99.2,
+     "texture_w": 92.3,
+     "position_score": 92.7
+    },
+    "total_score": 97.3,
+    "verification": {
+     "triggered": true,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 19.88
+  },
+  {
+   "file": "8-2.png",
+   "sample_id": "8#-2",
+   "category": "control",
+   "type": "4mm 普白 未钢化",
+   "thickness_mm": 4,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "零点对照第二片",
+   "image_px": [
+    652,
+    630
+   ],
+   "detection": {
+    "provenance": "manual",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    606,
+    611
+   ],
+   "crop_check": {
+    "coverage_long": 1.00164,
+    "coverage_short": 0.99344,
+    "aniso": 0.00825
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 20.4,
+    "x095_unit": "gray",
+    "gray_variance": 19.5,
+    "gradient_mean": 3.37,
+    "gradient_variance": 167.6,
+    "texture_w": 0.1386,
+    "texture_w_ca_w": 0.0287,
+    "texture_w_cpa_w": 13.1,
+    "texture_w_dynamic_range": 240.84,
+    "texture_w_degenerate": false,
+    "position_score": 92.0,
+    "center_concentration": 0.0264,
+    "weighted_coverage": 0.0,
+    "binding_branch": "concentration",
+    "sub_scores": {
+     "x095": 99.8,
+     "gray_variance": 100.0,
+     "gradient_mean": 100.0,
+     "gradient_variance": 87.1,
+     "texture_w": 89.9,
+     "position_score": 92.0
+    },
+    "total_score": 94.8,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 20.2
+  },
+  {
+   "file": "10.png",
+   "sample_id": "10#",
+   "category": "core",
+   "type": "6mm 普白钢化",
+   "thickness_mm": 6,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "",
+   "image_px": [
+    656,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    609,
+    610
+   ],
+   "crop_check": {
+    "coverage_long": 1.0,
+    "coverage_short": 0.99836,
+    "aniso": 0.00164
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 90.8,
+    "x095_unit": "gray",
+    "gray_variance": 943.5,
+    "gradient_mean": 24.97,
+    "gradient_variance": 1121.4,
+    "texture_w": 0.2262,
+    "texture_w_ca_w": 0.0846,
+    "texture_w_cpa_w": 91.2,
+    "texture_w_dynamic_range": 249.73,
+    "texture_w_degenerate": false,
+    "position_score": 74.3,
+    "center_concentration": 0.0629,
+    "weighted_coverage": 0.242,
+    "binding_branch": "coverage",
+    "sub_scores": {
+     "x095": 62.7,
+     "gray_variance": 77.4,
+     "gradient_mean": 26.0,
+     "gradient_variance": 0.0,
+     "texture_w": 45.6,
+     "position_score": 74.3
+    },
+    "total_score": 47.67,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 248.13
+  },
+  {
+   "file": "11.png",
+   "sample_id": "11#",
+   "category": "core",
+   "type": "8mm 普白钢化",
+   "thickness_mm": 8,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "",
+   "image_px": [
+    667,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    610,
+    606
+   ],
+   "crop_check": {
+    "coverage_long": 1.0,
+    "coverage_short": 0.99344,
+    "aniso": 0.0066
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 121.3,
+    "x095_unit": "gray",
+    "gray_variance": 1280.5,
+    "gradient_mean": 36.52,
+    "gradient_variance": 1337.3,
+    "texture_w": 0.2339,
+    "texture_w_ca_w": 0.1109,
+    "texture_w_cpa_w": 99.8,
+    "texture_w_dynamic_range": 249.0,
+    "texture_w_degenerate": false,
+    "position_score": 37.9,
+    "center_concentration": 0.0211,
+    "weighted_coverage": 0.442,
+    "binding_branch": "coverage",
+    "sub_scores": {
+     "x095": 46.7,
+     "gray_variance": 68.8,
+     "gradient_mean": 0.0,
+     "gradient_variance": 0.0,
+     "texture_w": 41.8,
+     "position_score": 37.9
+    },
+    "total_score": 32.53,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 216.52
+  },
+  {
+   "file": "12.png",
+   "sample_id": "12#",
+   "category": "core",
+   "type": "8mm 普白钢化",
+   "thickness_mm": 8,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "",
+   "image_px": [
+    669,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    611,
+    607
+   ],
+   "crop_check": {
+    "coverage_long": 1.00164,
+    "coverage_short": 0.99508,
+    "aniso": 0.00659
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 136.0,
+    "x095_unit": "gray",
+    "gray_variance": 1672.5,
+    "gradient_mean": 40.63,
+    "gradient_variance": 2475.0,
+    "texture_w": 0.2412,
+    "texture_w_ca_w": 0.1129,
+    "texture_w_cpa_w": 114.0,
+    "texture_w_dynamic_range": 249.02,
+    "texture_w_degenerate": false,
+    "position_score": 42.4,
+    "center_concentration": 0.0375,
+    "weighted_coverage": 0.417,
+    "binding_branch": "coverage",
+    "sub_scores": {
+     "x095": 38.9,
+     "gray_variance": 58.9,
+     "gradient_mean": 0.0,
+     "gradient_variance": 0.0,
+     "texture_w": 38.1,
+     "position_score": 42.4
+    },
+    "total_score": 29.71,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 246.7
+  },
+  {
+   "file": "13.png",
+   "sample_id": "13#",
+   "category": "special",
+   "type": "3.2mm 太阳能光伏 压花",
+   "thickness_mm": 3.2,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "压花纹理；探针实测错检成 2 片（QA 预期 fail），待人工定角",
+   "image_px": [
+    647,
+    630
+   ],
+   "detection": {
+    "provenance": "manual",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    605,
+    613
+   ],
+   "crop_check": {
+    "coverage_long": 1.00492,
+    "coverage_short": 0.9918,
+    "aniso": 0.01322
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 34.5,
+    "x095_unit": "gray",
+    "gray_variance": 120.7,
+    "gradient_mean": 11.15,
+    "gradient_variance": 328.9,
+    "texture_w": 0.1291,
+    "texture_w_ca_w": 0.05,
+    "texture_w_cpa_w": 8.4,
+    "texture_w_dynamic_range": 242.58,
+    "texture_w_degenerate": false,
+    "position_score": 88.5,
+    "center_concentration": 0.0379,
+    "weighted_coverage": 0.005,
+    "binding_branch": "concentration",
+    "sub_scores": {
+     "x095": 92.4,
+     "gray_variance": 98.2,
+     "gradient_mean": 77.2,
+     "gradient_variance": 72.1,
+     "texture_w": 94.7,
+     "position_score": 88.5
+    },
+    "total_score": 87.18,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 49.32
+  },
+  {
+   "file": "14.png",
+   "sample_id": "14#",
+   "category": "special",
+   "type": "12mm 普白钢化 高应力防火",
+   "thickness_mm": 12,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "应力刻意偏高；12mm 档唯一样片，n=1 不入 refs 草案",
+   "image_px": [
+    654,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    601,
+    603
+   ],
+   "crop_check": {
+    "coverage_long": 0.98852,
+    "coverage_short": 0.98525,
+    "aniso": 0.00333
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 240.3,
+    "x095_unit": "gray",
+    "gray_variance": 5615.0,
+    "gradient_mean": 34.53,
+    "gradient_variance": 1996.7,
+    "texture_w": 0.3495,
+    "texture_w_ca_w": 0.0794,
+    "texture_w_cpa_w": 602.6,
+    "texture_w_dynamic_range": 249.17,
+    "texture_w_degenerate": false,
+    "position_score": 26.7,
+    "center_concentration": 0.0041,
+    "weighted_coverage": 0.503,
+    "binding_branch": "coverage",
+    "sub_scores": {
+     "x095": 0.0,
+     "gray_variance": 0.0,
+     "gradient_mean": 0.0,
+     "gradient_variance": 0.0,
+     "texture_w": 0.0,
+     "position_score": 26.7
+    },
+    "total_score": 4.45,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 249.17
+  },
+  {
+   "file": "15.png",
+   "sample_id": "15#",
+   "category": "core",
+   "type": "15mm 普白钢化",
+   "thickness_mm": 15,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "15mm 档唯一样片，n=1 出观测值、不入 refs 草案",
+   "image_px": [
+    663,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    605,
+    583
+   ],
+   "crop_check": {
+    "coverage_long": 0.9918,
+    "coverage_short": 0.95574,
+    "aniso": 0.03774
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 212.2,
+    "x095_unit": "gray",
+    "gray_variance": 3777.5,
+    "gradient_mean": 49.16,
+    "gradient_variance": 4067.8,
+    "texture_w": 0.3054,
+    "texture_w_ca_w": 0.1045,
+    "texture_w_cpa_w": 325.2,
+    "texture_w_dynamic_range": 245.59,
+    "texture_w_degenerate": false,
+    "position_score": 9.2,
+    "center_concentration": 0.0,
+    "weighted_coverage": 0.599,
+    "binding_branch": "coverage",
+    "sub_scores": {
+     "x095": 0.0,
+     "gray_variance": 5.6,
+     "gradient_mean": 0.0,
+     "gradient_variance": 0.0,
+     "texture_w": 5.6,
+     "position_score": 9.2
+    },
+    "total_score": 3.42,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 227.97
+  },
+  {
+   "file": "16-1.png",
+   "sample_id": "16#",
+   "category": "special",
+   "type": "6Low-E+12A+6 钢化中空",
+   "thickness_mm": null,
+   "spec_mm": [
+    510,
+    360
+   ],
+   "notes": "同一样片两张照片之一",
+   "image_px": [
+    544,
+    630
+   ],
+   "detection": {
+    "provenance": "manual",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    480,
+    327
+   ],
+   "crop_check": {
+    "coverage_long": 0.94118,
+    "coverage_short": 0.90833,
+    "aniso": 0.03616
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 74.8,
+    "x095_unit": "gray",
+    "gray_variance": 755.7,
+    "gradient_mean": 20.84,
+    "gradient_variance": 2328.6,
+    "texture_w": 0.1716,
+    "texture_w_ca_w": 0.0404,
+    "texture_w_cpa_w": 31.3,
+    "texture_w_dynamic_range": 243.53,
+    "texture_w_degenerate": false,
+    "position_score": 77.5,
+    "center_concentration": 0.0741,
+    "weighted_coverage": 0.091,
+    "binding_branch": "concentration",
+    "sub_scores": {
+     "x095": 71.2,
+     "gray_variance": 82.1,
+     "gradient_mean": 41.3,
+     "gradient_variance": 0.0,
+     "texture_w": 73.2,
+     "position_score": 77.5
+    },
+    "total_score": 57.57,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 137.03
+  },
+  {
+   "file": "16-2.png",
+   "sample_id": "16#",
+   "category": "special",
+   "type": "6Low-E+12A+6 钢化中空",
+   "thickness_mm": null,
+   "spec_mm": [
+    510,
+    360
+   ],
+   "notes": "同一样片两张照片之二（重复性估计对）",
+   "image_px": [
+    520,
+    630
+   ],
+   "detection": {
+    "provenance": "manual",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    477,
+    328
+   ],
+   "crop_check": {
+    "coverage_long": 0.93529,
+    "coverage_short": 0.91111,
+    "aniso": 0.02654
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 94.1,
+    "x095_unit": "gray",
+    "gray_variance": 1135.5,
+    "gradient_mean": 24.16,
+    "gradient_variance": 3876.2,
+    "texture_w": 0.21,
+    "texture_w_ca_w": 0.0568,
+    "texture_w_cpa_w": 71.1,
+    "texture_w_dynamic_range": 252.0,
+    "texture_w_degenerate": false,
+    "position_score": 73.7,
+    "center_concentration": 0.0867,
+    "weighted_coverage": 0.106,
+    "binding_branch": "concentration",
+    "sub_scores": {
+     "x095": 61.0,
+     "gray_variance": 72.5,
+     "gradient_mean": 29.0,
+     "gradient_variance": 0.0,
+     "texture_w": 53.8,
+     "position_score": 73.7
+    },
+    "total_score": 48.35,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 179.24
+  },
+  {
+   "file": "18.png",
+   "sample_id": "18#",
+   "category": "special",
+   "type": "6mm Low-E 钢化单片",
+   "thickness_mm": 6,
+   "spec_mm": [
+    510,
+    360
+   ],
+   "notes": "镀膜改变光学幅度，与 6mm 普白并排定性对照",
+   "image_px": [
+    562,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    502,
+    359
+   ],
+   "crop_check": {
+    "coverage_long": 0.98431,
+    "coverage_short": 0.99722,
+    "aniso": 0.01294
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 225.5,
+    "x095_unit": "gray",
+    "gray_variance": 3587.5,
+    "gradient_mean": 56.79,
+    "gradient_variance": 9810.4,
+    "texture_w": 0.2915,
+    "texture_w_ca_w": 0.117,
+    "texture_w_cpa_w": 260.6,
+    "texture_w_dynamic_range": 249.0,
+    "texture_w_degenerate": false,
+    "position_score": 24.0,
+    "center_concentration": 0.0458,
+    "weighted_coverage": 0.518,
+    "binding_branch": "coverage",
+    "sub_scores": {
+     "x095": 0.0,
+     "gray_variance": 10.4,
+     "gradient_mean": 0.0,
+     "gradient_variance": 0.0,
+     "texture_w": 12.6,
+     "position_score": 24.0
+    },
+    "total_score": 7.85,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 249.0
+  },
+  {
+   "file": "19.png",
+   "sample_id": "19#",
+   "category": "special",
+   "type": "6mm Low-E 钢化单片",
+   "thickness_mm": 6,
+   "spec_mm": [
+    510,
+    360
+   ],
+   "notes": "",
+   "image_px": [
+    550,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    490,
+    338
+   ],
+   "crop_check": {
+    "coverage_long": 0.96078,
+    "coverage_short": 0.93889,
+    "aniso": 0.02332
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 88.0,
+    "x095_unit": "gray",
+    "gray_variance": 964.3,
+    "gradient_mean": 24.27,
+    "gradient_variance": 4362.0,
+    "texture_w": 0.189,
+    "texture_w_ca_w": 0.0481,
+    "texture_w_cpa_w": 46.2,
+    "texture_w_dynamic_range": 239.69,
+    "texture_w_degenerate": false,
+    "position_score": 78.5,
+    "center_concentration": 0.0711,
+    "weighted_coverage": 0.12,
+    "binding_branch": "concentration",
+    "sub_scores": {
+     "x095": 64.2,
+     "gray_variance": 76.9,
+     "gradient_mean": 28.6,
+     "gradient_variance": 0.0,
+     "texture_w": 64.4,
+     "position_score": 78.5
+    },
+    "total_score": 52.1,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 229.79
+  },
+  {
+   "file": "20.png",
+   "sample_id": "20#",
+   "category": "core",
+   "type": "6mm 普白钢化",
+   "thickness_mm": 6,
+   "spec_mm": [
+    510,
+    360
+   ],
+   "notes": "本批唯一 510×360 的普白钢化",
+   "image_px": [
+    559,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    504,
+    358
+   ],
+   "crop_check": {
+    "coverage_long": 0.98824,
+    "coverage_short": 0.99444,
+    "aniso": 0.00624
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 175.3,
+    "x095_unit": "gray",
+    "gray_variance": 2335.8,
+    "gradient_mean": 39.41,
+    "gradient_variance": 5444.7,
+    "texture_w": 0.2763,
+    "texture_w_ca_w": 0.1115,
+    "texture_w_cpa_w": 208.0,
+    "texture_w_dynamic_range": 248.93,
+    "texture_w_degenerate": false,
+    "position_score": 58.8,
+    "center_concentration": 0.0597,
+    "weighted_coverage": 0.327,
+    "binding_branch": "coverage",
+    "sub_scores": {
+     "x095": 18.3,
+     "gray_variance": 42.1,
+     "gradient_mean": 0.0,
+     "gradient_variance": 0.0,
+     "texture_w": 20.3,
+     "position_score": 58.8
+    },
+    "total_score": 23.25,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 245.93
+  },
+  {
+   "file": "21.png",
+   "sample_id": "21#",
+   "category": "core",
+   "type": "6mm 普白钢化",
+   "thickness_mm": 6,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "",
+   "image_px": [
+    661,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    606,
+    607
+   ],
+   "crop_check": {
+    "coverage_long": 0.99508,
+    "coverage_short": 0.99344,
+    "aniso": 0.00165
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 92.5,
+    "x095_unit": "gray",
+    "gray_variance": 807.7,
+    "gradient_mean": 28.02,
+    "gradient_variance": 1288.8,
+    "texture_w": 0.23,
+    "texture_w_ca_w": 0.0887,
+    "texture_w_cpa_w": 97.2,
+    "texture_w_dynamic_range": 250.5,
+    "texture_w_degenerate": false,
+    "position_score": 60.5,
+    "center_concentration": 0.0357,
+    "weighted_coverage": 0.317,
+    "binding_branch": "coverage",
+    "sub_scores": {
+     "x095": 61.8,
+     "gray_variance": 80.8,
+     "gradient_mean": 14.7,
+     "gradient_variance": 0.0,
+     "texture_w": 43.7,
+     "position_score": 60.5
+    },
+    "total_score": 43.6,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 244.99
+  },
+  {
+   "file": "22.png",
+   "sample_id": "22#",
+   "category": "core",
+   "type": "8mm 普白钢化",
+   "thickness_mm": 8,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "",
+   "image_px": [
+    653,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    606,
+    605
+   ],
+   "crop_check": {
+    "coverage_long": 0.99344,
+    "coverage_short": 0.9918,
+    "aniso": 0.00165
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 137.5,
+    "x095_unit": "gray",
+    "gray_variance": 1777.3,
+    "gradient_mean": 45.73,
+    "gradient_variance": 2024.7,
+    "texture_w": 0.2501,
+    "texture_w_ca_w": 0.1385,
+    "texture_w_cpa_w": 127.8,
+    "texture_w_dynamic_range": 248.86,
+    "texture_w_degenerate": false,
+    "position_score": 47.8,
+    "center_concentration": 0.04,
+    "weighted_coverage": 0.387,
+    "binding_branch": "coverage",
+    "sub_scores": {
+     "x095": 38.2,
+     "gray_variance": 56.3,
+     "gradient_mean": 0.0,
+     "gradient_variance": 0.0,
+     "texture_w": 33.6,
+     "position_score": 47.8
+    },
+    "total_score": 29.31,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 244.91
+  },
+  {
+   "file": "23.png",
+   "sample_id": "23#",
+   "category": "core",
+   "type": "5mm 普白钢化",
+   "thickness_mm": 5,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "",
+   "image_px": [
+    661,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    611,
+    611
+   ],
+   "crop_check": {
+    "coverage_long": 1.00164,
+    "coverage_short": 1.00164,
+    "aniso": 0.0
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 57.6,
+    "x095_unit": "gray",
+    "gray_variance": 389.2,
+    "gradient_mean": 17.18,
+    "gradient_variance": 661.7,
+    "texture_w": 0.1491,
+    "texture_w_ca_w": 0.0518,
+    "texture_w_cpa_w": 16.0,
+    "texture_w_dynamic_range": 249.94,
+    "texture_w_degenerate": false,
+    "position_score": 94.2,
+    "center_concentration": 0.0141,
+    "weighted_coverage": 0.132,
+    "binding_branch": "coverage",
+    "sub_scores": {
+     "x095": 80.2,
+     "gray_variance": 91.4,
+     "gradient_mean": 54.9,
+     "gradient_variance": 41.0,
+     "texture_w": 84.6,
+     "position_score": 94.2
+    },
+    "total_score": 74.38,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 234.68
+  },
+  {
+   "file": "24.png",
+   "sample_id": "24#",
+   "category": "core",
+   "type": "6mm 普白钢化",
+   "thickness_mm": 6,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "",
+   "image_px": [
+    655,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    607,
+    606
+   ],
+   "crop_check": {
+    "coverage_long": 0.99508,
+    "coverage_short": 0.99344,
+    "aniso": 0.00165
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 165.0,
+    "x095_unit": "gray",
+    "gray_variance": 2355.0,
+    "gradient_mean": 24.6,
+    "gradient_variance": 1274.7,
+    "texture_w": 0.2673,
+    "texture_w_ca_w": 0.0644,
+    "texture_w_cpa_w": 197.4,
+    "texture_w_dynamic_range": 249.75,
+    "texture_w_degenerate": false,
+    "position_score": 18.6,
+    "center_concentration": 0.0195,
+    "weighted_coverage": 0.548,
+    "binding_branch": "coverage",
+    "sub_scores": {
+     "x095": 23.7,
+     "gray_variance": 41.6,
+     "gradient_mean": 27.4,
+     "gradient_variance": 0.0,
+     "texture_w": 24.9,
+     "position_score": 18.6
+    },
+    "total_score": 22.69,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 238.7
+  },
+  {
+   "file": "25.png",
+   "sample_id": "25#",
+   "category": "core",
+   "type": "5mm 普白钢化",
+   "thickness_mm": 5,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "",
+   "image_px": [
+    662,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    611,
+    609
+   ],
+   "crop_check": {
+    "coverage_long": 1.00164,
+    "coverage_short": 0.99836,
+    "aniso": 0.00328
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 74.9,
+    "x095_unit": "gray",
+    "gray_variance": 853.4,
+    "gradient_mean": 19.18,
+    "gradient_variance": 2046.0,
+    "texture_w": 0.2035,
+    "texture_w_ca_w": 0.0498,
+    "texture_w_cpa_w": 63.3,
+    "texture_w_dynamic_range": 250.87,
+    "texture_w_degenerate": false,
+    "position_score": 87.0,
+    "center_concentration": 0.0428,
+    "weighted_coverage": 0.135,
+    "binding_branch": "concentration",
+    "sub_scores": {
+     "x095": 71.1,
+     "gray_variance": 79.7,
+     "gradient_mean": 47.5,
+     "gradient_variance": 0.0,
+     "texture_w": 57.1,
+     "position_score": 87.0
+    },
+    "total_score": 57.07,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 242.37
+  },
+  {
+   "file": "26.png",
+   "sample_id": "26#",
+   "category": "core",
+   "type": "8mm 普白钢化",
+   "thickness_mm": 8,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "",
+   "image_px": [
+    660,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    610,
+    608
+   ],
+   "crop_check": {
+    "coverage_long": 1.0,
+    "coverage_short": 0.99672,
+    "aniso": 0.00329
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 95.0,
+    "x095_unit": "gray",
+    "gray_variance": 793.1,
+    "gradient_mean": 19.14,
+    "gradient_variance": 664.4,
+    "texture_w": 0.2278,
+    "texture_w_ca_w": 0.0615,
+    "texture_w_cpa_w": 99.7,
+    "texture_w_dynamic_range": 248.52,
+    "texture_w_degenerate": false,
+    "position_score": 59.2,
+    "center_concentration": 0.039,
+    "weighted_coverage": 0.324,
+    "binding_branch": "coverage",
+    "sub_scores": {
+     "x095": 60.5,
+     "gray_variance": 81.2,
+     "gradient_mean": 47.6,
+     "gradient_variance": 40.7,
+     "texture_w": 44.8,
+     "position_score": 59.2
+    },
+    "total_score": 55.68,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 234.2
+  },
+  {
+   "file": "27.png",
+   "sample_id": "27#",
+   "category": "core",
+   "type": "4mm 普白钢化",
+   "thickness_mm": 4,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "",
+   "image_px": [
+    659,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    603,
+    605
+   ],
+   "crop_check": {
+    "coverage_long": 0.9918,
+    "coverage_short": 0.98852,
+    "aniso": 0.00332
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 45.3,
+    "x095_unit": "gray",
+    "gray_variance": 390.6,
+    "gradient_mean": 12.36,
+    "gradient_variance": 880.4,
+    "texture_w": 0.1802,
+    "texture_w_ca_w": 0.0493,
+    "texture_w_cpa_w": 37.4,
+    "texture_w_dynamic_range": 249.46,
+    "texture_w_degenerate": false,
+    "position_score": 93.1,
+    "center_concentration": 0.0228,
+    "weighted_coverage": 0.053,
+    "binding_branch": "concentration",
+    "sub_scores": {
+     "x095": 86.7,
+     "gray_variance": 91.4,
+     "gradient_mean": 72.7,
+     "gradient_variance": 20.5,
+     "texture_w": 68.9,
+     "position_score": 93.1
+    },
+    "total_score": 72.22,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 239.35
+  },
+  {
+   "file": "28.png",
+   "sample_id": "28#",
+   "category": "core",
+   "type": "6mm 普白钢化",
+   "thickness_mm": 6,
+   "spec_mm": [
+    610,
+    610
+   ],
+   "notes": "",
+   "image_px": [
+    655,
+    630
+   ],
+   "detection": {
+    "provenance": "auto",
+    "n_sheets": 1
+   },
+   "warp_px": [
+    605,
+    607
+   ],
+   "crop_check": {
+    "coverage_long": 0.99508,
+    "coverage_short": 0.9918,
+    "aniso": 0.00331
+   },
+   "qa": {
+    "level": "pass",
+    "reasons": []
+   },
+   "indicators": {
+    "x095": 139.1,
+    "x095_unit": "gray",
+    "gray_variance": 1727.4,
+    "gradient_mean": 38.23,
+    "gradient_variance": 1883.4,
+    "texture_w": 0.2538,
+    "texture_w_ca_w": 0.1143,
+    "texture_w_cpa_w": 142.6,
+    "texture_w_dynamic_range": 251.0,
+    "texture_w_degenerate": false,
+    "position_score": 35.1,
+    "center_concentration": 0.0393,
+    "weighted_coverage": 0.457,
+    "binding_branch": "coverage",
+    "sub_scores": {
+     "x095": 37.3,
+     "gray_variance": 57.5,
+     "gradient_mean": 0.0,
+     "gradient_variance": 0.0,
+     "texture_w": 31.7,
+     "position_score": 35.1
+    },
+    "total_score": 26.94,
+    "verification": {
+     "triggered": false,
+     "passed": true,
+     "reasons": []
+    }
+   },
+   "dynamic_range_inset5": 236.22
+  }
+ ],
+ "bands": [
+  {
+   "thickness_mm": 4,
+   "n": 2,
+   "members": [
+    "6#",
+    "27#"
+   ],
+   "x095": {
+    "mean": 56.75,
+    "min": 45.3,
+    "max": 68.2
+   },
+   "gray_variance": {
+    "mean": 412.2,
+    "min": 390.6,
+    "max": 433.8
+   },
+   "gradient_mean": {
+    "mean": 12.51,
+    "min": 12.36,
+    "max": 12.66
+   },
+   "gradient_variance": {
+    "mean": 683.5,
+    "min": 486.6,
+    "max": 880.4
+   },
+   "texture_w": {
+    "mean": 0.1749,
+    "min": 0.1696,
+    "max": 0.1802
+   },
+   "position_score": {
+    "mean": 84.25,
+    "min": 75.4,
+    "max": 93.1
+   },
+   "total_score": {
+    "mean": 73.075,
+    "min": 72.22,
+    "max": 73.93
+   }
+  },
+  {
+   "thickness_mm": 5,
+   "n": 3,
+   "members": [
+    "4#",
+    "23#",
+    "25#"
+   ],
+   "x095": {
+    "mean": 78.4667,
+    "min": 57.6,
+    "max": 102.9
+   },
+   "gray_variance": {
+    "mean": 681.7,
+    "min": 389.2,
+    "max": 853.4
+   },
+   "gradient_mean": {
+    "mean": 16.7167,
+    "min": 13.79,
+    "max": 19.18
+   },
+   "gradient_variance": {
+    "mean": 1047.2667,
+    "min": 434.1,
+    "max": 2046.0
+   },
+   "texture_w": {
+    "mean": 0.1831,
+    "min": 0.1491,
+    "max": 0.2035
+   },
+   "position_score": {
+    "mean": 88.3,
+    "min": 83.7,
+    "max": 94.2
+   },
+   "total_score": {
+    "mean": 66.6633,
+    "min": 57.07,
+    "max": 74.38
+   }
+  },
+  {
+   "thickness_mm": 6,
+   "n": 5,
+   "members": [
+    "10#",
+    "20#",
+    "21#",
+    "24#",
+    "28#"
+   ],
+   "x095": {
+    "mean": 132.54,
+    "min": 90.8,
+    "max": 175.3
+   },
+   "gray_variance": {
+    "mean": 1633.88,
+    "min": 807.7,
+    "max": 2355.0
+   },
+   "gradient_mean": {
+    "mean": 31.046,
+    "min": 24.6,
+    "max": 39.41
+   },
+   "gradient_variance": {
+    "mean": 2202.6,
+    "min": 1121.4,
+    "max": 5444.7
+   },
+   "texture_w": {
+    "mean": 0.2507,
+    "min": 0.2262,
+    "max": 0.2763
+   },
+   "position_score": {
+    "mean": 49.46,
+    "min": 18.6,
+    "max": 74.3
+   },
+   "total_score": {
+    "mean": 32.83,
+    "min": 22.69,
+    "max": 47.67
+   }
+  },
+  {
+   "thickness_mm": 8,
+   "n": 4,
+   "members": [
+    "11#",
+    "12#",
+    "22#",
+    "26#"
+   ],
+   "x095": {
+    "mean": 122.45,
+    "min": 95.0,
+    "max": 137.5
+   },
+   "gray_variance": {
+    "mean": 1380.85,
+    "min": 793.1,
+    "max": 1777.3
+   },
+   "gradient_mean": {
+    "mean": 35.505,
+    "min": 19.14,
+    "max": 45.73
+   },
+   "gradient_variance": {
+    "mean": 1625.35,
+    "min": 664.4,
+    "max": 2475.0
+   },
+   "texture_w": {
+    "mean": 0.2382,
+    "min": 0.2278,
+    "max": 0.2501
+   },
+   "position_score": {
+    "mean": 46.825,
+    "min": 37.9,
+    "max": 59.2
+   },
+   "total_score": {
+    "mean": 36.8075,
+    "min": 29.31,
+    "max": 55.68
+   }
+  },
+  {
+   "thickness_mm": 15,
+   "n": 1,
+   "members": [
+    "15#"
+   ],
+   "x095": {
+    "mean": 212.2,
+    "min": 212.2,
+    "max": 212.2
+   },
+   "gray_variance": {
+    "mean": 3777.5,
+    "min": 3777.5,
+    "max": 3777.5
+   },
+   "gradient_mean": {
+    "mean": 49.16,
+    "min": 49.16,
+    "max": 49.16
+   },
+   "gradient_variance": {
+    "mean": 4067.8,
+    "min": 4067.8,
+    "max": 4067.8
+   },
+   "texture_w": {
+    "mean": 0.3054,
+    "min": 0.3054,
+    "max": 0.3054
+   },
+   "position_score": {
+    "mean": 9.2,
+    "min": 9.2,
+    "max": 9.2
+   },
+   "total_score": {
+    "mean": 3.42,
+    "min": 3.42,
+    "max": 3.42
+   }
+  }
+ ],
+ "eligible_n": 15,
+ "excluded_from_stats": [
+  {
+   "sample_id": "1#",
+   "file": "1-1.png",
+   "reasons": [
+    "category=special"
+   ]
+  },
+  {
+   "sample_id": "1#",
+   "file": "1-2.png",
+   "reasons": [
+    "category=special"
+   ]
+  },
+  {
+   "sample_id": "2#",
+   "file": "2.png",
+   "reasons": [
+    "category=special"
+   ]
+  },
+  {
+   "sample_id": "3#",
+   "file": "3.png",
+   "reasons": [
+    "category=special"
+   ]
+  },
+  {
+   "sample_id": "7#",
+   "file": "7.png",
+   "reasons": [
+    "category=special"
+   ]
+  },
+  {
+   "sample_id": "8#-1",
+   "file": "8-1.png",
+   "reasons": [
+    "category=control"
+   ]
+  },
+  {
+   "sample_id": "8#-2",
+   "file": "8-2.png",
+   "reasons": [
+    "category=control"
+   ]
+  },
+  {
+   "sample_id": "13#",
+   "file": "13.png",
+   "reasons": [
+    "category=special"
+   ]
+  },
+  {
+   "sample_id": "14#",
+   "file": "14.png",
+   "reasons": [
+    "category=special"
+   ]
+  },
+  {
+   "sample_id": "16#",
+   "file": "16-1.png",
+   "reasons": [
+    "category=special"
+   ]
+  },
+  {
+   "sample_id": "16#",
+   "file": "16-2.png",
+   "reasons": [
+    "category=special"
+   ]
+  },
+  {
+   "sample_id": "18#",
+   "file": "18.png",
+   "reasons": [
+    "category=special"
+   ]
+  },
+  {
+   "sample_id": "19#",
+   "file": "19.png",
+   "reasons": [
+    "category=special"
+   ]
+  }
+ ],
+ "spearman_w_vs_thickness": 0.734,
+ "epsilon": {
+  "note": "官方判据（整片 max−min）实测无区分力——片上标签纸/边缘辉光把对照片 DR 拉到与钢化片同域；内缩 5% 口径才分离。ε 落地须 (a) 无标签样本重测或 (b) 判据改内缩域（工程决策），并在产线批复核——ε 定值仍 TODO(plant)",
+  "controls_dr": [
+   240.62,
+   240.84
+  ],
+  "controls_dr_inset5": [
+   19.88,
+   20.2
+  ],
+  "tempered_dr_min": 239.69,
+  "tempered_dr_inset5_min": 49.32,
+  "window_official": [
+   240.84,
+   239.69
+  ],
+  "window_inset5": [
+   20.2,
+   49.32
+  ]
+ },
+ "repeatability": {
+  "1#": {
+   "d_texture_w": 0.0232,
+   "d_coverage": 0.01446,
+   "d_total": 9.59
+  },
+  "16#": {
+   "d_texture_w": 0.0384,
+   "d_coverage": 0.00155,
+   "d_total": 9.22
+  }
+ },
+ "l2_cross": {
+  "rows": [
+   {
+    "sample_id": "1#",
+    "match": "same_sheet",
+    "q95_nm": 47,
+    "q98_nm": 51,
+    "x095_gray": 125.1,
+    "texture_w": 0.2262
+   },
+   {
+    "sample_id": "2#",
+    "match": "same_sheet",
+    "q95_nm": 116,
+    "q98_nm": 131,
+    "x095_gray": 207.5,
+    "texture_w": 0.3061
+   },
+   {
+    "sample_id": "3#",
+    "match": "same_sheet",
+    "q95_nm": 45,
+    "q98_nm": 49,
+    "x095_gray": 71.4,
+    "texture_w": 0.211
+   },
+   {
+    "sample_id": "4#",
+    "match": "same_sheet",
+    "q95_nm": 47,
+    "q98_nm": 53,
+    "x095_gray": 102.9,
+    "texture_w": 0.1966
+   },
+   {
+    "sample_id": "6#",
+    "match": "same_furnace",
+    "q95_nm": 45,
+    "q98_nm": 48,
+    "x095_gray": 68.2,
+    "texture_w": 0.1696
+   },
+   {
+    "sample_id": "7#",
+    "match": "same_furnace",
+    "q95_nm": 78,
+    "q98_nm": 84,
+    "x095_gray": 182.7,
+    "texture_w": 0.2527
+   },
+   {
+    "sample_id": "8#-1",
+    "match": "same_furnace",
+    "q95_nm": 35,
+    "q98_nm": 37,
+    "x095_gray": 20.8,
+    "texture_w": 0.1338
+   },
+   {
+    "sample_id": "11#",
+    "match": "same_furnace",
+    "q95_nm": 75,
+    "q98_nm": 84,
+    "x095_gray": 121.3,
+    "texture_w": 0.2339
+   },
+   {
+    "sample_id": "12#",
+    "match": "same_furnace",
+    "q95_nm": 72,
+    "q98_nm": 80,
+    "x095_gray": 136.0,
+    "texture_w": 0.2412
+   },
+   {
+    "sample_id": "16#",
+    "match": "same_sheet",
+    "q95_nm": 56,
+    "q98_nm": 70,
+    "x095_gray": 84.4,
+    "texture_w": 0.1908
+   },
+   {
+    "sample_id": "18#",
+    "match": "same_sheet",
+    "q95_nm": 84,
+    "q98_nm": 307,
+    "x095_gray": 225.5,
+    "texture_w": 0.2915
+   }
+  ],
+  "spearman_x095_vs_q95": 0.9178,
+  "spearman_texture_w_vs_q95": 0.9087,
+  "spearman_x095_vs_q95_same_sheet_only": 0.7537,
+  "note": "L2 评估域=扣角 75mm/扣边 25mm、nm 域；本报告=扣免罚边框带、灰度域，两次成像相隔一月——只作秩一致性对照，不构成 gray→nm 标定"
+ },
+ "refs_draft": {
+  "refs_by_thickness": [
+   {
+    "max_thickness_mm": 4.0,
+    "fail_line": null,
+    "refs": {
+     "x095": {
+      "best": 45.3,
+      "worst": 68.2
+     },
+     "gray_variance": {
+      "best": 390.6,
+      "worst": 433.8
+     },
+     "gradient_mean": {
+      "best": 12.36,
+      "worst": 12.66
+     },
+     "gradient_variance": {
+      "best": 486.6,
+      "worst": 880.4
+     },
+     "texture_w": {
+      "best": 0.1696,
+      "worst": 0.1802
+     }
+    }
+   },
+   {
+    "max_thickness_mm": 5.0,
+    "fail_line": null,
+    "refs": {
+     "x095": {
+      "best": 57.6,
+      "worst": 102.9
+     },
+     "gray_variance": {
+      "best": 389.2,
+      "worst": 853.4
+     },
+     "gradient_mean": {
+      "best": 13.79,
+      "worst": 19.18
+     },
+     "gradient_variance": {
+      "best": 434.1,
+      "worst": 2046.0
+     },
+     "texture_w": {
+      "best": 0.1491,
+      "worst": 0.2035
+     }
+    }
+   },
+   {
+    "max_thickness_mm": 6.0,
+    "fail_line": null,
+    "refs": {
+     "x095": {
+      "best": 90.8,
+      "worst": 175.3
+     },
+     "gray_variance": {
+      "best": 807.7,
+      "worst": 2355.0
+     },
+     "gradient_mean": {
+      "best": 24.6,
+      "worst": 39.41
+     },
+     "gradient_variance": {
+      "best": 1121.4,
+      "worst": 5444.7
+     },
+     "texture_w": {
+      "best": 0.2262,
+      "worst": 0.2763
+     }
+    }
+   },
+   {
+    "max_thickness_mm": 8.0,
+    "fail_line": null,
+    "refs": {
+     "x095": {
+      "best": 95.0,
+      "worst": 137.5
+     },
+     "gray_variance": {
+      "best": 793.1,
+      "worst": 1777.3
+     },
+     "gradient_mean": {
+      "best": 19.14,
+      "worst": 45.73
+     },
+     "gradient_variance": {
+      "best": 664.4,
+      "worst": 2475.0
+     },
+     "texture_w": {
+      "best": 0.2278,
+      "worst": 0.2501
+     }
+    }
+   }
+  ]
+ },
+ "scatter": "data/derived/sample26_thickness/w_by_thickness.png"
+}
