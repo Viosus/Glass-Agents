@@ -36,16 +36,18 @@ cloud_string_patterns:
 #     GlassApp 是联网客户端/服务器产品（打分服务器、账号服务、桌面上传器），其联网层
 #     出现 base_url / http / requests 属产品本职，非数据外泄面。Glass Agents 仓库
 #     任何文件都不在豁免内——机密数据层禁联网护栏不变。2026-08-04 经用户拍板加入。
-#     条目为路径前缀（正/反斜杠均可，大小写不敏感）；目录以 / 结尾。
+#     条目支持两种写法（正/反斜杠均可，大小写不敏感）：绝对路径按前缀匹配；
+#     **相对片段**（不带盘符）按路径包含匹配，跨机器/跨盘符自动生效——出差笔记本
+#     或移动硬盘包里仓库路径不同，无需改本文件。2026-08-29 由绝对路径改为片段。
 cloud_exempt_paths:
-  - "D:/GlassApp/server/"
-  - "D:/GlassApp/app/uploader.py"
-  - "D:/GlassApp/app/config_store.py"
-  - "D:/GlassApp/app/settings_page.py"
+  - "GlassApp/server/"
+  - "GlassApp/app/uploader.py"
+  - "GlassApp/app/config_store.py"
+  - "GlassApp/app/settings_page.py"
   # AnnotationApp 同为联网产品（标注服务/推送工具/拉取通道），口径同上
-  - "D:/AnnotationApp/server/"
-  - "D:/AnnotationApp/capture_push/"
-  - "D:/AnnotationApp/host_sync/"
+  - "AnnotationApp/server/"
+  - "AnnotationApp/capture_push/"
+  - "AnnotationApp/host_sync/"
 
 # 3) 命名铁律——受批准的大写记号（CONVENTIONS.md §2/§3），命名检查时豁免。
 #    末尾两项为 Qt 框架强制的虚函数覆写名（GlassApp 界面层）：重命名即失效，非风格违规。

@@ -49,6 +49,10 @@ RE_UPPER_SNAKE = re.compile(r"^_*[A-Z][A-Z0-9_]*$")  # 模块级常量（允许�
 RE_PASCAL = re.compile(r"^_?[A-Z][a-zA-Z0-9]*$")     # 类名
 RE_CJK = re.compile(r"[一-鿿]")              # 中文字符
 
+# 绝对路径判别（Windows 盘符 D:/… 或 POSIX /…）——用于区分 cloud_exempt_paths
+# 的绝对条目与可跨机器的相对片段条目
+_ABS_PATH_RE = re.compile(r"^([a-z]:/|/)")
+
 
 # ============ 工具 ============
 def _load_rules(rules_path: Path) -> dict:
@@ -67,6 +71,11 @@ def _is_cloud_exempt(path: Path | None, rules: dict) -> bool:
     仅豁免「云端调用」类规则（import 黑名单 + 联网字面子串）——GlassApp 联网层
     （打分服务器/账号服务/上传器）的产品本职；中文注释与命名铁律照查。
     stdin（无路径）不豁免。
+
+    条目可写绝对路径（`D:/GlassApp/server/`，按前缀匹配）或**相对片段**
+    （`GlassApp/server/`，按路径包含匹配）。相对片段让豁免跨机器/跨盘符生效：
+    同一条目同时命中 `D:/glassapp/server/` 与出差硬盘包内的
+    `e:/glassagents出差包/glassapp/server/`，换机器无需改 config。
     """
     if path is None:
         return False
@@ -75,12 +84,18 @@ def _is_cloud_exempt(path: Path | None, rules: dict) -> bool:
         entry = str(raw).replace("\\", "/").lower()
         if not entry:
             continue
+        is_absolute = _ABS_PATH_RE.match(entry) is not None
         # 目录条目（/ 结尾）按前缀匹配；文件条目须精确相等——避免
         # "uploader.py" 顺带豁免 "uploader.py.bak" 一类同前缀文件
         if entry.endswith("/"):
             if norm.startswith(entry):
                 return True
+            # 相对片段：须落在路径分隔处，防止 "app/" 误命中 "myapp/"
+            if not is_absolute and ("/" + entry) in norm:
+                return True
         elif norm == entry:
+            return True
+        elif not is_absolute and norm.endswith("/" + entry):
             return True
     return False
 
