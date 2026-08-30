@@ -74,3 +74,7 @@ approved_uppercase_names:
   - resizeEvent
   - showEvent
   - paintEvent
+  # 2026-08-29 补：orbit_page.py（反射环绕页）交互回调用到的同族覆写名
+  - mouseReleaseEvent
+  - mouseMoveEvent
+  - hideEvent

@@ -1,3 +1,13 @@
+# ⛔ 本文件已失效，**不要用它建环境** —— 请用 requirements.txt。
+#
+# 生成于 2026-06-24，此后从未刷新，现存三处硬伤：
+#   1. transformers==5.12.1 —— 正是 `.claude/rules/以往错误.md` §5 记录的
+#      「Windows 上加载 14B 分片触发 0xC0000005 原生崩溃」那一版；requirements.txt
+#      已锁 transformers<5（实装 4.57.6）。照本文件装等于把踩过的坑装回来。
+#   2. 缺 openpyxl / python-docx（requirements.txt 明确要求，标注表与 Word 报告靠它们）。
+#   3. huggingface_hub==1.20.1 与 transformers<5 不兼容（实装 0.36.2）。
+# 保留本文件仅作 2026-06-24 环境的历史快照，供排查版本回归时比对。
+#
 absl-py==2.4.0
 accelerate==1.14.0
 aiohappyeyeballs==2.6.2
