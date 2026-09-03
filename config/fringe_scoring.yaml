@@ -9,13 +9,25 @@ indicators:                   # 六指标测量与加权总分（决策#14；统
     gradient_mean: 1.0        # 梯度均值（Sobel 幅值）
     gradient_variance: 1.0    # 梯度方差
     ccp: 1.0                  # 组合纹理特征
-    uniformity: 1.0           # 斑纹空间分布均匀度（与深浅解耦）
-  uniformity_ratio_at_zero: 0.33  # 均匀度专属刻度锚（per_sheet 口径罚分比→0 分；0.33≈中心满斑理论上限）
-  uniformity_segment:         # 均匀度专属掩膜口径（2026-07-08 需求：与"斑纹判定"解耦——主 segment 的
-    top_fraction: 0.15        #   判定参数 min_dev_gray/top_fraction/min_z 等怎么调都不影响均匀度）。
+    position_score: 1.0       # 应力斑位置评分（斑纹空间分布，与深浅解耦；原"uniformity/均匀度"，2026-07-19 改名）
+  scoring:                    # 位置指标·评分层（指标层只出中心集中度 ρu，不读本段）
+    position_ratio_at_zero: 0.33  # 集中度支路刻度锚 ρ0（ρu 达该值→0 分；0.33≈中心满斑理论上限；原 uniformity_ratio_at_zero）
+    position_coverage:        # 覆盖度支路（2026-07-22 按 121 片人工标注初标）：位置评分=min(集中度支路, 覆盖度支路)
+      min_dev_gray: 30.0      #   G0 覆盖判斑灰度阈（固定工程口径，独立于主判斑灵敏度 segment.min_dev_gray——解耦保持）
+      cov_full: 0.10          #   C0：位置加权覆盖度 ≤ 此值覆盖支路不扣分
+      cov_zero: 0.65          #   C1：加权覆盖度 ≥ 此值覆盖支路 0 分（"整片皆斑"封顶——ρu 逐片自标准化对满板重纹理自吞）
+  baseline_flip:              # 基准翻转门闩（2026-07-19，仅位置指标路径；修"斑过半→中位数落斑内→跳分"）
+    enabled: true             # false=恒走单遍（旧行为，供与历史结果对拍）
+    p_flip: 0.05              # 触发阈=暗尾占比 p_dark 超此判翻转（未标定，工程初值 TODO(plant)）
+    q_lo: 0.25                # 暗侧子总体分位 q 下限（未标定；任务书初值 0.05，按 T6 边界实测上调——见 segment.BASELINE_FLIP_Q_LO 注释）
+    q_max: 0.5                # q 上限：不越过中位（未标定）
+    min_dark_abs: 1000        # 暗侧样本绝对下限，不足则回退置 aborted（未标定）
+    min_dark_frac: 0.005      # 暗侧样本相对下限 ×|M|（未标定）
+  position_segment:           # 位置指标专属掩膜口径（2026-07-08 需求：与"斑纹判定"解耦——主 segment 的
+    top_fraction: 0.15        #   判定参数 min_dev_gray/top_fraction/min_z 等怎么调都不影响位置指标）。
     min_z: 2.5                #   本段缺省时代码取同值内置口径；数值=历史默认，一般无需改动。
     z_saturation: 8.0         #   背景估计/边框带参数不在此列（那是背景不是判斑，仍与主配置共享）
-    polarity: bright
+    polarity: bright          #   （旧键名 uniformity_segment 代码仍识别，deprecated）
   refs:                       # 子分映射参考：s=clip(100×(worst−v)/(worst−best))。
                               # 初值=本批 25 片好/差片实测中位（2026-07-03），工厂按自家口径调
     x095: {best: 20.0, worst: 210.0}
@@ -23,7 +35,7 @@ indicators:                   # 六指标测量与加权总分（决策#14；统
     gradient_mean: {best: 5.0, worst: 32.0}
     gradient_variance: {best: 30.0, worst: 1100.0}
     ccp: {best: 0.2, worst: 1.4}    # 2026-07-13 拍板标尺：ccp 子分特例——优于 best 溢出 >100、劣于 worst 封 0（indicators._OVERFLOW_KEYS）
-    uniformity: {best: 100.0, worst: 0.0}  # 越大越好方向（best>worst 公式自动同向）；默认等价直通
+    position_score: {best: 100.0, worst: 0.0}  # 越大越好方向（best>worst 公式自动同向）；默认等价直通
   # refs_by_thickness:        # 可选：按厚度分档的参考值（厚玻璃天生斑重，须与同厚度参考比才公平；
   #   - max_thickness_mm: 6   #   机制同国标分级表"≤该厚度适用"。各档数值须用同厚度好/差样片标定，
   #     refs:                 #   TODO(plant)：当前样片厚度未知，无法给任何档的真值——绝不臆造）
@@ -56,6 +68,7 @@ sheets:                       # 整床多片切分（一张照片多块玻璃；
   close_frac: 0.005           # 闭运算核边长 ≈ 短边 × 该比例（连补片边亮线断点；过大会把相邻片粘连）
   min_area_frac: 0.01         # 单片最小面积占整图（裁边后）比例，低于视为杂物/反光忽略
   min_side_frac: 0.05         # 单片最小边长（minAreaRect 短边）占短边比例，低于视为亮线纹/细条干扰剔除
+  contained_drop_frac: 0.95   # 包含剔除：候选凸包与更大候选交叠占自身面积 ≥ 该值判"片内亮纹理"剔除（2026-07-22，玻璃片不可能互相包含）
   max_sheets: 50              # 检出片数上限，超出判过分割 → 报错不打分
   poly_epsilon_frac: 0.02     # 逐片四角拟合 approxPolyDP 的 epsilon = 凸包周长 × 该比例
 

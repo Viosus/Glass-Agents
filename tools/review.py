@@ -61,6 +61,30 @@ def _is_approved(name: str, approved: set[str]) -> bool:
     return name in approved
 
 
+def _is_cloud_exempt(path: Path | None, rules: dict) -> bool:
+    """该文件是否在云端调用豁免路径内（cloud_exempt_paths，前缀匹配、大小写不敏感）。
+
+    仅豁免「云端调用」类规则（import 黑名单 + 联网字面子串）——GlassApp 联网层
+    （打分服务器/账号服务/上传器）的产品本职；中文注释与命名铁律照查。
+    stdin（无路径）不豁免。
+    """
+    if path is None:
+        return False
+    norm = str(path.resolve()).replace("\\", "/").lower()
+    for raw in rules.get("cloud_exempt_paths", []) or []:
+        entry = str(raw).replace("\\", "/").lower()
+        if not entry:
+            continue
+        # 目录条目（/ 结尾）按前缀匹配；文件条目须精确相等——避免
+        # "uploader.py" 顺带豁免 "uploader.py.bak" 一类同前缀文件
+        if entry.endswith("/"):
+            if norm.startswith(entry):
+                return True
+        elif norm == entry:
+            return True
+    return False
+
+
 # ============ 通道一：确定性预检（AST + 正则）============
 def detect_cloud_imports(tree: ast.AST, rules: dict) -> list[tuple[int, str]]:
     """检测 import 黑名单（云端/网络库），按模块根名与点号命名空间匹配。"""
@@ -172,8 +196,13 @@ def detect_naming(tree: ast.AST, rules: dict) -> list[tuple[int, str]]:
     return findings
 
 
-def run_deterministic(file_name: str, source: str, rules: dict) -> list[str]:
-    """跑确定性通道，返回排好序的 ❌ 行（语法错误则返回单条解析失败）。"""
+def run_deterministic(file_name: str, source: str, rules: dict,
+                      cloud_exempt: bool = False) -> list[str]:
+    """跑确定性通道，返回排好序的 ❌ 行（语法错误则返回单条解析失败）。
+
+    cloud_exempt=True（文件命中 cloud_exempt_paths）时跳过云端调用两项检查，
+    其余规则照查。
+    """
     try:
         tree = ast.parse(source)
     except SyntaxError as exc:
@@ -181,8 +210,9 @@ def run_deterministic(file_name: str, source: str, rules: dict) -> list[str]:
 
     lines = source.splitlines()
     items: list[tuple[int, str]] = []
-    items += detect_cloud_imports(tree, rules)
-    items += detect_cloud_strings(lines, rules)
+    if not cloud_exempt:
+        items += detect_cloud_imports(tree, rules)
+        items += detect_cloud_strings(lines, rules)
     items += detect_missing_chinese_comments(tree, source)
     items += detect_naming(tree, rules)
     items.sort(key=lambda t: t[0])
@@ -278,17 +308,17 @@ def run(argv: list[str]) -> int:
     args = _parse_args(argv)
     rules = _load_rules(Path(args.rules))
 
-    # 收集 (文件名, 代码)
-    targets: list[tuple[str, str]] = []
+    # 收集 (文件名, 代码, 云端豁免标志)
+    targets: list[tuple[str, str, bool]] = []
     if args.files:
         for f in args.files:
             p = Path(f)
             if not p.exists():
                 print(f"❌ 文件不存在：{p}", file=sys.stderr)
                 return 2
-            targets.append((p.name, p.read_text(encoding="utf-8")))
+            targets.append((p.name, p.read_text(encoding="utf-8"), _is_cloud_exempt(p, rules)))
     else:
-        targets.append(("<stdin>", sys.stdin.read()))
+        targets.append(("<stdin>", sys.stdin.read(), False))
 
     # 模型通道（按需加载，可 --no-model 跳过）
     llm = None
@@ -305,10 +335,10 @@ def run(argv: list[str]) -> int:
         llm = _make_llm(model_path, args.n_ctx, gpu_layers)
 
     has_violation = False
-    for file_name, code in targets:
+    for file_name, code, cloud_exempt in targets:
         print(f"\n===== 审查: {file_name} =====")
-        hard = run_deterministic(file_name, code, rules)
-        print("[确定性·硬规则]")
+        hard = run_deterministic(file_name, code, rules, cloud_exempt=cloud_exempt)
+        print("[确定性·硬规则]" + ("（云端调用规则已豁免：cloud_exempt_paths）" if cloud_exempt else ""))
         if hard:
             has_violation = True
             for line in hard:

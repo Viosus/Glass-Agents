@@ -18,11 +18,14 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))  # 支持直接 `python tools/make_annotation_template.py`
+
+from schemas.process_params import GLASS_TYPES  # noqa: E402
 OUT_DIR = ROOT / "data" / "annotation"
 
 # 枚举列的允许值（xlsx 下拉 + 字典）
 ENUMS: dict[str, list[str]] = {
-    "glass_type": ["ultra_clear", "clear"],
+    "glass_type": list(GLASS_TYPES),  # 单一真值源：schemas/process_params.py（2026-08-23 扩为 7 值）
     "quality_mode": ["high_quality", "high_efficiency"],
     "expert_quality_grade": ["A", "B", "C"],
     "measured_quality_grade": ["A", "B", "C"],
@@ -37,7 +40,7 @@ COLUMNS: list[tuple[str, str, str, str, list[str]]] = [
     ("operator_id", "A 标识", "老师傅工号（测标签一致性）", "记录员", ["S01", "S01"]),
     ("source", "A 标识", "产线/班次", "记录员", ["line1/早班", "line1/早班"]),
     ("thickness_mm", "B 规格·分桶键", "厚度 mm", "记录员", ["8", "8"]),
-    ("glass_type", "B 规格·分桶键", "品类 {ultra_clear,clear}", "记录员", ["clear", "ultra_clear"]),
+    ("glass_type", "B 规格·分桶键", "品类 {普白clear,超白ultra_clear,Low-E low_e,镀膜coated,彩釉enameled,压花patterned,其他other}", "记录员", ["clear", "low_e"]),  # noqa: E501
     ("quality_mode", "B 规格·分桶键", "模式 {high_quality,high_efficiency}", "记录员", ["high_quality", "high_efficiency"]),  # noqa: E501
     ("x0_95_nm", "C 输入·状况X", "应力斑 X0.95，nm（可得则填）", "系统", ["82", "70"]),
     ("iso_t_pct", "C 输入·状况X", "IsoT %（暂无→留空/TODO(plant)）", "系统", ["", ""]),

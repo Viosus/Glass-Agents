@@ -10,6 +10,8 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 
 # MAD → 正态一致性尺度因子（1/Φ^{-1}(3/4)，统计常数，非工艺限值）
@@ -140,26 +142,37 @@ def background_with_bands(
     return bg
 
 
+def robust_z_stats(
+    residual: np.ndarray,
+    region_mask: np.ndarray,
+    min_contrast_frac: float,
+    reference_scale: float,
+) -> tuple[np.ndarray, float, float]:
+    """残差 → (稳健 z 图, 基准 med, 尺度 scale)：median/MAD 只在 region_mask 内估计。
+
+    残差尺度 ≤ reference_scale × min_contrast_frac 时判"无斑"（z 全 0），
+    防止把平滑玻璃的数值噪声当尺度放大成斑；常量图（MAD=0）同样安全退化。
+    返回的 med/scale 为退化判定前的原始统计量（诊断量导出用）。
+    """
+    res = np.asarray(residual, dtype=float)
+    inside = res[region_mask]
+    if inside.size == 0:
+        raise ValueError("robust_z_stats: 内部区域无有效像素")
+    med = float(np.median(inside))
+    scale = robust_scale(inside)
+    if scale <= min_contrast_frac * reference_scale or scale <= 0.0:
+        return np.zeros_like(res), med, scale  # 无斑：残差起伏低于对比度门槛
+    return (res - med) / scale, med, scale
+
+
 def robust_z_map(
     residual: np.ndarray,
     region_mask: np.ndarray,
     min_contrast_frac: float,
     reference_scale: float,
 ) -> np.ndarray:
-    """残差 → 稳健 z 图：median/MAD 只在 region_mask（非边框内部）内估计。
-
-    残差尺度 ≤ reference_scale × min_contrast_frac 时判"无斑"（返回全 0），
-    防止把平滑玻璃的数值噪声当尺度放大成斑；常量图（MAD=0）同样安全退化。
-    """
-    res = np.asarray(residual, dtype=float)
-    inside = res[region_mask]
-    if inside.size == 0:
-        raise ValueError("robust_z_map: 内部区域无有效像素")
-    med = float(np.median(inside))
-    scale = robust_scale(inside)
-    if scale <= min_contrast_frac * reference_scale or scale <= 0.0:
-        return np.zeros_like(res)  # 无斑：残差起伏低于对比度门槛
-    return (res - med) / scale
+    """robust_z_stats 的薄包装：只要 z 图（既有调用点保持不变）。"""
+    return robust_z_stats(residual, region_mask, min_contrast_frac, reference_scale)[0]
 
 
 def deviation_map(z: np.ndarray, polarity: str) -> np.ndarray:
@@ -179,7 +192,23 @@ def fringe_mask_and_intensity(
     seg_cfg: dict,
     dev_gray: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """偏离图 → (斑掩膜, 深浅强度 s∈[0,1])，只在 region_mask 内判定。
+    """fringe_mask_intensity_info 的薄包装：只要 (掩膜, 强度)（既有调用点保持不变）。"""
+    mask, intensity_s, _ = fringe_mask_intensity_info(dev, region_mask, seg_cfg, dev_gray)
+    return mask, intensity_s
+
+
+def fringe_mask_intensity_info(
+    dev: np.ndarray,
+    region_mask: np.ndarray,
+    seg_cfg: dict,
+    dev_gray: np.ndarray | None = None,
+) -> tuple[np.ndarray, np.ndarray, dict]:
+    """偏离图 → (斑掩膜, 深浅强度 s∈[0,1], 阈值信息)，只在 region_mask 内判定。
+
+    第三个返回值 info = {"threshold": 实际生效阈值, "bound": 阈值由谁决定}——
+    quantile 法 bound ∈ {"quantile", "min_z", "min_dev_gray"}（分位值与下限取大，
+    平手记下限）；gray_threshold 恒为下限；robust_z 记 "z_threshold"。
+    供位置指标诊断量（threshold_T / quantile_bound）复算核对，判定逻辑不变。
 
     按 s_scale_mode 整体切换判定域（掩膜与强度必须同域，否则"整片重斑"会在
     z 域检测里隐身——z 被自身尺度压扁到 min_z 以下，掩膜为空 → 假满分）：
@@ -211,11 +240,11 @@ def fringe_mask_and_intensity(
 
     # 掩膜判定域：absolute+quantile/gray_threshold 用灰度域（配 min_dev_gray），其余 z 域（配 min_z）
     if mode == "absolute" and method in ("quantile", "gray_threshold"):
-        base, floor = dev_gray, float(seg_cfg["min_dev_gray"])
+        base, floor, floor_name = dev_gray, float(seg_cfg["min_dev_gray"]), "min_dev_gray"
     elif method == "gray_threshold":
         raise ValueError("fringe_mask_and_intensity: gray_threshold 法仅支持 s_scale_mode=absolute")
     else:
-        base, floor = dev, float(seg_cfg["min_z"])
+        base, floor, floor_name = dev, float(seg_cfg["min_z"]), "min_z"
     assert base is not None  # absolute 分支已确保 dev_gray 非 None
 
     if method == "quantile":
@@ -223,14 +252,18 @@ def fringe_mask_and_intensity(
         if not 0.0 < top_fraction < 1.0:
             raise ValueError("fringe_mask_and_intensity: top_fraction 须在 (0,1) 内")
         threshold = float(np.quantile(base[region_mask], 1.0 - top_fraction))
+        bound = "quantile" if threshold > floor else floor_name  # 平手记下限
         threshold = max(threshold, floor)  # 质控下限：top-q 且至少中等偏离
         mask = region_mask & (base >= threshold) & (base > 0.0)  # base>0 排除退化全 0
+        info = {"threshold": threshold, "bound": bound}
     elif method == "gray_threshold":
         # 面积不设上限：所有显著偏离都计罚（斑占比越大罚越重，决策 #12）
         mask = region_mask & (base >= floor) & (base > 0.0)
+        info = {"threshold": floor, "bound": floor_name}
     else:
         threshold = float(seg_cfg["z_threshold"])
         mask = region_mask & (dev >= threshold)
+        info = {"threshold": threshold, "bound": "z_threshold"}
 
     if mode == "absolute":
         saturation = seg_cfg.get("s_saturation_gray")
@@ -238,10 +271,92 @@ def fringe_mask_and_intensity(
             raise ValueError("fringe_mask_and_intensity: absolute 模式需配置正的 s_saturation_gray")
         assert dev_gray is not None
         intensity_s = np.where(mask, np.clip(dev_gray / float(saturation), 0.0, 1.0), 0.0)
-        return mask, intensity_s
+        return mask, intensity_s, info
 
     z_saturation = float(seg_cfg["z_saturation"])
     if z_saturation <= 0.0:
         raise ValueError("fringe_mask_and_intensity: z_saturation 须为正")
     intensity_s = np.where(mask, np.clip(dev / z_saturation, 0.0, 1.0), 0.0)
-    return mask, intensity_s
+    return mask, intensity_s, info
+
+
+# ── 基准翻转门闩（2026-07-19，仅位置指标路径启用）────────────────────────
+# 问题：med(R_M) 击穿点 50%——斑覆盖率过半时中位数落进斑内，斑成为新基准，
+# 干净区变负偏离被 max(z,0) 折零 → 分数跳变（理想化模型 49%→51% 跳约 56 分）。
+# 修法 = 确定性两遍法：Pass1 现行 z 不变；暗向尾部占比 p_dark 超阈则判"基准已
+# 翻转"，改用暗侧子总体 D（真实干净区的保守子集）重定基准重算 z。
+# 下列常数均为工程初值，未经现场标定（TODO(plant)）；config indicators.baseline_flip
+# 段可覆写（enabled/p_flip/q_lo/q_max/min_dark_abs/min_dark_frac）。
+BASELINE_FLIP_P_FLIP = 0.05      # 触发阈：p_dark 超此判翻转
+# q 下限：任务书初值 0.05（=触发阈），T6 边界扫描实测调整为 0.25——
+# 触发边界（p_dark≈p_flip）处暗侧子总体太小（≈5%）会把基准锚死在暗簇上，
+# 台阶 −44 分；取 0.25 后 D 至少含下四分位、台阶减半（−25 分，方向保守向下），
+# 深度翻转片（干净区占比 ≥ q_lo/2 = 12.5%）的锚定不受影响（q=clip 取 p_dark）
+BASELINE_FLIP_Q_LO = 0.25
+BASELINE_FLIP_Q_MAX = 0.5        # q 上限：不越过中位
+BASELINE_FLIP_MIN_DARK_ABS = 1000   # |D| 绝对下限（样本过少不可靠 → 回退）
+BASELINE_FLIP_MIN_DARK_FRAC = 0.005  # |D| 相对下限（× |M|）
+
+
+@dataclass
+class BaselineFlip:
+    """门闩结果：实际用于后续判斑的 z 图 + 诊断量。"""
+
+    z: np.ndarray            # 未触发/回退 = 原 z（零改动）；翻转成功 = 重算 z
+    p_dark: float            # 暗向尾部占比 |{p∈M: z<−z_min}| / |M|（翻转判据）
+    flipped: bool            # 门闩触发且重定基准成功
+    aborted: bool            # 门闩触发但暗侧样本不足/尺度退化 → 回退 Pass1
+    m_r: float               # 实际用于 z 的稳健基准（翻转成功时 = med(R_D)）
+    sigma_r: float           # 实际用于 z 的稳健尺度（回退时为 Pass1 原始 σR）
+
+
+def baseline_flip_z(
+    residual: np.ndarray,
+    region_mask: np.ndarray,
+    z: np.ndarray,
+    z_min: float,
+    min_contrast_frac: float,
+    reference_scale: float,
+    z_med: float,
+    z_scale: float,
+    flip_cfg: dict | None,
+) -> BaselineFlip:
+    """基准翻转门闩（严格两遍、确定性、无随机；分位数=线性插值口径）。
+
+    Pass1 z 由调用方给入（robust_z_stats 现行逻辑，不变）；p_dark ≤ p_flip 时对
+    z 零操作直接返回（无翻转片位级不变的根基）。触发时取暗侧子总体
+    D = {p∈M: R ≤ Q_q(R_M)}，q = clip(p_dark, q_lo, q_max)——p_dark 是干净区占比
+    的保守（偏小）估计，D 宁可少取不可混入斑；|D| 或其尺度不可靠则回退置
+    aborted。退化 z≡0 的片 p_dark 恒为 0，天然不触发。
+    """
+    cfg = flip_cfg or {}
+    inside_z = z[region_mask]
+    n = inside_z.size
+    if n == 0:
+        raise ValueError("baseline_flip_z: 内部区域无有效像素")
+    p_dark = float((inside_z < -float(z_min)).sum()) / float(n)
+    enabled = bool(cfg.get("enabled", True))
+    p_flip = float(cfg.get("p_flip", BASELINE_FLIP_P_FLIP))
+    if not enabled or p_dark <= p_flip:
+        return BaselineFlip(z=z, p_dark=p_dark, flipped=False, aborted=False,
+                            m_r=z_med, sigma_r=z_scale)
+
+    q_lo = float(cfg.get("q_lo", BASELINE_FLIP_Q_LO))
+    q_max = float(cfg.get("q_max", BASELINE_FLIP_Q_MAX))
+    min_abs = int(cfg.get("min_dark_abs", BASELINE_FLIP_MIN_DARK_ABS))
+    min_frac = float(cfg.get("min_dark_frac", BASELINE_FLIP_MIN_DARK_FRAC))
+    q = min(max(p_dark, q_lo), q_max)
+    res = np.asarray(residual, dtype=float)
+    inside_r = res[region_mask]
+    cut = float(np.quantile(inside_r, q))
+    dark = inside_r[inside_r <= cut]
+    if dark.size < max(min_abs, min_frac * n):
+        return BaselineFlip(z=z, p_dark=p_dark, flipped=False, aborted=True,
+                            m_r=z_med, sigma_r=z_scale)
+    med_dark = float(np.median(dark))
+    scale_dark = robust_scale(dark)
+    if scale_dark <= min_contrast_frac * reference_scale or scale_dark <= 0.0:
+        return BaselineFlip(z=z, p_dark=p_dark, flipped=False, aborted=True,
+                            m_r=z_med, sigma_r=z_scale)
+    return BaselineFlip(z=(res - med_dark) / scale_dark, p_dark=p_dark,
+                        flipped=True, aborted=False, m_r=med_dark, sigma_r=scale_dark)

@@ -69,7 +69,8 @@ def print_sheets_result(name: str, res: SheetsScoreResult) -> None:
                 f"      六指标: 总分={ind.total_score:.1f} | "
                 f"X0.95={ind.x095:.1f}{ind.x095_unit} 灰度方差={ind.gray_variance:.1f} "
                 f"梯度均={ind.gradient_mean:.1f} 梯度方差={ind.gradient_variance:.1f} "
-                f"CCP={ind.ccp_value:.3f} 均匀度={ind.uniformity:.1f}"
+                f"CCP={ind.ccp_value:.3f} 位置评分={ind.position_score:.1f} "
+                f"中心集中度={ind.center_concentration:.4f}"
             )
 
 
@@ -174,7 +175,10 @@ def dump_sheets_store(
                 "ccp_ca": ind.ccp_ca,
                 "ccp_cpa": ind.ccp_cpa,
                 "ccp_reference_is_plant_calibrated": ind.ccp_reference_is_plant_calibrated,
-                "uniformity": ind.uniformity,
+                "center_concentration": ind.center_concentration,
+                "position_score": ind.position_score,
+                "uniformity": ind.position_score,  # deprecated：旧消费方兼容，值=position_score
+                "position_diagnostics": ind.position_diagnostics,
                 "sub_scores": ind.sub_scores,
                 "weights": ind.weights,
             }

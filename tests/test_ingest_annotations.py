@@ -151,6 +151,25 @@ def test_roundtrip_injects_furnace_identity(tmp_path, furnaces_yaml):
     assert s.operator_id == "S01" and s.is_ground_truth is True
 
 
+def test_all_glass_types_ingest_end_to_end(tmp_path, furnaces_yaml):
+    """7 品类的填好表都必须整行进得来（2026-08-23 修复的核心回归）。
+
+    修复前 glass_type 只认 ultra_clear/clear，Low-E/彩釉/压花/镀膜/其他 的行会被
+    ProcessParams 的 Literal 拒掉 → 整行 rejected → 这几类炉次事实上无法回流。
+    """
+    from schemas.process_params import GLASS_TYPES
+
+    rows = [make_row(sample_id=f"g{i:03d}", glass_type=gt) for i, gt in enumerate(GLASS_TYPES)]
+    csv_path = tmp_path / "filled.csv"
+    write_filled_csv(csv_path, rows)
+
+    report = ingest(csv_path, "F1", tmp_path / "archive", furnaces_yaml)
+    assert report.accepted == len(GLASS_TYPES), f"应全数接受，实际拒收：{report.rejected}"
+    assert not report.rejected
+    got = {s.glass_type for s in report.samples}
+    assert got == set(GLASS_TYPES)
+
+
 def test_unregistered_furnace_warns_but_ingests(tmp_path, furnaces_yaml):
     csv_path = tmp_path / "filled.csv"
     write_filled_csv(csv_path, [make_row()])

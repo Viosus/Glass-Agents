@@ -39,7 +39,18 @@
 - `ccp_reference.yaml`：`c_max`、`cp_max`。
 
 ### 受控枚举值
-- `glass_type` ∈ {`ultra_clear`(超白), `clear`(普白)}。
+- `glass_type` ∈ {`ultra_clear`(超白), `clear`(普白), `low_e`(Low-E), `coated`(镀膜·其他),
+  `enameled`(彩釉), `patterned`(压花), `other`(其他)}。**2026-08-23 由 2 值扩为 7 值**——标注应用
+  自 2026-07-26 起支持 7 品类且现场在用，原枚举导致 Low-E/彩釉/压花/镀膜 的 39 列 CSV 被
+  `ingest_annotations` 整行拒收，这几类炉次无法回流。品类只是**分桶键**，不参与任何安全判定
+  （`constraints.validate` 四条规则一条都不读它），放宽枚举不触及安全闸门。
+  - **唯一真值源** = `schemas/process_params.py` 的 `GLASS_TYPES` / `GLASS_TYPE_ZH` / `GlassType`，
+    新增品类只改那一处（三者一致性由 `tests/test_schemas.py::test_glass_type_sources_agree` 锁定）。
+  - ⚠ `other` 的手输名在标注应用侧是 `glass_type_note`，**39 列表暂无该列** → 选 `other` 时具体
+    品类名不会回流，只留 `other`。扩列需改冻结契约，未做。
+  - ⚠ `tools/constraints.py:47` 的注释仍写 `# ultra_clear | clear`，**属已知过时**：该文件是安全闸门，
+    在 AnnotationApp `server/vendor/` 有逐字节冻结副本，为保住「闸门一个字未改」的机器证明未动它。
+    字段本身是 `str`、不校验品类，故无功能影响。
 - `quality_mode` ∈ {`high_quality`(高质量), `high_efficiency`(高效率)}。
 - `zone_roles` 取值含 {`center`, `edge`, …}（其余角色待 `TODO(plant)` 真实分区定义）。
 
